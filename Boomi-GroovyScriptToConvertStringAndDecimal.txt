@@ -1,0 +1,11 @@
+if( InputValue.contains( "%" ) ) {
+    InputValue = InputValue.replaceAll( "%", "" );
+    OutputCalculatedAmount = Double.parseDouble( InputValue ) * Double.parseDouble( DwellingLimit ) / 100.0;
+    OutputCalculatedAmount = Double.toString( OutputCalculatedAmount );
+    if( OutputCalculatedAmount.contains( "." ) ) {
+        def decimalPointPos = OutputCalculatedAmount.indexOf( "." );
+        OutputCalculatedAmount = OutputCalculatedAmount.substring( 0, decimalPointPos );
+    }
+} else {
+    OutputCalculatedAmount = InputValue.replaceAll( ".0", "" );
+}

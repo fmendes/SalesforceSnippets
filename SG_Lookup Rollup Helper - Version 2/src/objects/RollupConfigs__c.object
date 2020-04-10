@@ -1,0 +1,161 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata">
+    <customSettingsType>List</customSettingsType>
+    <customSettingsVisibility>Public</customSettingsVisibility>
+    <enableFeeds>false</enableFeeds>
+    <fields>
+        <fullName>Child_Object_Name__c</fullName>
+        <description>Stores the API name of the child object which contains fields to be rolled up by the Parent</description>
+        <externalId>false</externalId>
+        <inlineHelpText>Stores the API name of the child object which contains fields to be rolled up by the Parent</inlineHelpText>
+        <label>Child Object Name</label>
+        <length>255</length>
+        <required>true</required>
+        <type>Text</type>
+        <unique>false</unique>
+    </fields>
+    <fields>
+        <fullName>Parent_Object__c</fullName>
+        <description>Stores the API name of the Parent object which will display the roll-up summaries of lookup fields</description>
+        <externalId>false</externalId>
+        <inlineHelpText>Stores the API name of the Parent object which will display the roll-up summaries of lookup fields</inlineHelpText>
+        <label>Parent Object</label>
+        <length>255</length>
+        <required>true</required>
+        <type>Text</type>
+        <unique>false</unique>
+    </fields>
+    <fields>
+        <fullName>parentQueryField1__c</fullName>
+        <description>Holds the API name of the field on the Parent object which will display the rolled-up summary of fields on the Child. Example: total_hours_spent__c</description>
+        <externalId>false</externalId>
+        <inlineHelpText>Holds the API name of the field on the Parent object which will display the rolled-up summary of fields on the Child. Example: total_hours_spent__c</inlineHelpText>
+        <label>parentQueryField1</label>
+        <length>255</length>
+        <required>false</required>
+        <type>Text</type>
+        <unique>false</unique>
+    </fields>
+    <fields>
+        <fullName>parentQueryField2__c</fullName>
+        <description>Holds the API name of the field on the Parent object which will display the rolled-up summary of fields on the Child. Example: total_hours_spent__c</description>
+        <externalId>false</externalId>
+        <inlineHelpText>Holds the API name of the field on the Parent object which will display the rolled-up summary of fields on the Child. Example: total_hours_spent__c</inlineHelpText>
+        <label>parentQueryField2</label>
+        <length>255</length>
+        <required>false</required>
+        <type>Text</type>
+        <unique>false</unique>
+    </fields>
+    <fields>
+        <fullName>parentQueryField3__c</fullName>
+        <description>Holds the API name of the field on the Child object which will be rolled up by the Parent. Example: hours_spent__c</description>
+        <externalId>false</externalId>
+        <inlineHelpText>Holds the API name of the field on the Child object which will be rolled up by the Parent. Example: hours_spent__c</inlineHelpText>
+        <label>parentQueryField3</label>
+        <length>255</length>
+        <required>false</required>
+        <type>Text</type>
+        <unique>false</unique>
+    </fields>
+    <fields>
+        <fullName>parentQueryField4__c</fullName>
+        <description>Holds the API name of the field on the Parent object which will display the rolled-up summary of fields on the Child. Example: total_hours_spent__c</description>
+        <externalId>false</externalId>
+        <inlineHelpText>Holds the API name of the field on the Parent object which will display the rolled-up summary of fields on the Child. Example: total_hours_spent__c</inlineHelpText>
+        <label>parentQueryField4</label>
+        <length>255</length>
+        <required>false</required>
+        <type>Text</type>
+        <unique>false</unique>
+    </fields>
+    <fields>
+        <fullName>parentQueryField5__c</fullName>
+        <description>Holds the API name of the field on the Parent object which will display the rolled-up summary of fields on the Child. Example: total_hours_spent__c</description>
+        <externalId>false</externalId>
+        <inlineHelpText>Holds the API name of the field on the Parent object which will display the rolled-up summary of fields on the Child. Example: total_hours_spent__c</inlineHelpText>
+        <label>parentQueryField5</label>
+        <length>255</length>
+        <required>false</required>
+        <type>Text</type>
+        <unique>false</unique>
+    </fields>
+    <fields>
+        <fullName>parentRowCount__c</fullName>
+        <description>Holds the API name of the field on the parent which stores the aggregated number of child rows (e.g., if there are 15 children for a parent, value will be &quot;15&quot;)</description>
+        <externalId>false</externalId>
+        <inlineHelpText>Holds the API name of the field on the parent which stores the aggregated number of child rows (e.g., if there are 15 children for a parent, value will be &quot;15&quot;)</inlineHelpText>
+        <label>parentRowCount</label>
+        <length>255</length>
+        <required>false</required>
+        <type>Text</type>
+        <unique>false</unique>
+    </fields>
+    <fields>
+        <fullName>queryField1__c</fullName>
+        <description>Holds the API name of the field on the Child object which will be rolled up by the Parent. Example: hours_spent__c</description>
+        <externalId>false</externalId>
+        <inlineHelpText>Holds the API name of the field on the Child object which will be rolled up by the Parent. Example: hours_spent__c</inlineHelpText>
+        <label>queryField1</label>
+        <length>255</length>
+        <required>false</required>
+        <type>Text</type>
+        <unique>false</unique>
+    </fields>
+    <fields>
+        <fullName>queryField2__c</fullName>
+        <description>Holds the API name of the field on the Child object which will be rolled up by the Parent. Example: hours_spent__c</description>
+        <externalId>false</externalId>
+        <inlineHelpText>Holds the API name of the field on the Child object which will be rolled up by the Parent. Example: hours_spent__c</inlineHelpText>
+        <label>queryField2</label>
+        <length>255</length>
+        <required>false</required>
+        <type>Text</type>
+        <unique>false</unique>
+    </fields>
+    <fields>
+        <fullName>queryField3__c</fullName>
+        <description>Holds the API name of the field on the Child object which will be rolled up by the Parent. Example: hours_spent__c</description>
+        <externalId>false</externalId>
+        <inlineHelpText>Holds the API name of the field on the Child object which will be rolled up by the Parent. Example: hours_spent__c</inlineHelpText>
+        <label>queryField3</label>
+        <length>255</length>
+        <required>false</required>
+        <type>Text</type>
+        <unique>false</unique>
+    </fields>
+    <fields>
+        <fullName>queryField4__c</fullName>
+        <description>Holds the API name of the field on the Child object which will be rolled up by the Parent. Example: hours_spent__c</description>
+        <externalId>false</externalId>
+        <inlineHelpText>Holds the API name of the field on the Child object which will be rolled up by the Parent. Example: hours_spent__c</inlineHelpText>
+        <label>queryField4</label>
+        <length>255</length>
+        <required>false</required>
+        <type>Text</type>
+        <unique>false</unique>
+    </fields>
+    <fields>
+        <fullName>queryField5__c</fullName>
+        <description>Holds the API name of the field on the Child object which will be rolled up by the Parent. Example: hours_spent__c</description>
+        <externalId>false</externalId>
+        <inlineHelpText>Holds the API name of the field on the Child object which will be rolled up by the Parent. Example: hours_spent__c</inlineHelpText>
+        <label>queryField5</label>
+        <length>255</length>
+        <required>false</required>
+        <type>Text</type>
+        <unique>false</unique>
+    </fields>
+    <fields>
+        <fullName>queryField_parentRelationshipName__c</fullName>
+        <description>Holds the API name of the field on the Child that is the Lookup relationship to the parent. Example: parent_account__c</description>
+        <externalId>false</externalId>
+        <inlineHelpText>Holds the API name of the field on the Child that is the Lookup relationship to the parent. Example: parent_account__c</inlineHelpText>
+        <label>queryField_parentRelationshipName</label>
+        <length>255</length>
+        <required>true</required>
+        <type>Text</type>
+        <unique>false</unique>
+    </fields>
+    <label>RollupConfigs</label>
+</CustomObject>

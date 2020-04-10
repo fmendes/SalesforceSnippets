@@ -1,0 +1,4 @@
+DateTime aCompletionDate = DateTime.valueOf( '2019-08-02 00:00:00' ).addHours( -7 );
+system.debug( 'value= ' + aCompletionDate );
+system.debug( 'date()= ' + aCompletionDate.date() );
+system.debug( 'dateGmt()= ' + aCompletionDate.dateGmt() );

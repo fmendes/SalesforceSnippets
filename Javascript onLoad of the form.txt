@@ -1,0 +1,17 @@
+
+<script type="text/javascript">
+	// execute resizing after page loads while respecting any framework code
+	if( window.attachEvent ) {
+		window.attachEvent( 'onload', resizeDiagram );
+	} else {
+		if( window.onload ) {
+			var curronload = window.onload;
+			var newonload = function() {
+				curronload();
+				resizeDiagram();
+			};
+			window.onload = newonload;
+		} else {
+			window.onload = resizeDiagram;
+		}
+	}

@@ -1,0 +1,75 @@
+RETRIEVING FILES:
+
+            // retrieve links of files associated to the record
+            List<ContentDocumentLink> cdlList =
+                    [ SELECT ID, ContentDocumentId, ShareType, Visibility
+                    FROM ContentDocumentLink
+                    WHERE LinkedEntityId = :a.Id ];
+
+            system.debug( cdlList );
+
+            // collect file ids to fetch them
+            Set<ID> fileIdSet = new Set<ID>();
+            for( ContentDocumentLink cdl : cdlList ) {
+                fileIdSet.add( cdl.ContentDocumentId );
+            }
+
+            // load last versions of each file associated to record
+            List<ContentDocument> contDocList =
+                [ SELECT ID, Title, FileExtension, FileType, PublishStatus, ContentSize, Description
+                        , ( SELECT ID, ContentUrl, PathOnClient FROM ContentVersions ORDER BY VersionNumber DESC LIMIT 1 )
+                FROM ContentDocument
+                WHERE ID IN :fileIdSet ];
+
+            system.debug( contDocList );
+
+SAVING FILES:
+
+
+                <apex:pageBlockSection columns="1">
+                    <apex:pageBlockSectionItem >
+                        <apex:outputLabel value="File1" for="file1"/>
+                        <apex:inputFile value="{!aFile.VersionData}" filename="{!aFile.title}" />
+                    </apex:pageBlockSectionItem>
+                    <!--
+                    <apex:pageBlockSectionItem >
+                        <apex:outputLabel value="Description" for="description"/>
+                        <apex:inputTextarea value="{!aFile.description}" id="description"/>
+                    </apex:pageBlockSectionItem>
+                    -->
+                </apex:pageBlockSection>
+
+
+        if( aFile.Title == null ) {
+            return;
+        }
+
+        try {
+            // insert content version first, then get content document
+            aFile.PathOnClient = '/';
+            insert aFile;
+
+            // fetch corresponding content document
+            aFile = [ SELECT ID, Title, ContentDocument.ID, ContentDocument.Title
+                    FROM ContentVersion
+                    WHERE ID= :aFile.ID ];
+            ContentDocument cd = aFile.ContentDocument;
+
+            // link file to main record
+            ContentDocumentLink cdl = new ContentDocumentLink();
+            cdl.LinkedEntityId = a.Id;
+            cdl.ContentDocumentId = cd.Id;
+            cdl.ShareType = 'V';
+            insert cdl;
+
+            ApexPages.addMessage( new ApexPages.message( ApexPages.severity.INFO
+                    , 'Attachment uploaded successfully : ' + aFile.Title ) );
+
+        }catch( DMLException e ) {
+            ApexPages.addMessage(new ApexPages.message( ApexPages.severity.ERROR
+                        ,'Error uploading attachment : ' + aFile.Title ) );
+            return;
+
+        } finally {
+            aFile = new ContentVersion();
+        }

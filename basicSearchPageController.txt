@@ -1,0 +1,79 @@
+public with sharing class VFC_LeadSearch {
+	public String phone { get; set; }
+	public String email { get; set; }
+	public String firstName { get; set; }
+	public String address { get; set; }
+	public List<Contact> contactList { get; set; }
+	public Map<String, Boolean> contactSelectionMap { get; set; }
+	public Boolean selectAllStatus { get; set; }
+
+	public static List<Contact> dummyList = new List<Contact> {
+		new Contact( FirstName = 'John', LastName = 'Southers', Phone = '972 972 9722', Email = 'john@sharklasers.com', MailingStreet = '123 Main', MailingCity = 'Dallas' )
+		, new Contact( FirstName = 'Mary', LastName = 'Carrow', Phone = '214 214 2144', Email = 'mary@sharklasers.com', MailingStreet = '321 Leap Rd', MailingCity = 'Houston' )
+		, new Contact( FirstName = 'Thomas', LastName = 'Lehoux', Phone = '817	817 8177', Email = 'tlehoux@sharklasers.com', MailingStreet = '456 Test', MailingCity = 'Sugarland' )
+		, new Contact( FirstName = 'Liz', LastName = 'Ochoa', Phone = '281 281 2811', Email = 'lochoa@sharklasers.com', MailingStreet = '654 Preston', MailingCity = 'Galveston' )
+		, new Contact( FirstName = 'Stephen', LastName = 'Doyle', Phone = '346 346 3466', Email = 'sdoyle@sharklasers.com', MailingStreet = '789 Arapahoe', MailingCity = 'Austin' )
+	};
+
+	public VFC_LeadSearch() {
+		
+	}
+
+	public PageReference search() {
+		contactList = dummyList;
+
+		// TODO: remove dummy data above
+
+		contactSelectionMap = new Map<String, Boolean>();
+		for( Contact c : contactList ) {
+			contactSelectionMap.put( c.FirstName + c.LastName, false );
+		}
+
+		//for( Integer i = 0; i < 10000; i++ ) {
+		//	for( Integer j = 0; j < 10000; j++ ) {
+		//	}
+		//}
+
+		// TODO: prepare web service call using the parameters
+
+		return null;
+	}
+
+	public void selectAll() {
+		for( String theKey : contactSelectionMap.keySet() ) {
+			contactSelectionMap.put( theKey, selectAllStatus );
+		}
+
+		return;
+	}
+
+	public void selectedContact() {
+		Boolean allSelected = true;
+		for( String theKey : contactSelectionMap.keySet() ) {
+			if( ! contactSelectionMap.get( theKey ) ) {
+				allSelected = false;
+				break;
+			}
+		}
+		selectAllStatus = allSelected;
+		return;
+	}
+
+	public PageReference selectContact() {
+		String selectedContact = '';
+		for( String theKey : contactSelectionMap.keySet() ) {
+			if( contactSelectionMap.get( theKey ) ) {
+				selectedContact = theKey;
+				break;
+			}
+		}
+
+		if( selectedContact == '' ) {
+			ApexPages.addMessage( new ApexPages.message( ApexPages.severity.ERROR
+				, 'Please select a lead.' ) );
+			return null;
+		}
+
+		return new PageReference( '/' + selectedContact );
+	}
+}

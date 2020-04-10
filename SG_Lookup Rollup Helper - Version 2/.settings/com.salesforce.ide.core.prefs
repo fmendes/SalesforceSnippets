@@ -1,0 +1,13 @@
+#Fri Jul 12 15:57:15 CDT 2013
+eclipse.preferences.version=1
+endpointApiVersion=26.0
+endpointEnvironment=Production/Developer Edition
+endpointServer=www.salesforce.com
+httpsProtocol=true
+ideVersion=26.0
+keependpoint=false
+metadataFormatVersion=26.0
+namespacePrefix=
+packageName=unpackaged
+readTimeout=400
+username=rollup@strategicgrowthinc.com

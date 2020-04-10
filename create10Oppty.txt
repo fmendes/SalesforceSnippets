@@ -1,0 +1,18 @@
+List<Opportunity> opptyList = new List<Opportunity>();
+
+for( Integer i = 0; i < 10; i++ ) {
+    Opportunity o = new Opportunity();
+    o.AccountID = '0010t00001HNEV9';
+    o.StageName = 'Current Client';
+    o.CloseDate = Date.today().addDays( -10 );
+    o.State__c = 'TX';
+    o.Policy_Type__c = 'Home';
+    o.Policy_Number__c = 'Policy #' + ( i + 1 );
+    o.Name = 'Test ' + o.Policy_Number__c;
+    o.RecordType = new RecordType( Name = 'Property Policy' );
+    
+    opptyList.add( o );
+}
+
+insert opptyList;
+

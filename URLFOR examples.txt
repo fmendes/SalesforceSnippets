@@ -1,0 +1,59 @@
+URLFOR( $Action.Product_Option__c.New )
+URLFOR( $Action.Product_Option__c.Edit, o.ID )
+URLFOR( $Action.Product_Option__c.Delete, o.ID )
+URLFOR( $Action.Product_Option__c.View, o.ID )
+
+URLFOR( $Action.Holiday__c.New, null
+      , [ 'CF00N00000008igMg' = SiteProgram__c.Name
+      , 'CF00N00000008igMg_lkid' = SiteProgram__c.Id
+      , 'retURL' = SiteProgram__c.Id ] )
+
+{!URLFOR( target, id, [inputs], [no override] )}
+
+      target: URL or action, s-control or static resource
+      id: of the object or resource name (string type)
+      inputs: URL parameters in brackets and separate them with commas ex: [param1="value1", param2="value2"]
+      no override: boolean (defaults to false), set to true to display the standard Salesforce page instead of custom page
+
+<apex:page id="ProductOptions" standardController="Product2" extensions="SG_VFC_ProductOptions" lightningStylesheets="true">
+<apex:form>
+    <apex:pageBlock >
+
+    <apex:pageBlockButtons >
+        <apex:commandButton action="{!URLFOR( $Action.Product_Option__c.New )}" value="New" />
+    </apex:pageBlockButtons>
+
+    <apex:repeat value="{!optionTypesList}" var="t">
+
+        <apex:pageBlockSection title="{!t}" columns="1">
+
+            <apex:pageBlockTable value="{! optionTypesMap[ t ] }" var="o">
+                <apex:column >
+                    <apex:outputLink value="{!URLFOR( $Action.Product_Option__c.Edit, o.ID )}">Edit</apex:outputLink>
+                    <apex:outputText value=" | " />
+                    <apex:outputLink value="{!URLFOR( $Action.Product_Option__c.Delete, o.ID )}"
+                                     onclick="return window.confirm( 'Are you sure?' );">Delete</apex:outputLink>
+                </apex:column>
+
+                <apex:column headerValue="Product Option Name" >
+                    <apex:outputLink value="{! URLFOR( $Action.Product_Option__c.View, o.ID )}" >
+                        <apex:outputText value="{!o.Name}" />
+                    </apex:outputLink>
+                </apex:column>
+
+                <apex:column value="{!o.Option__c}" />
+
+                <apex:column value="{!o.Option_record_type__c}" />
+
+            </apex:pageBlockTable>
+
+        </apex:pageBlockSection>
+
+    </apex:repeat>
+
+    </apex:pageBlock>
+    <!--
+    <apex:relatedList list="Product_Options__r" />
+    -->
+</apex:form>
+</apex:page>

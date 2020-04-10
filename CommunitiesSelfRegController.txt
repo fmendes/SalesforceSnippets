@@ -1,0 +1,254 @@
+/**
+ * An apex page controller that supports self registration of users in communities that allow self registration
+ */
+public without sharing class SG_VFC_CommunitiesSelfReg {
+
+    public String firstName { get; set;}
+    public String lastName { get; set;}
+    public String email { get; set;}
+    public String password {
+        get;
+        set {
+            password = ( value == null ? value : value.trim() );
+        }
+    }
+    public String confirmPassword {
+        get;
+        set {
+            confirmPassword = ( value == null ? value : value.trim() );
+        }
+    }
+    public String communityNickname {
+        get;
+        set {
+            communityNickname = ( value == null ? value : value.trim() );
+        }
+    }
+
+    public String companyName { get; set; }
+    public String companyNMLS { get; set; }
+    public String contactNMLS { get; set; }
+
+    public SG_VFC_CommunitiesSelfReg() {
+        String expid = ApexPages.currentPage().getParameters().get('expid');
+        if( expId != null ) {
+            Site.setExperienceId( expId );
+        }
+    }
+
+    private boolean isValidPassword() {
+        if( password == null || password == '' ) {
+            return false;
+        }
+        return password == confirmPassword;
+    }
+
+    public PageReference registerUser() {
+        Account theCompany;
+        Contact theContact;
+        User u = new User();
+        String userId, userName;
+
+        Savepoint sp = Database.setSavepoint();
+
+        try {
+            ApexPages.getMessages().clear();
+
+            // prevent passwords that don't match and null passwords
+            if( isValidPassword() != true ) {
+                Database.rollback( sp );
+                ApexPages.Message msg = new ApexPages.Message(
+                        ApexPages.Severity.ERROR, Label.site.passwords_dont_match);
+                ApexPages.addMessage(msg);
+                return null;
+            }
+
+            // find company by NMLS
+            theCompany = getCompany( companyName, companyNMLS );
+
+            // verify that the user is not trying to use NMLS from another company
+            if( checkCompanyIsValid( theCompany, companyName, companyNMLS, sp ) == false ) {
+                return null;
+            }
+
+            theCompany.Account_Status__c = 'Prospect';
+            theCompany.OwnerId = Label.ClientAppOwner;
+
+            // find contact by NMLS
+            theContact = getContact( firstName, lastName, contactNMLS );
+
+            // verify that the user is not trying to use NMLS from another person
+            if( checkContactIsValid( theContact, firstName, lastName, contactNMLS, sp ) == false ) {
+                return null;
+            }
+
+            theContact.Account = theCompany;
+            theContact.NMLS_ID__c = contactNMLS;
+            theContact.Email = email;
+            theContact.OwnerId = Label.ClientAppOwner;
+
+            userName = email;
+            communityNickname = firstName + '.' + lastName + '.' + contactNMLS;
+
+            u.Username = userName;
+            u.Email = email;
+            u.FirstName = firstName;
+            u.LastName = lastName;
+            u.CommunityNickname = communityNickname;
+
+
+        } catch( Exception e ) {
+            handleSingleError( sp, e );
+            return null;
+        }
+
+        try {
+            // save account if needed
+            if( theCompany.ID == null ) {
+                insert theCompany;
+            }
+
+            // copy parent ID to contact
+            theContact.AccountID = theCompany.ID;
+            theContact.Account = null;
+
+            // save contact
+            if( theContact.ID == null ) {
+                insert theContact;
+
+            } else {
+                update theContact;
+            }
+
+            // create user
+            u.ContactID = theContact.ID;
+            userId = Site.createExternalUser( u, theCompany.ID, password );
+
+        } catch( Site.ExternalUserCreateException ex ) {
+            handleUserCreationError( sp, ex );
+        }
+
+        if( userId == null ) {
+            return null;
+        }
+
+        if( password != null && password.length() > 1 ) {
+            String startURL = ApexPages.currentPage().getParameters().get( 'startURL' );
+            if( startURL == null ) {
+                startURL = '/clients/s/';
+            }
+            return Site.login( userName, password, startURL );
+
+        }
+
+        // this will never be reached since we're preventing null passwords
+        PageReference page; // = System.Page.CommunitiesSelfRegConfirm;
+        //page.setRedirect( true );
+        return page;
+    }
+
+    public static void handleSingleError( Savepoint sp, Exception e ) {
+        Database.rollback( sp );
+        system.debug( e.getMessage() + ' - ' + e.getStackTraceString() );
+
+        String errors = e.getMessage();
+        ApexPages.addMessage( new ApexPages.Message( ApexPages.Severity.ERROR
+                , errors ) );
+    }
+
+    public static void handleUserCreationError( Savepoint sp, Site.ExternalUserCreateException ex ) {
+
+        Database.rollback( sp );
+        system.debug( ex.getMessage() + ' - ' + ex.getStackTraceString() );
+
+        List<String> errors = ex.getDisplayMessages();
+        for( String error : errors ) {
+            ApexPages.addMessage( new ApexPages.Message( ApexPages.Severity.ERROR
+                    , error ) );
+        }
+    }
+
+    public static Account getCompany( String companyName, String companyNMLS ) {
+        Account theCompany;
+
+        // find company by NMLS
+        List<Account> accountList = [
+                SELECT ID, Name, NMLS__c, OwnerId
+                FROM Account
+                WHERE NMLS__c = :companyNMLS
+        ];
+
+        if( accountList.size() <= 0 ) {
+            theCompany = new Account();
+            theCompany.Name = companyName;
+            theCompany.NMLS__c = companyNMLS;
+
+        } else {
+            theCompany = accountList[0];
+        }
+
+        return theCompany;
+    }
+
+    public static Boolean checkCompanyIsValid( Account theCompany, String companyName, String companyNMLS
+                                , Savepoint sp ) {
+        // verify that the user is not trying to use NMLS from another company
+        Boolean companyNameMatches = companyName.containsIgnoreCase(theCompany.Name)
+                || theCompany.Name.containsIgnoreCase(companyName);
+        if( companyNameMatches == false ) {
+            Database.rollback( sp );
+            ApexPages.Message msg = new ApexPages.Message(ApexPages.Severity.ERROR
+                    , 'That NMLS # ' + companyNMLS + ' belongs to a different company than '
+                            + companyName);
+            ApexPages.addMessage(msg);
+            return false;
+        }
+
+        return true;
+    }
+
+    public static Contact getContact( String firstName
+                     , String lastName, String contactNMLS ) {
+        Contact theContact;
+
+        // find contact by NMLS
+        List<Contact> contactList = [
+                SELECT ID, FirstName, LastName
+                        , Email, NMLS_ID__c
+                        , AccountID, OwnerId
+                FROM Contact
+                WHERE NMLS_ID__c = :contactNMLS
+        ];
+
+        if (contactList.size() <= 0) {
+            theContact = new Contact();
+            theContact.FirstName = firstName;
+            theContact.LastName = lastName;
+
+        } else {
+            theContact = contactList[0];
+        }
+
+        return theContact;
+    }
+
+    public static Boolean checkContactIsValid( Contact theContact, String firstName
+                    , String lastName, String contactNMLS, Savepoint sp ) {
+
+        // verify that the user is not trying to use NMLS from another person
+        Boolean contactNameMatches = ( firstName.containsIgnoreCase(theContact.FirstName)
+                    || theContact.FirstName.containsIgnoreCase(firstName) )
+                && ( lastName.containsIgnoreCase(theContact.LastName)
+                    || theContact.LastName.containsIgnoreCase(lastName) );
+        if( contactNameMatches == false ) {
+            Database.rollback( sp );
+            ApexPages.Message msg = new ApexPages.Message(ApexPages.Severity.ERROR
+                    , 'The NMLS # ' + contactNMLS + ' belongs to a different person than '
+                            + firstName + ' ' + lastName);
+            ApexPages.addMessage(msg);
+            return false;
+        }
+
+        return true;
+    }
+}

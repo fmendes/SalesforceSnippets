@@ -1,0 +1,101 @@
+
+
+<script type="text/javascript">
+    var lastKeyCode, lastCharCode, altPressed, isFirefox;
+    isFirefox = typeof InstallTrigger !== 'undefined';   // Firefox 1.0+
+
+    // commented out since the F5 and F6 hotkeys will not be used anymore
+    if( document.addEventListener ) { //code for Moz
+        document.addEventListener( "keydown", captureKeystroke, false ); 
+        document.addEventListener( "keyup", captureKeystroke, false );
+        document.addEventListener( "keypress", captureKeystroke, false );
+    } else {
+        // code for IE
+        document.attachEvent( "onkeydown", captureKeystroke ); 
+        document.attachEvent( "onkeyup", captureKeystroke ); 
+        document.attachEvent( "onkeypress", captureKeystroke );
+    }
+
+    function captureKeystroke( e ) {
+        if( typeof window.event != "undefined" ) {
+            e = window.event;   //code for IE
+        }
+
+        if( e.keyCode ) { lastKeyCode = e.keyCode; }
+        else if( e.which ) { lastKeyCode = e.which; } // firefox
+
+        if( e.charCode ) { lastCharCode = e.charCode; }
+        else { lastCharCode = String.fromCharCode( lastKeyCode ); } // firefox
+
+        
+        if( lastKeyCode == 18 && e.type == 'keydown' ) {
+            altPressed = true;
+        }
+        if( lastKeyCode == 18 && e.type == 'keyup' ) {
+            altPressed = false;
+        }
+
+        if( isFirefox ) {
+            if( altPressed && lastCharCode == 'O' ) {
+                // alt + O pressed
+                document.getElementById( '{!$Component.quickCreate.theForm.mainPageBlock.pbButtons.dirUpdButton}' ).click();
+            }
+            if( altPressed && lastCharCode == 'P' ) {
+                // alt + P pressed
+                document.getElementById( '{!$Component.quickCreate.theForm.mainPageBlock.pbButtons.partialDirUpdButton}' ).click();
+            }
+        }
+
+        //if( e.type == "keydown" ) {
+        //} else if( e.type == "keyup" ) {
+        //} else if( e.type == "keypress" ) {
+        //}
+        debugKeystroke( e.type, lastKeyCode, lastCharCode );
+
+/*
+
+        // as per http://unixpapa.com/js/key.html F5 and F6 keys are 116 and 117 on all browsers
+        if( e.type == "keyup" || e.type == "onkeyup" ) {
+
+            if( lastKeyCode === 116 ) {
+                // trigger the Directory Update button 
+                document.getElementById( '{!$Component.quickCreate.theForm.mainPageBlock.pbButtons.dirUpdButton}' ).click();
+            }
+            if( lastKeyCode === 117 ) {
+                // trigger the Partial Directory Update button 
+                document.getElementById( '{!$Component.quickCreate.theForm.mainPageBlock.pbButtons.partialDirUpdButton}' ).click();
+            }
+            e.preventDefault(); // cancel default action of F5 (refresh) and F6 (focus on address bar)
+        }
+        if( ( lastKeyCode === 116 || lastKeyCode === 117 ) && ( e.type == "keydown" || e.type == "onkeydown" ) {
+            e.preventDefault(); // cancel default action of F5 (refresh) and F6 (focus on address bar)
+        }
+*/
+    }
+    function debugKeystroke( type, lastKeyCode, lastCharCode ) {
+        //var obj = document.getElementById( "displayKey" );
+        //obj.innerHTML = "Type = " + type + " <br />Key = " + lastKeyCode + " <br />Char = " + lastCharCode;
+        console.debug( "Type = " + type + " Key = " + lastKeyCode + " Char = " + lastCharCode ); 
+    }
+    // this identifies what tab has been selected
+    function getSelectedTabName() {
+        if( RichFaces ) {
+            var tabs = 
+                    RichFaces.panelTabs[ 
+                    '{!$Component.quickCreate.theForm.mainPageBlock.pbsAccount.pageBlockAccount.accountTab}' ];
+//                        'quickCreate:theForm:mainPageBlock:pbsAccount:pageBlockAccount:accountTab' ];
+            for( var i = 0; i < tabs.length; i++ ) {
+                var tab = tabs[ i ];
+                if( RichFaces.isTabActive( tab.id + '_lbl' ) ) {
+                    return tab.name;
+                }
+            }
+        }
+        return null;
+    }
+    // this responds to the click on a tab
+    function setSelectedTab() {
+//alert( getSelectedTabName() );
+        selectTabActionFunction( getSelectedTabName() );
+    }
+ </script>

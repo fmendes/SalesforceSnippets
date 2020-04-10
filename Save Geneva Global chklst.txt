@@ -1,0 +1,5 @@
+Global_Checklist__c gc = new Global_Checklist__c();
+gc.Quarter_Close__c = 'a1l0q000001d2wL';
+gc.Action_Item__c = 'Pricing loaded to Geneva';
+gc.Current_Target_Date__c = Date.today();
+insert gc;

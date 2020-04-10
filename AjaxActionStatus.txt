@@ -1,0 +1,38 @@
+
+<style type="text/css">
+	.showStatus {
+		position: absolute;
+		overflow: hidden;
+		top: 0px;
+		padding: 0;
+		margin: 0;
+		width: 90%;
+		height: 100%;
+		background: rgba( 255, 255, 255, 0.8 ); /* dimmed */
+		z-index: 1001;
+		visibility: visible;
+		display: block;
+	}
+	.hideStatus {
+		visibility: hidden;
+		display: none;
+	}
+	.animatedStatus {
+		display: block;
+		position: absolute;
+		top: 100px;
+		bottom: 0;
+		left: 0;
+		right: 0;
+		margin-left: auto;
+		margin-right: auto;
+		z-index: 1002;
+	}
+</style>
+
+<apex:actionStatus id="ajaxStatus" layout="block"
+		startStyleClass="showStatus" stopStyleClass="hideStatus" >
+	<apex:facet name="start">
+		<apex:image value="/img/loading32.gif" styleClass="animatedStatus" />
+	</apex:facet>
+</apex:actionStatus>

@@ -1,0 +1,163 @@
+
+    public static void loadChartsFromStaticResource() {
+        // process the first 9000 records then process the rest asynchronously
+        loadChartsFromStaticResource( true, 0, 9000 );
+
+        loadChartsFromStaticResourceAtFuture( true, 9001, 17000 );
+    }
+
+    public static void loadLMSValuesFromStaticResource() {
+        // uppercase field list to match CSV
+        Set<String> decimalFields = new Set<String> {
+                    'AGE_MONTHS__C', 'L_VALUE_BMI__C'
+                    , 'L_VALUE_HEAD_CIRCUMFERENCE__C', 'L_VALUE_HEIGHT__C'
+                    , 'L_VALUE_WEIGHT__C', 'M_VALUE_BMI__C'
+                    , 'M_VALUE_HEAD_CIRCUMFERENCE__C', 'M_VALUE_HEIGHT__C'
+                    , 'M_VALUE_WEIGHT__C', 'S_VALUE_BMI__C'
+                    , 'S_VALUE_HEAD_CIRCUMFERENCE__C', 'S_VALUE_HEIGHT__C'
+                    , 'S_VALUE_WEIGHT__C', 'SD0_BMI__C', 'SD0_HEIGHT__C'
+                    , 'SD0_WEIGHT__C', 'SD1_BMI__C', 'SD1_HEIGHT__C'
+                    , 'SD1_WEIGHT__C', 'SD1NEG_BMI__C', 'SD1NEG_HEIGHT__C'
+                    , 'SD1NEG_WEIGHT__C', 'SD2_BMI__C', 'SD2_HEIGHT__C'
+                    , 'SD2_WEIGHT__C', 'SD2NEG_BMI__C', 'SD2NEG_HEIGHT__C'
+                    , 'SD2NEG_WEIGHT__C', 'SD3_BMI__C', 'SD3_HEIGHT__C'
+                    , 'SD3_WEIGHT__C', 'SD3NEG_BMI__C', 'SD3NEG_HEIGHT__C'
+                    , 'SD3NEG_WEIGHT__C' };
+
+        loadSObjectFromStaticResourceCSV(
+                    'LMSValuesCSV', 'LMS_Values__c'
+                    , decimalFields, true, 0, 99999 );
+    }
+
+    public static void loadLMSValW4HFromStaticResource() {
+        // uppercase field list to match CSV
+        Set<String> decimalFields = new Set<String> {
+                    'HEIGHT__C', 'L_VALUE__C', 'M_VALUE__C', 'S_VALUE__C' };
+
+        loadSObjectFromStaticResourceCSV(
+                    'LMSValuesWeightForHeightCSV'
+                    , 'LMS_Values_Weight_For_Height__c'
+                    , decimalFields, true, 0, 99999 );
+    }
+
+    @future
+    public static void loadChartsFromStaticResourceAtFuture(
+                    Boolean saveRecords, Integer startIndex, Integer endIndex ) {
+
+        loadChartsFromStaticResource( saveRecords, startIndex, endIndex );
+    }
+
+    public static List<SObject> loadSObjectFromStaticResourceCSV(
+                    String staticResourceCSV, String sObjectName
+                    , Set<String> decimalFields, Boolean saveRecords
+                    , Integer startIndex, Integer endIndex ) {
+
+        StaticResource csvFile = [ SELECT ID, Body 
+                                  FROM StaticResource 
+                                  WHERE Name = :staticResourceCSV
+                                  LIMIT 1 ];
+
+        String body = csvFile.Body.toString();
+
+        String firstRow = body.substringBefore( '\n' );
+        String[] colNameList = firstRow.split( ',' );
+
+        // startIndex indicates the number of the records to skip
+        // this prevents the error Too many DML 10001
+        if( startIndex == null ) {
+            startIndex = 0;
+        }
+        if( endIndex == null ) {
+            endIndex = 0;
+        }
+
+        // create a clinical growth chart record for each row of the file
+        List<SObject> sObjectList = new List<SObject>();
+
+        // read the file row by row
+        Integer rowNumber = 0;
+        Integer rowIndex = body.indexOf( '\n' ) + 1;
+        Integer rowEndIndex = body.indexOf( '\n', rowIndex );
+        while( rowIndex > 0 && rowEndIndex > 0 ) {
+            // extract one row
+            String csvRow = body.substring( rowIndex, rowEndIndex );
+            system.debug( csvRow );
+
+            rowNumber ++;
+            system.debug( 'Read row #' + rowNumber );
+
+            // split row into columns
+            String[] colList =  csvRow.split( ',' );
+
+            // check if this row should be processed or skipped
+            if( rowNumber < startIndex ) {
+                // find next row
+                rowIndex = rowEndIndex + 1;
+                //rowIndex = body.indexOf( '\n', rowIndex ) + 1;
+                rowEndIndex = body.indexOf( '\n', rowIndex );
+                continue;
+            }
+
+            // stop processing if past the last row
+            if( rowNumber > endIndex ) {
+                break;
+            }
+
+            // populate record with each column value
+            SObject sobj = Schema.getGlobalDescribe().get( 
+                                            sObjectName ).newSObject();
+            for( Integer j = 0; j < colList.size(); j++ ) {
+                String colName = colNameList[ j ];
+                //colName = colName.remove( '"' );
+
+                // skip ID
+                if( colName.equalsIgnoreCase( 'ID' ) ) {
+                    continue;
+                }
+
+                String colValue = colList[ j ]; //.remove( '"' );
+
+                system.debug( colName + ' = ' + colValue );
+
+                // convert fields to decimal
+                if( decimalFields.contains( colName ) 
+                        && colValue != '' ) {
+                    Decimal value = Decimal.valueOf( colValue );
+                    sobj.put( colName, value );
+                    continue;
+                }
+
+                //// copy to Record Type if not saving the list
+                //if( saveRecords != true && colName == 'TYPE__C' ) {
+                //    sobj.RecordType = new RecordType( Name = colValue );
+                //}
+
+                if( colValue != '' ) {
+                    sobj.put( colName, colValue );
+                }
+            }
+
+            sObjectList.add( sobj );
+
+            // find next row
+            rowIndex = rowEndIndex + 1;
+            //rowIndex = body.indexOf( '\n', rowIndex ) + 1;
+            rowEndIndex = body.indexOf( '\n', rowIndex );
+
+        }
+
+        if( saveRecords == true ) {
+            insert sObjectList;
+        }
+
+        return sObjectList;
+    }
+
+    public static List<Clinical_Growth_Chart__c> loadChartsFromStaticResource(
+                    Boolean saveRecords, Integer startIndex, Integer endIndex ) {
+
+        return loadSObjectFromStaticResourceCSV(
+                    'ClinicalGrowthChartCSV', 'Clinical_Growth_Chart__c'
+                    // uppercase field list to match CSV
+                    , new Set<String> { 'VALUE__C', 'PERCENTILE__C', 'AGE_MONTHS__C' }
+                    , saveRecords, startIndex, endIndex );

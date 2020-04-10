@@ -1,0 +1,75 @@
+
+    public List<SelectOption> solarLightList {
+        get {
+            if( solarLightList == null ) {
+                solarLightList = getPicklist( Opportunity.Motion_Solar_Light__c );
+            }
+            return solarLightList;
+        }
+        set;
+    }
+
+    public static List<SelectOption> getPicklist( Schema.SObjectField f ) {
+        List<SelectOption> theList = new List<SelectOption>();
+        Schema.DescribeFieldResult fr = f.getDescribe();
+        List<Schema.PicklistEntry> pleList = fr.getPicklistValues();
+        theList.add( new SelectOption( '', '' ) );
+        for( Schema.PicklistEntry p : pleList ) {
+            theList.add( new SelectOption( p.getValue(), p.getLabel() ) );
+        }
+        system.debug( theList );
+        return theList;
+    }
+
+//// ALTERNATIVE 1
+
+    public List<SelectOption> pavilionList { get; set; }
+    public List<Pavilion__c> pavList { get; set; }
+
+//...
+
+    // retrieve list of available pavilions for the user
+    User theUser = [ SELECT ID, Park__c 
+                    FROM User 
+                    WHERE ID = :UserInfo.getUserID() ];
+    String userPark = theUser.Park__c;
+    if( userPark == 'Corporate' ) {
+        pavList = [ SELECT ID, Name 
+                    FROM Pavilion__c ];
+    } else {
+        pavList = [ SELECT ID, Name 
+                    FROM Pavilion__c
+                    WHERE Park__c = :userPark ];
+    }
+    
+    // populate select option list with pavilions
+    pavilionList = new List<SelectOption>();
+    for( Pavilion__c aPavilion : pavList ) {
+        SelectOption newOption = new SelectOption( aPavilion.ID, aPavilion.Name );
+        pavilionList.add( newOption );
+    }
+
+//...
+
+    <apex:pageBlockSectionItem >
+        <apex:outputLabel for="pavilionSelection" value="Scheduled Pavilion"></apex:outputLabel>
+        <apex:outputPanel layout="block" styleClass="requiredInput">
+            <apex:outputPanel layout="block" styleClass="requiredBlock" />
+        </apex:outputPanel>
+    </apex:pageBlockSectionItem>
+
+
+
+///////////   ALTERNATIVE 2
+
+public List<SelectOption> getCountries() {
+  List<SelectOption> options = new List<SelectOption>();
+
+  Schema.DescribeFieldResult fieldResult = OfficeLocation__c.Country__c.getDescribe();
+  List<Schema.PicklistEntry> ple = fieldResult.getPicklistValues();
+
+  for( Schema.PicklistEntry f : ple) {
+    options.add(new SelectOption(f.getLabel(), f.getValue()));
+  }       
+  return options;
+}

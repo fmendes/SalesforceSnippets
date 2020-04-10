@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<CodeSnippets
+    xmlns="http://schemas.microsoft.com/VisualStudio/2005/CodeSnippet">
+    <CodeSnippet Format="1.0.0">
+        <Header>
+            <Title>testClass</Title>
+            <Shortcut>class</Shortcut>
+            <Description>Code snippet for test class</Description>
+            <Author>Fernando</Author>
+            <SnippetTypes>
+                <SnippetType>Expansion</SnippetType>
+            </SnippetTypes>
+        </Header>
+        <Snippet>
+            <Declarations>
+                <Literal>
+                    <ID>controller</ID>
+                    <Default>VFC_Controller</Default>
+                    <ToolTip>Controller class in Apex</ToolTip>
+                </Literal>
+            </Declarations>
+            <Code Language="Apex"><![CDATA[@isTest
+public with sharing class $controller$_Test {
+	@TestSetup
+	public static void setupData() {
+		Account a = new Account();
+		a.Name = 'SGI Test One';
+		a.Type = 'Customer';
+		a.Channel__c = 'Reseller';
+		a.RecordType = new RecordType( Name = 'Site' );
+		insert a;
+
+		Opportunity o = new Opportunity();
+		o.AccountID = a.ID;
+		o.Name = 'SGI Test 1';
+		o.StageName = '50-PIQ Complete';
+		o.CloseDate = Date.today();
+		o.RecordType = new RecordType( Name = 'Fixed' );
+		insert o;
+
+	}
+
+	public static TestMethod void myUnitTest() {
+		Test.startTest();
+
+		// create objects to test
+
+		// set page and parameters
+		Test.setCurrentPage( Page.myPage );
+		ApexPages.CurrentPage().getParameters().put( 'ID', obj.ID );
+
+
+		// instantiate the extension controller
+		ApexPages.StandardController stdCtrlr = 
+					new ApexPages.StandardController( theObj );
+		$controller$ theController = new $controller$( stdCtrlr );
+
+		// instantiate the main controller
+		$controller$ theController = new $controller$();
+		
+		//theController.previousURL = '/';
+		//theController.cancel();
+
+		if( ApexPages.getMessages().size() > 0 ) {
+			String errorMsg = ApexPages.getMessages()[ 0 ].getSummary();
+			system.assert( errorMsg.contains( 'Please enter' ), '1st error: ' + errorMsg );
+			system.assert( errorMsg.contains( 'in the opportunity before entering revenue distribution' ), '2nd error: ' + errorMsg );
+		}
+
+		Test.stopTest();
+
+		//system.assertEquals( 0, variable, 'Test' );
+
+
+		//Database.Error[] errors = new Database.Error[] {};
+		//String listOfErrors = $controller$.ConcatenateErrors( errors );
+	}
+$end$
+]]></Code>
+        </Snippet>
+    </CodeSnippet>
+</CodeSnippets>

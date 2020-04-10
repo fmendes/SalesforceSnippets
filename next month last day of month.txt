@@ -1,0 +1,22 @@
+
+
+    public static Date getNextMonth( Date aDate ) {
+        Date nextDate;
+
+        // add 1 to the month
+        Integer DistrMonth = aDate.month() + 1;
+
+        // carry over year (if needed)
+        Integer DistrYear = DistrMonth > 12 ? aDate.year() + 1 : aDate.year();
+        DistrMonth = DistrMonth > 12 ? 1 : DistrMonth;
+
+        // set to the last day of the month
+        nextDate = Date.newInstance( DistrYear, DistrMonth, Date.daysInMonth( DistrYear, DistrMonth ) );
+        return nextDate;
+    }
+                                                    
+    public static Date getLastDayOfMonth( Date aDate ) {
+        return Date.newInstance( aDate.year()
+                                    , aDate.month()
+                                    , Date.daysInMonth( aDate.year(), aDate.month() ) );
+    }

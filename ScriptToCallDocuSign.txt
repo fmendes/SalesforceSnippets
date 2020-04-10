@@ -1,0 +1,26 @@
+
+String envelopeID = '8547155d-67fc-48dd-8ba6-aa449735c532';
+
+Map<String, Map<String, String>> recipientInfoMap =
+        DocuSignWebService.getRecipientsForEnvelope( envelopeID );
+
+recipientInfoMap.get( 'Drew Burks' ).put(
+        'clientUserId', 'be5ee069-a4e1-4b45-87a4-72ec6b770aca' );
+recipientInfoMap.get( 'Joe O\'Shaughnessy' ).put(
+        'clientUserId', '0146544d-cc82-4bed-bd6e-a5cfd451030c' );
+
+DocuSignWebService.updateRecipientsForEnvelope(
+        envelopeID, recipientInfoMap );
+
+Map<String, String> parameterMap = new Map<String, String> {
+        'userName' => 'Joe O\'Shaughnessy',
+        'email' => 'joeoshaughnessy@sharklasers.com',
+        'recipientId' => 'b177a6d1-b750-4b14-a1fd-4f2d68a1ca06',
+        'clientUserId' => '',
+        'authenticationMethod' => 'email',
+        'returnUrl' => 'https =>//www.docusign.com/devcenter'
+};
+
+DocuSignWebService.getSigningURL( envelopeID, parameterMap );
+
+

@@ -1,0 +1,90 @@
+<!-- 
+
+    component to display a button/text depending on some fields and refresh
+    when record changes
+
+-->
+
+
+<aura:component implements="flexipage:availableForRecordHome,force:hasRecordId" 
+                access="global" >
+    
+    <aura:attribute name="recordId" type="String" />
+	<aura:attribute name="record" type="Object" />
+	<aura:attribute name="recordError" type="String" />
+	
+    <aura:dependency resource="markup://force:editRecord" type="EVENT" />
+    <aura:handler event="force:refreshView" action="{!c.doInit}" />
+    
+	<force:recordData aura:id="service"
+					  layoutType="FULL"
+					  recordId="{!v.recordId}"
+					  targetError="{!v.recordError}"
+					  targetFields="{!v.record}"
+					  mode="EDIT" />
+    <aura:if isTrue="{! v.record.Bid_Bond_Required__c == 'Yes' }">
+        
+    <!-- horizontalAlign options are
+        center, space, spread, and end -->
+    <lightning:layout horizontalAlign=""
+                      multipleRows="true" >
+        
+        <aura:if isTrue="{! v.record.sysSendBondRequest__c != true }">
+            <lightning:layoutItem padding="horizontal-small" >
+                <lightning:button aura:id="button1" 
+                                  label="Send Bid Bond Request"
+                                  onclick="{!c.onButtonPressed}" />
+            </lightning:layoutItem>
+        </aura:if>
+        
+        <aura:if isTrue="{! not( empty( v.record.Bid_Bond_Requested_Date__c ) ) }">
+            <lightning:layoutItem padding="horizontal-small">
+            Bid Bond Requested Date: &nbsp;
+                <lightning:formattedDateTime label="Bid Bond Requested Date"
+                                             value="{! v.record.Bid_Bond_Requested_Date__c }"/>
+            </lightning:layoutItem>
+        </aura:if>
+        
+    </lightning:layout>
+        
+    </aura:if>
+    
+</aura:component>
+
+
+
+({
+    doInit : function( component, event, helper ) {
+        var service = component.find( "service" );
+        service.reloadRecord( true );
+    }
+    ,
+    onButtonPressed : function( component, event, helper ) {
+        var record = component.get( "v.record" );
+        record.sysSendBondRequest__c = true;
+        component.set( "v.record", record );
+        
+        var service = component.find( "service" );
+        service.saveRecord( 
+            $A.getCallback( function( saveResult ) {
+                if( saveResult.state === "SUCCESS" 
+                            || saveResult.state === "DRAFT" ) {
+                    console.log( "Save completed successfully." );
+                    var refreshAction = $A.get( 'e.force:refreshView' );
+                    refreshAction.fire();
+                    
+                } else if ( saveResult.state === "INCOMPLETE" ) {
+                    console.log( "User is offline, device doesn't support drafts." );
+                    
+                } else if ( saveResult.state === "ERROR" ) {
+                    console.log( 'Problem saving record, error: ' + 
+                               JSON.stringify( saveResult.error ) );
+                    
+                } else {
+                    console.log( 'Unknown problem, state: ' + saveResult.state 
+                                + ', error: ' + JSON.stringify( saveResult.error ) );
+                }
+            })
+        );
+    }
+})

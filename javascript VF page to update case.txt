@@ -1,0 +1,39 @@
+//Just in case someone else needs it, here is the code for a VisualForce page with no Apex controller - it uses Javascript only to update the record when viewed by the owner.
+//
+//The page needs to be embedded in all page layouts for Case so that when the user opens the case detail page, it will execute this javascript update.
+//It will not do anything if the user just opens the Case FEED.
+//
+//The page will check whether the case owner id is the same as the user id and if they're different it will stop without doing anything to the case.
+//
+//If the update fails, it will not warn the user but will only log the error in the browser's developer console.
+
+
+<apex:page standardcontroller="Case" >
+
+<apex:includeScript value="/soap/ajax/21.0/connection.js"/>
+<apex:includeScript value="/soap/ajax/21.0/apex.js"/>
+
+<script> 
+    var caseOwner = "{!Case.OwnerID}";
+    var currentUser = "{!$User.ID}";
+    console.log( 'Check ' + caseOwner + ' against ' + currentUser );
+    if( caseOwner !== currentUser ) {
+        console.log( 'Case owner != current User' );
+        // do nothing
+        return;
+    }
+
+    var objCase = new sforce.SObject( "Case" );
+    objCase.Id = "{!Case.Id}";
+    objCase.Comment_Checkbox__c = false;
+    
+    var result = sforce.connection.update( [ objCase ] );
+    
+    if( result[ 0 ].success == "true" ) {
+        console.log( "The Case " + objCase.Id + " was Updated Successfully" );
+    } else {
+        console.log( "The Case " + objCase.Id + " FAILED Update. " + result );
+    }
+</script>
+
+</apex:page>

@@ -1,0 +1,107 @@
+/**********************************************************************
+* Name:     SG_PercentageWonLost
+* Author:   Strategic Growth, Inc. (www.strategicgrowthinc.com)
+*
+* ======================================================
+* ======================================================
+* Purpose:
+*
+* ======================================================
+* ======================================================
+* History:
+* VERSION   DATE            INITIALS      DESCRIPTION/FEATURES ADDED
+* 1.0       13-FEB-2019     fmf           Initial Development
+*
+***********************************************************************/
+
+/*
+
+USAGE:  SG_PercentageWonLost.scheduleMe( '0 30 2 * * ?' ); // every day at 2:30am
+
+*/
+global class SG_PercentageWonLost implements Database.Batchable<sObject>, Database.Stateful, Schedulable {
+    public static final String jobName = 'SGI - Percentage Won/Lost calculation - Nightly Run';
+
+    global final Integer BatchSize = 1200;
+    global String theQuery;
+    global ID batchID;
+
+    //This allows for a query to be passed into the batchapex class
+    global SG_PercentageWonLost( String q ) {
+        theQuery = q;
+        initialize();
+    }
+    global SG_PercentageWonLost( Date currDt ) {
+        //currentDate = currDt;
+        initialize();
+    }
+    global SG_PercentageWonLost() {
+        initialize();
+        setDefaultQuery();
+    }
+
+    global void initialize() {
+    }
+
+    global void setDefaultQuery() {
+        String ytdQuery = 'SELECT ID, AccountID, Expected_Ship_Date__c, CloseDate, Sub_Total_from_Filemaker__c'
+                + ' FROM Opportunity WHERE isWon = true';
+
+        //// set up clause for prior YTD
+        //ytdQuery += ' AND ( ( CloseDate >= ' + priorFiscalYearStart;
+
+        //// NOTE:  replaced prior fiscal YTD with prior fiscal year to be able to sum Prior_Year_Total_Won_Rollup__c
+        //ytdQuery +=         ' AND CloseDate <= ' + priorFiscalYearEnd + ' )';
+
+        //// set up clause for current YTD
+        //ytdQuery +=     ' OR ( CloseDate >= ' + currentFiscalYearStart;
+        //ytdQuery +=         ' AND CloseDate <= ' + currentFiscalYTDEnd + ' ) ) ';
+        //ytdQuery += ' ORDER BY AccountID, CloseDate ';
+        System.debug( 'ytdQuery= ' + ytdQuery );
+
+        theQuery = ytdQuery;
+    }
+
+    global Database.QueryLocator start( Database.BatchableContext bc ) {
+        return Database.getQueryLocator( theQuery );
+    }
+
+    global void execute( Database.BatchableContext bc, List<SObject> scope ) {
+        processRecords( scope );
+    }
+
+    global void processRecords( List<SObject> scope ) {
+    }
+
+    global void finish( Database.BatchableContext bc ) {
+    }
+
+    global void execute( SchedulableContext sc ) {
+        // do YTD rollups
+        SG_PercentageWonLost y = new SG_PercentageWonLost();
+        batchID = Database.executeBatch( y, y.BatchSize );
+    }
+
+    global static void scheduleMe( String schedTime ) {
+        // remove existing schedule
+        List<CronTrigger> cL =
+                [ SELECT ID
+                FROM CronTrigger
+                WHERE CronJobDetail.Name = :jobName ];
+
+        if( cL.size() > 0 )
+        {
+            system.abortJob( cL[ 0 ].ID );
+        }
+
+        // every day at the specified hour and minute
+        if( schedTime == null )
+        {
+            schedTime = '0 30 2 * * ?';// everyday 2:30am
+        }
+
+        SG_PercentageWonLost ytdr = new SG_PercentageWonLost();
+        System.schedule( jobName, schedTime, ytdr );
+    }
+
+}

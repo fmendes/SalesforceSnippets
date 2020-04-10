@@ -1,0 +1,233 @@
+<apex:page controller="evt.EventCalendarController" sidebar="false" cache="false" standardstylesheets="false">
+
+<link rel="stylesheet" type="text/css" href="{!URLFOR($Resource.evt__EventManagement,'styles/fullcalendar.css')}" />  
+
+<script src="https://www.google.com/jsapi?key=ABQIAAAAC7Ltv_3xEtJuuoY0LLIU0BQLNlfCSZsNWrNrjOuv5jQjg1XmWxTBmlNjfmUYoQnNBdSSobucYtoG8A" type="text/javascript"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.10.3/jquery-ui.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/fullcalendar/1.6.4/fullcalendar.min.js"></script>
+
+    <script type='text/javascript'>
+    // http://arshaw.com/fullcalendar/docs    
+    $(document).ready(function() {
+    
+        var date = new Date();
+        var d = date.getDate();
+        var m = date.getMonth();
+        var y = date.getFullYear();
+        
+        /* initialize the external events
+        -----------------------------------------------------------------*/
+    
+        $('#external-events div.external-event').each(function() {
+        
+            // create an Event Object (http://arshaw.com/fullcalendar/docs/event_data/Event_Object/)
+            // it doesn't need to have a start or end
+            var eventObject = {
+                title: $.trim($(this).text()) // use the element's text as the event title
+            };
+            
+            // store the Event Object in the DOM element so we can get to it later
+            $(this).data('eventObject', eventObject);
+            
+            // make the event draggable using jQuery UI
+            $(this).draggable({
+                zIndex: 999,
+                revert: true,      // will cause the event to go back to its
+                revertDuration: 0  //  original position after the drag
+            });
+            
+        });
+        
+        
+        $('#calendar').fullCalendar({
+            header: {
+                left: 'prev,next today',
+                center: 'title',
+                right: 'month,agendaWeek,agendaDay'
+            },
+            editable: true,
+            events: '/apex/CalendarFeed',
+            eventDrop: function( event, dayDelta, minuteDelta, allDay, revertFunc, jsEvent, ui, view ) {
+                var recordId = event.id;
+                var recType = event.recType;
+                var hasSessions = event.hasSessions;
+                var confirmString = '';
+                if (event.registeredAttendees >0) {
+                    confirmString = 'This event has '+event.registeredAttendees+' registered attendee(s).  ';
+                }
+                confirmString = confirmString + "Are you sure want to reschedule this event?"; 
+                if (!confirm(confirmString)) {
+                    revertFunc();
+                } 
+                Visualforce.remoting.Manager.invokeAction(
+                    '{!$RemoteAction.EventCalendarController.updateEventDateTime}',
+                    recordId, recType, dayDelta, minuteDelta, allDay,
+                    function(result, event) { 
+                        if (result.success == true) {
+                            //alert('Event updated.  Has sessions='+hasSessions+', recType='+recType);
+                            if (hasSessions == true) {
+                                $('#calendar').fullCalendar('refetchEvents');
+                            }
+                        } else {
+                        
+                            revertFunc();
+                            alert('Error encountered rescheduling event: '+result.message);
+                        }
+                    }
+                );              
+                             
+            },
+            eventResize: function( event, dayDelta, minuteDelta, allDay, revertFunc ) {
+                var recordId = event.id;
+                var recType = event.recType;
+                var hasSessions = event.hasSessions;
+                if (!confirm("Are you sure want to modify this event?")) {
+                    revertFunc();
+                } 
+                Visualforce.remoting.Manager.invokeAction(
+                    '{!$RemoteAction.EventCalendarController.updateEventEndDateTime}',
+                    recordId, recType, dayDelta, minuteDelta, 
+                    function(result, event) { 
+                        if (result.success == true) {
+                            //alert('Event updated.');
+                            if (hasSessions == true) {
+                                $('#calendar').fullCalendar('refetchEvents');
+                            }
+                        } else {
+                        
+                            revertFunc();
+                            alert('Error encountered modifying event: '+result.message);
+                        }
+                    }
+                );              
+                             
+            },
+            droppable: true, // this allows things to be dropped onto the calendar !!!
+            drop: function(date, allDay) { // this function is called when something is dropped
+            
+                // retrieve the dropped element's stored Event Object
+                var originalEventObject = $(this).data('eventObject');
+                
+                // we need to copy it, so that multiple events don't have a reference to the same object
+                var copiedEventObject = $.extend({}, originalEventObject);
+                
+                // assign it the date that was reported
+                copiedEventObject.start = date;
+                copiedEventObject.allDay = allDay;
+                copiedEventObject.recType = 'Event';
+                copiedEventObject.hasSessions = false;
+                
+                
+                // call SF to insert special event record
+                var eventName = originalEventObject.title;
+                Visualforce.remoting.Manager.invokeAction(
+                    '{!$RemoteAction.EventCalendarController.addSpecialEvent}',
+                    eventName, date, allDay, 
+                    function(result, event) { 
+                        if (result.success == true) {
+                            copiedEventObject.id = result.recordId;
+                            // render the event on the calendar
+                            // the last `true` argument determines if the event "sticks" (http://arshaw.com/fullcalendar/docs/event_rendering/renderEvent/)
+                            //$('#calendar').fullCalendar('renderEvent', copiedEventObject, true);
+                            $('#calendar').fullCalendar('refetchEvents');
+                            //alert('Event added. Id: '+result.recordId);
+                        } else {                        
+                            //revertFunc();
+                            alert('Error encountered adding event: '+result.message);
+                        }
+                    }
+                );                          
+                
+                
+
+                
+            }
+                        
+        });
+        
+    });
+
+    </script>
+    <style>
+    .fc-header-title h2 { font-size:1.5em; }
+    .keycolor {
+        border: 1px solid grey;
+        display: inline;
+        padding: 2px 4px;
+        margin-bottom:2px;
+        }
+    .keybox {
+        margin: 10px 0px 5px 0px;
+    }
+    #external-events {
+        /* float: left; */
+        width: 150px;
+        padding: 0px 10px;
+        margin-top:15px;
+        margin-right:10px;
+        border: 1px solid #ccc;
+        background: #eee;
+        text-align: left;
+        }
+        
+    #external-events h4 {
+        font-size: 16px;
+        display:block;
+        margin-top: 0;
+        padding-top: 1em;
+        }
+        
+    .external-event { /* try to mimick the look of a real event */
+        margin: 10px 0;
+        padding: 2px 4px;
+        background: #4072B2;
+        color: #FFF;
+        font-size: .85em;
+        cursor: pointer;
+        border-radius:4px;  
+        box-shadow: 2px 2px 2px #cccccc;    
+        }
+        
+    #external-events p {
+        margin: 1.5em 0;
+        font-size: 11px;
+        color: #666;
+        }
+    
+    </style>
+        <table style="width:100%;"><tr>
+        <td><span style="font-size:1.6em;">Special Events Calendar</span></td>
+        <td style="text-align:right;"><span style="margin-left:auto;">
+        <apex:outputLink value="{!URLFOR($Action.evt__Special_Event__c.New)}">Add Event</apex:outputLink>&nbsp;|&nbsp;
+        <apex:outputLink target="_blank" value="{!URLFOR($Page.evt__EventManagementHelp)}">Help</apex:outputLink>
+        </span></td>
+        </tr></table>
+        <table style="width:100%;"><tr>
+        <td style="vertical-align:top;">
+            <div id='external-events'>
+            <div class="keybox"><div class="keycolor" style="background-color:#6147BA;color:#fff;">&nbsp;&nbsp;</div>&nbsp;Published</div>
+            <div class="keybox"><div class="keycolor" style="background-color:#4072B2;color:#fff;">&nbsp;&nbsp;</div>&nbsp;Planned</div>
+            <div class="keybox"><div class="keycolor" style="background-color:#E0E0E0;">&nbsp;&nbsp;</div>&nbsp;Event Session</div>
+            <div class="keybox"><div class="keycolor" style="background-color:#FFE979;">&nbsp;&nbsp;</div>&nbsp;Other</div>
+            
+            <p>
+            Drag to the calendar to add new events:
+            </p>
+            <div class='external-event'>New Quick Event</div>
+            <div class='external-event'>New Seminar</div>
+            <div class='external-event'>New Conference</div>
+            <div class='external-event'>New Web Meeting</div>
+            <div class='external-event'>New Specialty Event</div>
+            </div>
+        </td>
+        <td style="vertical-align:top;" width="90%">
+            <div id='calendar' style='margin:1em 0;font-size:13px'></div>       
+        </td>
+        </tr></table>
+
+
+
+
+</apex:page>
+                            

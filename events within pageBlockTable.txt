@@ -1,0 +1,35 @@
+<!--    EXAMPLE 1      -->
+
+<apex:pageBlockTable value="{!ccSelection.headerList}" var="h">
+	<apex:column >
+		<apex:inputCheckbox value="{!ccSelection.headerSelectionMap[ h.ID ]}">
+			<apex:actionSupport event="onchange" action="{!ccSelection.keepSingleSelection}" reRender="checklistSelection">
+				<apex:param name="selectedHeaderID" value="{!h.ID}" assignTo="{!ccSelection.selectedHeaderID}" />
+			</apex:actionSupport>
+		</apex:inputCheckbox>
+	</apex:column>
+</apex:pageBlockTable>
+
+<apex:actionStatus id="ajaxStatus" startStyleClass="showStatus" stopStyleClass="hideStatus" layout="block">
+	<apex:image value="/img/loading32.gif" />
+</apex:actionStatus>
+
+
+<!--    EXAMPLE 2     -->
+
+<apex:actionFunction name="recalculateDates" action="{!recalculateDates}" reRender="checklist" status="ajaxStatus">
+	<apex:param name="editedTargetDate" value="" assignTo="{!editedTargetDate}" />
+</apex:actionFunction>
+
+	<apex:inputField id="targetFundingDt" value="{!theHeader.Target_Funding_Date__c}" rendered="{!NOT(readOnly)}" taborderhint="20" onchange="recalculateDates(this.value);" >
+
+<apex:pageBlockTable value="{!checkList}" var="c" >
+	<apex:column headerValue="{!$ObjectType.Capital_Call_Checklist__c.fields.Completion_Date__c.label}">
+		<apex:inputField value="{!c.Completion_Date__c}" rendered="{!enabledItem[ c.Sequence_Order__c]}" >
+			<apex:actionSupport event="onchange" action="{!recalculateDates}" reRender="checklist,pbCapCallChecklist" status="ajaxStatus" >
+				<apex:param name="completedItem" value="{!c.Action_Item__c}" assignTo="{!editedActionItem}" />
+			</apex:actionSupport>
+		</apex:inputField>
+		<apex:outputField value="{!c.Completion_Date__c}" rendered="{!NOT(enabledItem[ c.Sequence_Order__c])}" />
+	</apex:column>
+</apex:pageBlockTable>

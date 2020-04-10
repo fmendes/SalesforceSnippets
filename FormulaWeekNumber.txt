@@ -1,0 +1,6 @@
+Formula to tell whether date is First, Second, Third... week of the month:
+
+CEILING( ( 
+Test_Date__c - DATE( YEAR( Test_Date__c ), MONTH( Test_Date__c ), 1 ) 
++ WEEKDAY( DATE( YEAR( Test_Date__c ), MONTH( Test_Date__c ), 1 ) )
+            ) / 7 )

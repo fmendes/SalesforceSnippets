@@ -1,0 +1,35 @@
+
+    public static Map<String, Schema.SObjectField> opptyFieldMap = 
+                            Schema.SObjectType.Opportunity.fields.getMap();
+
+                            
+
+    public static List<String> getFieldList( 
+                        Map<String, Schema.SObjectField> fieldMap ) {
+
+        // extract list of custom fields
+        List<String> fieldList = new List<String>();
+
+        for( String fieldName : fieldMap.keySet() ) {
+            Schema.SObjectField sof = fieldMap.get( fieldName );
+
+            Schema.DescribeFieldResult dfr = sof.getDescribe();
+
+            // NOTE:  by avoiding non-updateable fields below, 
+            // we can't sync formulas to fields
+
+            // skip fields that are not applicable
+            if( dfr.isCustom() == false 
+                    || dfr.isUpdateable() == false ) {
+                continue;
+            }
+
+            fieldList.add( dfr.getName() );
+        }
+
+        return fieldList;
+    }
+
+Schema.SObjectField sof = fieldMap.get( fieldName );
+
+Schema.DescribeFieldResult dfr = sof.getDescribe();

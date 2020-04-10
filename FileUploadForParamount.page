@@ -1,0 +1,453 @@
+<apex:page id="Loan" standardController="Loan__c"
+           extensions="SG_VFC_Loan"
+           showHeader="false"
+           sideBar="false"
+           applyHtmlTag="false"
+           lightningStylesheets="true" >
+
+    <html>
+
+    <head>
+        <!-- Include Lightning Styles -->
+        <apex:slds />
+
+    <style>
+        html .brandQuaternaryBgr {
+            background-color:  inherit!important;
+        }
+
+        TH.loanDocCol {
+            width: 45em;
+        }
+        TH.docTypeCol {
+            width: 9em;
+        }
+        TH.viewCol {
+            width: 5em;
+        }
+        TH.uploadCol {
+            width: 6em;
+        }
+
+        .Approved {
+            background-color: lightgreen;
+        }
+        .Rejected {
+            background-color: orangered;
+        }
+        .Rejected SPAN {
+            background-color: orangered;
+            color: white!important;
+        }
+        .Received {
+            background-color: yellow;
+        }
+        .Empty {
+            background-color: white;
+        }
+        .Under {
+            background-color: lightgoldenrodyellow;
+        }
+
+        .emptyheader {
+            margin-left: 50px;
+            margin-right: 50px;
+        }
+        .hiddenHeader {
+            display: none;
+        }
+        .documentBox {
+            margin-left: 50px;
+            margin-right: 50px;
+        }
+        .uploadPanel {
+            z-index: 3;
+            width: 50%;
+            position: fixed;
+            top: 20%;
+            margin-left: 25%;
+            margin-right: 25%;
+            background: white;
+            border: solid 1px gray;
+        }
+        .overlayPanel {
+            position: fixed;
+            display: none;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0,0,0,0.5);
+            z-index: 2;
+            cursor: pointer;
+        }
+        .viewPrompt {
+            z-index: 5;
+            width: 96%;
+            position: fixed;
+            top: 0;
+            margin-left: 2%;
+            margin-right: 2%;
+            background: white;
+            border: solid 1px gray;
+        }
+
+        .fileinputs {
+            position: relative;
+            border: solid 1px gray;
+        }
+        .overlayedFileText {
+            position: absolute;
+            text-align: center;
+            top: 0px;
+            left: 0px;
+            z-index: 3;
+            height: 150px;
+            font-size: 2em;
+            padding-left: 80px;
+        }
+        input.file {
+            position: relative;
+            text-align: right;
+            -moz-opacity: 0;
+            filter:alpha(opacity: 0);
+            opacity: 0;
+            z-index: 4;
+            height: 100px;
+            width: 100%;
+        }
+
+        .docRowFileInputs {
+            position: relative;
+        }
+        input.docRow {
+            position: relative;
+            -moz-opacity: 0;
+            filter:alpha(opacity: 0);
+            opacity: 0;
+            z-index: 4;
+            width: 100%;
+        }
+        .docRow:drop {
+            font-weight: bold;
+        }
+        .docRowOverlayed {
+            position: absolute;
+            top: 0px;
+            left: 0px;
+            z-index: 3;
+            width: 100%;
+        }
+        .dragOn {
+            outline: solid 1px gray;
+        }
+        .dragOff {
+            outline: initial;
+        }
+    </style>
+    </head>
+
+    <body class="slds-scope">
+
+    <script>
+        function openUploadDocDialog( docID ) {
+            console.log( docID );
+            /* uploadDocJS( docID ); */
+
+            // display overlay
+            var overlayPanel = document.getElementById( '{!$Component.theForm.overlayPanel}' );
+            overlayPanel.style.display = "block";
+
+            // display dialog
+            var uploadPanel = document.getElementById( '{!$Component.theForm.uploadPanel}' );
+            uploadPanel.style.display = "block";
+
+            // copy parameter to hidden input
+            storeDocID( docID );
+
+            // set focus
+            uploadPanel.focus();
+            uploadPanel.scrollIntoView();
+            window.location.hash = '#uploadPanel';
+
+            return false;
+        }
+
+        function storeDocID( docID ) {
+            // copy parameter to hidden input
+            var selectedDocID = document.getElementById( '{!$Component.theForm.selectedDocID}' );
+            selectedDocID.value = docID;
+            return true;
+        }
+
+        function fileChanged( docID ) {
+            if( docID == null ) {
+                var selectedDocID = document.getElementById( '{!$Component.theForm.selectedDocID}' );
+                docID = selectedDocID.value;
+            } else {
+                // copy parameter to hidden input
+                storeDocID( docID );
+            }
+
+            // get filename from file input that is hidden by the overlayed text
+            var file1 = document.getElementById( '{!$Component.theForm.pbFileUpload.pbsFile.file1}' );
+            console.log( file1.value );
+
+            // assign filename to the overlayed text so it is visible
+            var overlayedFileText = document.getElementById( '{!$Component.theForm.pbFileUpload.pbsFile.overlayedFileText}' );
+            console.log( overlayedFileText.innerText );
+            overlayedFileText.innerText = "File selected:  " + file1.value.replace( "C:\\fakepath\\", "" );;
+
+            // set focus to error/success message
+            var errorMsgs = document.getElementById( '{!$Component.theForm.errorMsgs}' );
+            errorMsgs.focus();
+            errorMsgs.scrollIntoView();
+            window.location.hash = '#errorMsgs';
+
+            // submit file immediately so it is uploaded as soon as it is dropped
+            uploadFileJS();
+
+            return false;
+        }
+
+        function highlight( elem ) {
+            elem.classList.add( "dragOn" );
+        }
+        function lowlight( elem ) {
+            elem.classList.remove( "dragOn" );
+        }
+
+        function viewDoc( docID, fileID, fileName ) {
+            // /sfc/servlet.shepherd/document/download/0690v000000VnuyAAC?operationContext=S1
+            console.log( docID );
+            console.log( fileID );
+            console.log( fileName );
+
+            if( fileID === null || fileID === '' ) {
+                alert( 'Document can not accessed:  File ID for document ' + docID + ' is blank or doesn\'t exist.' );
+                console.log( 'fileID null/empty' );
+                return false;
+            }
+
+            // display overlay
+            var overlayPanel = document.getElementById( '{!$Component.theForm.overlayPanel}' );
+            overlayPanel.style.display = "block";
+
+            // display dialog
+            var viewPrompt = document.getElementById( '{!$Component.theForm.viewPrompt}' );
+            viewPrompt.style.display = "block";
+
+            // copy parameter to hidden input
+            storeDocID( docID );
+
+            // embed image or object depending on file extension
+            var previewPanel = document.getElementById( '{!$Component.theForm.pbDisplayFile.pbsDisplayFile.previewPanel}' );
+            var elemImg;
+            var fileNameArray = fileName.split( "." );
+            var ext = fileNameArray[ fileNameArray.length - 1 ].toLowerCase();
+            var targetURL = "/partners/sfc/servlet.shepherd/document/download/" + fileID + "?operationContext=S1";
+            //var targetURL = "/servlet/servlet.FileDownload?file=" + fileID;
+            if( ".jpg.jpeg.gif.png.bmp.tiff.svg".indexOf( ext ) >= 0 ) {
+                elemImg = document.createElement( "img" );
+                elemImg.setAttribute( "src", targetURL );
+                elemImg.setAttribute( "alt", fileName );
+
+            } else {
+                //var elemEmbed = document.createElement( "embed" );
+                //elemEmbed.setAttribute( "data", targetURL );
+                //elemEmbed.setAttribute( "type", "application/pdf" );
+
+                elemImg = document.createElement( "object" ); // tested iframe and it didn't work
+                //elemImg.appendChild( elemEmbed );
+                elemImg.setAttribute( "src", targetURL );
+                elemImg.setAttribute( "alt", fileName );
+                elemImg.setAttribute( "type", "application/pdf" );
+
+            }
+            previewPanel.appendChild( elemImg );
+
+            // copy targetURL to hidden input
+            var fileURL = document.getElementById( '{!$Component.theForm.fileURL}' );
+            fileURL.value = targetURL;
+
+            // set focus
+            viewPrompt.focus();
+            viewPrompt.scrollIntoView();
+            window.location.hash = '#viewPrompt';
+
+            return false;
+        }
+
+        function downloadDoc() {
+            var fileURL = document.getElementById( '{!$Component.theForm.fileURL}' );
+
+            if( fileURL.value === null ) {
+                alert( 'File has not been uploaded for this loan document.' );
+                return false;
+            }
+
+            location.href = fileURL.value;
+
+            return false;
+        }
+    </script>
+
+    <apex:form id="theForm">
+
+        <!-- refresh page at topmost frame when needed -->
+        <apex:outputPanel rendered="{!refreshPage}" >
+            <script>
+                // execute refresh after page loads while respecting any framework code
+                if( window.attachEvent ) {
+                    window.attachEvent( 'onload', scheduleRefresh );
+                } else {
+                    if( window.onload ) {
+                        var curronload = window.onload;
+                        var newonload = function() {
+                            curronload();
+                            scheduleRefresh();
+                        };
+                        window.onload = newonload;
+                    } else {
+                        window.onload = scheduleRefresh;
+                    }
+                }
+
+                function scheduleRefresh() {
+                    // refresh after 1.5 second to give time for the user to see toast message
+                    window.setTimeout( refreshTop, 1000 );
+                }
+                function refreshTop() {
+                    // refresh topmost frame
+                    window.top.location=window.top.location; // '/partners/s/detail/{! l.id }';
+                }
+            </script>
+        </apex:outputPanel>
+
+        <div class="slds-scope">
+
+        <apex:actionFunction name="uploadFileJS" action="{!uploadFile}" />
+
+        <a name="errorMsgs">
+            <apex:pageMessages id="errorMsgs" />
+        </a>
+
+        <apex:inputHidden id="fileURL" value="{!fileURL}" />
+        <apex:inputHidden id="selectedDocID" value="{!selectedDocID}" />
+
+        <apex:pageBlock >
+
+            <!-- table with just detail (hidden header) inside the scrollable area -->
+
+            <apex:outputPanel layout="block" styleClass="documentBox">
+                <apex:pageBlockTable id="pbtDocList" value="{!docList}" var="d" > <!-- headerClass="hiddenHeader" -->
+                    <apex:column headerValue="Loan Document" headerClass="loanDocCol"
+                                 styleClass="{! MID( d.Status__c, 4, 20 ) }">
+
+                        <!-- panel with CSS to help respond to drag/drop events -->
+                        <apex:outputPanel id="fileInputPanel" styleClass="docRowFileInputs" layout="block"
+                                          html-ondragleave="lowlight( this );"
+                                          html-ondragover="highlight( this );" >
+
+                            <!-- this accepts dragged files and was made transparent and expanded to occupy the entire column -->
+                            <apex:inputFile id="file1" styleClass="docRow"
+                                            onChange="return fileChanged('{!d.Id}');"
+                                            value="{!aFile.VersionData}" filename="{!aFile.title}" />
+
+                            <!-- this is overlayed by the transparent file input -->
+                            <apex:outputText value="{!d.Name}" styleClass="docRowOverlayed" />
+
+                        </apex:outputPanel>
+
+
+                    </apex:column>
+                    <apex:column headerValue="View" headerClass="viewCol"
+                                 styleClass="{! MID( d.Status__c, 4, 20 ) }" >
+                        <apex:outputPanel layout="block" rendered="{! d.Status__c != '00-Empty' }" >
+                            <apex:commandButton value="View"
+                                                action="{!promptApproval}"
+                                                onClick="return storeDocID( '{! d.Id }' )" />
+                            <!--
+                        <button  onClick="return viewDoc( '{! d.Id }', '{! fileByDocIDMap[ d.Id ].ID }', '{! fileByDocIDMap[ d.Id ].Title }' );" >View</button>
+                        -->
+                        </apex:outputPanel>
+                    </apex:column>
+                    <apex:column headerValue="Upload" headerClass="uploadCol"
+                                 styleClass="{! MID( d.Status__c, 4, 20 ) }" >
+                        <button  onClick="return openUploadDocDialog('{!d.Id}');" >Upload</button>
+                    </apex:column>
+                    <apex:column headerValue="{!$ObjectType.Loan_Document__c.fields.Document_Type__c.Label}"
+                                 headerClass="docTypeCol"
+                                 value="{!d.Document_Type__c}"
+                                 styleClass="{! MID( d.Status__c, 4, 20 ) }" />
+                    <apex:column headerValue="{!$ObjectType.Loan_Document__c.fields.Status__c.Label}"
+                                 value="{!d.Status__c}"
+                                 styleClass="{! MID( d.Status__c, 4, 20 ) }" />
+                </apex:pageBlockTable>
+            </apex:outputPanel>
+
+        </apex:pageBlock>
+
+        <apex:outputPanel id="overlayPanel" styleClass="overlayPanel"
+                          layout="block" style="display: none;" />
+
+        <!-- panel with file upload element to be displayed via javascript openUploadDocDialog() -->
+
+        <a name="uploadPanel">
+        <apex:outputPanel id="uploadPanel" styleClass="uploadPanel"
+                          layout="block" style="display: none;" >
+            <apex:pageBlock id="pbFileUpload" title="File Upload">
+                &nbsp;
+                <apex:pageBlockSection id="pbsFile" columns="1">
+                    <!-- overlay file input with text to be able to get a bigger drag'n'drop area -->
+                    <apex:outputPanel id="fileInputPanel" styleClass="fileinputs" layout="block">
+                        <apex:inputFile id="file1" styleClass="file" onChange="return fileChanged();"
+                                        value="{!aFile.VersionData}" filename="{!aFile.title}" />
+                        <apex:outputText id="overlayedFileText" styleClass="overlayedFileText"
+                                         value="Click to select file or drag file here." >
+                        </apex:outputText>
+                    </apex:outputPanel>
+                </apex:pageBlockSection>
+
+                <apex:pageBlockButtons >
+                    <apex:commandButton value="Cancel" action="{!cancelFile}" />
+                </apex:pageBlockButtons>
+            </apex:pageBlock>
+        </apex:outputPanel>
+        </a>
+
+            <!-- panel displaying file opened via javascript viewDoc() -->
+
+            <a name="viewPrompt">
+                <apex:outputPanel id="viewPrompt" styleClass="viewPrompt"
+                                   layout="block" style="display: none;" >
+                    <apex:pageBlock id="pbDisplayFile" title="View Document">
+
+                        <apex:pageBlockButtons location="top" >
+                            <button id="downloadButton" style="padding: 4px 3px;"
+                                    onclick="return downloadDoc();" >Download</button>
+                            <apex:commandButton action="{!cancelFile}" value="Cancel" />
+                        </apex:pageBlockButtons>
+
+                        <apex:pageBlockSection id="pbsDisplayFile" columns="1" >
+
+                            <apex:outputPanel id="previewPanel" layout="block" >
+                                If preview isn't available, click Download.
+                            </apex:outputPanel>
+
+                        </apex:pageBlockSection>
+                    </apex:pageBlock>
+                </apex:outputPanel>
+            </a>
+
+        </div>
+
+    </apex:form>
+
+    </body>
+
+    </html>
+
+</apex:page>

@@ -1,0 +1,577 @@
+/**********************************************************************
+* Name:     VFC_FieldTrialSearch
+* Author:   Strategic Growth, Inc. (www.strategicgrowthinc.com)
+*  
+* ======================================================
+* ======================================================
+* Purpose:                                                      
+* 
+* ======================================================
+* ======================================================
+* History:                                                            
+* VERSION   DATE            INITIALS      DESCRIPTION/FEATURES ADDED
+* 1.0       12-Aug-2016     rwd           Initial Development           
+*   
+***********************************************************************/
+
+
+public with sharing class VFC_FieldTrialSearch {
+
+// ************************           PUBLIC VARIABLES          **************************
+    public Field_Trial__c fieldTrial { get; set; }
+
+    public Boolean isClearfield {get; set;}
+    public Boolean isRadiusSearch {get; set;}
+    public Boolean hasLocation {get; set;}
+    public Boolean hasResults {get; set;}
+
+    public Location__c zipLocation {get; set;}
+    public Location theLocation {get; set;}
+    public String theLat {get;set;}
+    public String theLong {get; set;}
+    public String clearFieldSearch {get; set;}
+
+    public List<Field_Trial_Line__c> fieldTrialLines {get; set;}
+    public List<SelectOption> searchTypeOptions {get; set;}
+    public List<SelectOption> stateOptions {get; set;}
+    public List<SelectOption> clearFieldOptions {get; set;}
+
+    public List<FieldTrialWrapper> searchResults {get; set;}
+
+    public String searchType {get; set;}
+    public String searchState {get; set;}
+    public String searchCounty {get; set;}
+    public String searchZip {get; set;}
+    public String distance {get; set;}
+
+    public Set<String> yearSetStr {get; set;}
+
+
+
+// ************************           PRIVATE VARIABLES       **************************
+    private ApexPages.StandardController controller;
+
+    private String queryFields;
+    private String pinQueryFields;
+    private Field_Trial_Settings__c settings;
+
+    private static final String DEFAULT_RADIUS = '25';
+    private static final Integer YEARS_IN_PAST_FOR_SEARCH = 2; // includes current year; so if "2" and year is 2016, searches 2016, 2015
+
+
+// ************************           CONSTRUCTOR                                 **************************           
+    public VFC_FieldTrialSearch(ApexPages.StandardController controller) {
+        System.debug('---> starting VFC_FieldTrialSearch constructor');
+        this.controller = controller;
+        fieldTrial = (Field_Trial__c) controller.getRecord();
+
+        isRadiusSearch = true;
+        isClearField = false;
+
+        // add Date query
+        yearSetStr = new Set<String>();
+        Integer currentYear = Date.today().year();
+        if ( YEARS_IN_PAST_FOR_SEARCH  != null && YEARS_IN_PAST_FOR_SEARCH > 0 )
+        {
+            for ( Integer i=0; i<YEARS_IN_PAST_FOR_SEARCH; i++ )
+            {
+                yearSetStr.add( String.valueOf( currentYear - i ));
+            }
+            System.debug(LoggingLevel.WARN, '---> yearSetStr: ' + yearSetStr );
+        }
+
+
+        init();
+
+    }
+
+    public void init()
+    {
+        if ( settings == null ) settings = Field_Trial_Settings__c.getInstance();
+
+        //if ( searchType == null ) searchType = Label.fieldTrial_RadiusSearch;
+        if ( distance == null ) distance = DEFAULT_RADIUS;
+        searchTypeOptions = getSearchTypes();
+        stateOptions = DisplayUtils.getStateSelectOptions();
+        clearFieldOptions = getClearfieldOptions();
+
+        hasResults = false;
+        hasLocation = false;
+
+
+        //queryFields = 'SELECT Cultivar__c cultivar, COUNT(id) fieldTrials, AVG(Yield__c) yield, AVG(Maturity_Days__c) maturityDays ';
+        //queryFields += ' ,AVG(Lodging__c) lodging, AVG(Total_Mill__c) totalMill, AVG(whole_mill__c) wholeMill, Clearfield__c isClearfield  ';
+
+        queryFields = 'SELECT Cultivar__c, yield__c, maturity_days__c, lodging__c, total_mill__c, whole_mill__c, clearfield__c ';
+        queryFields += ' ,Trial_Location__c, Trial_Location__Latitude__s, Trial_Location__Longitude__s, Year__c ';
+
+        // todo: remove pinQuery; remove old way
+        pinQueryFields = 'SELECT id, name, Cultivar__c, Yield__c, Trial_Location__c, Trial_Location__Latitude__s, Trial_Location__Longitude__s ';
+
+        // todo: need to do normal query and make sure results are only for cultivars within the search area; not just an agg of all results that happen include one cultivar
+        // todo: so, an intersection
+
+    }
+
+    public List<SelectOption> getSearchTypes()
+    {
+        List<SelectOption> options = new List<SelectOption>();
+        options.add( new SelectOption( Label.fieldTrial_RadiusSearch, Label.fieldTrial_RadiusSearch ));
+        options.add( new SelectOption( Label.fieldTrial_CountySearch, Label.fieldTrial_CountySearch));
+
+        return options;
+    }
+
+    public List<SelectOption> getClearfieldOptions()
+    {
+        List<SelectOption> options = new List<SelectOption>();
+        options.add( new SelectOption( Label.fieldTrial_OnlyClearfield, Label.fieldTrial_OnlyClearfield ));
+        options.add( new SelectOption( Label.fieldTrial_NonClearField, Label.fieldTrial_NonClearField));
+        //options.add( new SelectOption( Label.fieldTrial_BothClearfield, Label.fieldTrial_BothClearfield));
+
+        return options;
+    }
+
+    public PageReference doSearch()
+    {
+        System.debug(LoggingLevel.WARN, '---> start doSearch; search type: ' + searchType);
+        hasResults = false;
+
+        if ( searchType == Label.fieldTrial_RadiusSearch )
+        {
+            searchResults = doRadiusSearch();
+            //searchResults = doRadiusSearch_old();
+        }
+        else
+        {
+            searchResults = doCountySearch();
+        }
+
+
+
+        System.debug(LoggingLevel.WARN, '---> fieldTrialLines: ' + fieldTrialLines);
+        return null;
+    }
+
+    public List<FieldTrialWrapper> doRadiusSearch()
+    {
+        System.debug(LoggingLevel.WARN, '---> start doRadiusSearch');
+
+        // query for results;
+        // build Map of Cultivar to Trial Result
+            // only add if cultivar matches
+        // when adding to Map, also add to fieldTrialLines for the pins
+        List<FieldTrialWrapper> tmpList;
+
+        Map<String, List<Field_Trial_Line__c>> cultivarToTrialLineMap = new Map<String, List<Field_Trial_Line__c>>();
+        fieldTrialLines = new List<Field_Trial_Line__c>();
+
+        hasLocation = false;
+        zipLocation = null;
+        theLocation = null;
+        theLat = null;
+        theLong = null;
+        // if doing radius search, get the zip code and it's related geo
+
+        if ( searchZip != null )
+        {
+            if ( distance == null )
+            {
+                distance = DEFAULT_RADIUS;
+            }
+
+
+            List<Location__c> locations = [SELECT id, name, Postal_Code__c, Geolocation__c, Geolocation__Latitude__s, Geolocation__Longitude__s
+            FROM Location__c WHERE Postal_Code__c = :searchZip];
+            if ( locations != null && locations.size() > 0 )
+            {
+                zipLocation = locations[0];
+                hasLocation = true;
+                if ( zipLocation != null ) theLat = String.valueOf(zipLocation.Geolocation__Latitude__s );
+                if ( zipLocation != null  ) theLong = String.valueOf(zipLocation.Geolocation__Longitude__s );
+            }
+            else
+            {
+                DisplayUtils.addError( Label.fieldTrial_NoZip );
+            }
+
+            if ( zipLocation != null )
+            {
+                System.debug(LoggingLevel.WARN, '---> found starting location: ' + zipLocation);
+
+                Decimal latitude = zipLocation.Geolocation__Latitude__s;
+                Decimal longitude = zipLocation.Geolocation__Longitude__s;
+
+                String theQuery = queryFields;
+                theQuery += ' FROM Field_Trial_Line__c WHERE DISTANCE(  Trial_Location__c, GEOLOCATION(';
+                theQuery += latitude;
+                theQuery += ',';
+                theQuery += longitude;
+                theQuery += '), \'mi\') < ';
+                theQuery += distance;
+
+                // if clearfield is "Both" don't do anything; otherwise do the proper filter
+                if (clearFieldSearch != Label.fieldTrial_BothClearfield)
+                {
+                    if (clearFieldSearch == Label.fieldTrial_OnlyClearfield)
+                    {
+                        theQuery += ' AND clearfield__c = true';
+                    }
+                    else if (clearFieldSearch == Label.fieldTrial_NonClearField) {
+                        theQuery += ' AND clearfield__c = false';
+                    }
+                }
+
+                //theQuery += ' AND Year__c IN (' + DisplayUtils.getFormattedStringList( yearSetStr ) + ')';
+                theQuery += ' ORDER BY Cultivar__c DESC NULLS LAST';
+
+                hasResults = false;
+                List<Field_Trial_Line__c> foundLines;
+
+                if ( theQuery != null )
+                {
+                    foundLines = performSearch( theQuery );
+                    if (foundLines == null || foundLines.size() == 0)
+                    {
+                        DisplayUtils.addStatus(Label.fieldTrial_NoResultsFound);
+                    }
+                    else
+                    {
+                        //hasResults = true;  -- only show if a line count meets criteria in the setTrialWrappers method!
+                        tmpList = new List<FieldTrialWrapper>();
+                        fieldTrialLines = new List<Field_Trial_Line__c>();
+
+                        System.debug(LoggingLevel.WARN, '---> handing off to search/agg method');
+                        setTrialWrappers(tmpList, fieldTrialLines, foundLines, cultivarToTrialLineMap );
+
+                        // if still no valid results, show message
+                        if ( !hasResults )
+                        {
+                            DisplayUtils.addStatus(Label.fieldTrial_NoResultsFound);
+                        }
+                    }
+                }
+            }
+        }
+        else
+        {
+            DisplayUtils.addError( Label.fieldTrial_PleaseEnterZip );
+        }
+
+        return tmpList;
+
+    }
+
+    public List<FieldTrialWrapper> doCountySearch()
+    {
+        System.debug(LoggingLevel.WARN, '---> doCountySearch ');
+        //List<Field_Trial_Line__c> tmpList;
+        List<FieldTrialWrapper> tmpList;
+        Map<String, List<Field_Trial_Line__c>> cultivarToTrialLineMap = new Map<String, List<Field_Trial_Line__c>>();
+        fieldTrialLines = new List<Field_Trial_Line__c>();
+
+        Boolean hasBlank = false;
+
+        hasLocation = false;
+        theLocation = null;
+        theLat = null;
+        theLong = null;
+
+        if ( searchCounty == null || String.isBlank( searchCounty ) )
+        {
+            hasBlank = true;
+            DisplayUtils.addError(Label.fieldTrial_PleaseEnterCounty );
+        }
+        if ( searchState == null || String.isBlank( searchState ) )
+        {
+            hasBlank = true;
+            DisplayUtils.addError( Label.fieldTrial_PleaseEnterState );
+        }
+        if ( !hasBlank)
+        {
+            String theQuery = queryFields;
+            searchState = searchState.trim();
+            searchCounty = searchCounty.trim();
+
+            theQuery += ' FROM Field_Trial_Line__c WHERE Field_Trial__r.State__c = \'' + searchState + '\'';
+            theQuery += ' AND Field_Trial__r.County__c = \'' + searchCounty + '\'';
+
+            // if clearfield is "Both" don't do anything; otherwise do the proper filter
+            if ( clearFieldSearch != Label.fieldTrial_BothClearfield)
+            {
+                if ( clearFieldSearch == Label.fieldTrial_OnlyClearfield )
+                {
+                    theQuery += ' AND clearfield__c = true';
+                }
+                else if ( clearFieldSearch == Label.fieldTrial_NonClearField )
+                {
+                    theQuery += ' AND clearfield__c = false';
+                }
+            }
+
+        //  theQuery += ' AND Year__c IN (' + DisplayUtils.getFormattedStringList( yearSetStr ) + ')';
+            theQuery += ' ORDER BY Cultivar__c DESC NULLS LAST';
+
+            hasResults = false;
+            List<Field_Trial_Line__c> foundLines;
+
+            if ( theQuery != null )
+            {
+                foundLines = performSearch( theQuery );
+                if (foundLines == null || foundLines.size() == 0)
+                {
+                    DisplayUtils.addStatus(Label.fieldTrial_NoResultsFound);
+                }
+                else
+                {
+                    //hasResults = true;  -- only show if a line count meets criteria in the setTrialWrappers method!
+                    // hasLocation = true;
+                    tmpList = new List<FieldTrialWrapper>();
+                    fieldTrialLines = new List<Field_Trial_Line__c>();
+
+                    System.debug(LoggingLevel.WARN, '---> handing off to search/agg method');
+                    setTrialWrappers(tmpList, fieldTrialLines, foundLines, cultivarToTrialLineMap );
+
+                    // if still no valid results, show message
+                    if ( !hasResults )
+                    {
+                        DisplayUtils.addStatus(Label.fieldTrial_NoResultsFound);
+                    }
+
+                    if ( fieldTrialLines != null && fieldTrialLines.size() > 0 )
+                    {
+                        System.debug(LoggingLevel.WARN, '---> setting default map placement to first item in list');
+                        for ( Field_Trial_Line__c ft : fieldTrialLines )
+                        {
+                            if ( ft.Trial_Location__c != null && ft.Trial_Location__Latitude__s != null && ft.Trial_Location__Longitude__s != null )
+                            {
+                                theLat = String.valueOf( ft.Trial_Location__Latitude__s );
+                                theLong = String.valueOf( ft.Trial_Location__Longitude__s );
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+
+        }
+
+
+        return tmpList;
+    }
+
+    public void setTrialWrappers( List<FieldTrialWrapper> tmpList, List<Field_Trial_Line__c> fieldTrialLines, List<Field_Trial_Line__c> foundLines, Map<String, List<Field_Trial_Line__c>> cultivarToTrialLineMap )
+    {
+        System.debug(LoggingLevel.WARN, '---> start getTrialWrappers');
+        if (foundLines != null && foundLines.size() > 0)
+        {
+            try
+            {
+                // we need to perform an Intersection so the same cultivar appears in every result -- so group everything by Cultivar, and then do the averages
+                System.debug(LoggingLevel.WARN, '---> grouping by cultivar before doing the math');
+                // build the map by cultivar
+                for (Field_Trial_Line__c line : foundLines)
+                {
+                    System.debug(LoggingLevel.WARN, '---> grouping for cultivar: ' + line.Cultivar__c);
+                    List<Field_Trial_Line__c> tmpLines = cultivarToTrialLineMap.get(line.Cultivar__c);
+                    if (tmpLines == null) tmpLines = new List<Field_Trial_Line__c>();
+                    tmpLines.add(line);
+                    cultivarToTrialLineMap.put(line.Cultivar__c, tmpLines);
+                }
+
+                // now get the wrappers -- only build out for specific cultivars
+                System.debug(LoggingLevel.WARN, '---> building result of wrappers');
+                if (cultivarToTrialLineMap != null && cultivarToTrialLineMap.keySet().size() > 0)
+                {
+                    for (String cultivar : cultivarToTrialLineMap.keySet())
+                    {
+                        System.debug(LoggingLevel.WARN, '---> looping map for cultivar: ' + cultivar);
+                        List<Field_Trial_Line__c> lines = cultivarToTrialLineMap.get(cultivar);
+                        System.debug(LoggingLevel.WARN, '---> cultivar lines: ' + lines);
+                        if (lines != null) System.debug(LoggingLevel.WARN, '---> lines size: ' + lines.size());
+                        // if there is a minimum threshold, only add if meets threshold; if no threshold, just add
+                        if (lines != null && (!settings.Require_Num_Trial_Threshold__c || (settings.Require_Num_Trial_Threshold__c && lines.size() >= settings.Search_Threshold__c)))
+                        {
+                            hasResults = true;
+                            hasLocation = true;
+                            Boolean isClearfield = false;
+
+                            System.debug(LoggingLevel.WARN, '---> adding search row');
+                            FieldTrialWrapper wrapper = new FieldTrialWrapper(cultivar, lines);
+                            tmpList.add(wrapper);
+
+                            // add to list for pins...
+                            System.debug(LoggingLevel.WARN, '---> adding lines to list of results for pins');
+                            fieldTrialLines.addAll(lines);
+
+                        }
+                    }
+                }
+            }
+            catch ( Exception e )
+            {
+                System.debug(LoggingLevel.WARN, '---> message, stacktrace: ' + e.getMessage() + ' ' + e.getStackTraceString() );
+                DisplayUtils.addError('We encountered an error performing your search');
+            }
+
+
+        }
+    }
+
+    public List<Field_Trial_Line__c> performSearch( String theQuery)
+    {
+        System.debug(LoggingLevel.WARN, '---> start performSearch');
+        List<Field_Trial_Line__c> foundLines;
+
+        if ( theQuery != null )
+        {
+            try
+            {
+                System.debug(LoggingLevel.WARN, '---> theQuery: ' + theQuery);
+                foundLines = (List<Field_Trial_Line__c>) Database.query(theQuery);
+                System.debug(LoggingLevel.WARN, '---> found foundLines: ' + foundLines);
+            }
+            catch (Exception e) {
+                System.debug(LoggingLevel.WARN, '---> trialLines query: message, stacktrace:' + e.getMessage() + ' ' + e.getStackTraceString());
+                DisplayUtils.addError('We encountered an error performing your search');
+                //DisplayUtils.addError( e.getMessage() );
+            }
+        }
+
+        return foundLines;
+    }
+
+    public PageReference doToggleSearch()
+    {
+        isRadiusSearch = !isRadiusSearch;
+        // blank out previous results
+        fieldTrialLines = null;
+        //zipLocation = null;
+        //searchZip = null;
+        //searchCounty = null;
+        //searchState = null;
+        hasResults = false;
+        return null;
+    }
+
+    public class FieldTrialWrapper {
+
+        public String cultivar {get; set;}
+        public Integer fieldTrials {get;set;}
+        public Integer yield {get; set;}
+        public Integer maturityDays {get; set; }
+        public Integer lodging {get; set;}
+        public Integer totalMill {get; set;}
+        public Integer wholeMill {get; set;}
+        public Boolean isClearfield {get; set;}
+        public String latitude {get; set;}
+        public String longitude {get; set;}
+
+        public FieldTrialWrapper( String cultivar, List<Field_Trial_Line__c> lines )
+        {
+            System.debug(LoggingLevel.WARN, '---> creating row for cultivar: ' + cultivar );
+
+            this.cultivar = cultivar;
+            if ( cultivar == null ) this.cultivar = 'N/A';
+
+            this.fieldTrials = 0;
+            this.maturityDays = 0;
+            this.lodging = 0;
+            this.totalMill = 0;
+            this.wholeMill = 0;
+
+
+            if ( lines != null )
+            {
+                // get the sums and averages...
+                System.debug(LoggingLevel.WARN, '---> calculating averages for this row');
+                //AVG(Yield__c) yield, AVG(Maturity_Days__c) maturityDays  ,AVG(Lodging__c) lodging, AVG(Total_Mill__c) totalMill, AVG(whole_mill__c) wholeMill, Clearfield__c isClearfield
+
+                Double size = Double.valueOf( lines.size() );
+
+                Double yieldSize = 0;
+                Double maturityDaysSize = 0;
+                Double lodgingSize = 0;
+                Double totalMillSize = 0;
+                Double wholeMillSize = 0;
+
+                Double yieldCount = 0;
+                Double maturityDaysCount = 0;
+                Double lodgingCount = 0;
+                Double totalMillCount = 0;
+                Double wholeMillCount = 0;
+                for ( Field_Trial_Line__c line : lines )
+                {
+                    System.debug(LoggingLevel.WARN, '---> line: ' + line);
+                    System.debug(LoggingLevel.WARN, '---> cultivar: ' + line.Cultivar__c );
+                    System.debug(LoggingLevel.WARN, '---> yield: ' + line.Yield__c );
+                    if ( line.Yield__c != null && line.Yield__c > 0 )
+                    {
+                        yieldCount += line.Yield__c;
+                        yieldSize += 1;
+                    }
+                    System.debug(LoggingLevel.WARN, '---> yield count now: ' + yieldCount);
+                    System.debug(LoggingLevel.WARN, '---> yieldSize: ' + yieldSize );
+
+                    if ( line.Maturity_Days__c != null && line.Maturity_Days__c > 0 )
+                    {
+                        maturityDaysCount += line.Maturity_Days__c;
+                        maturityDaysSize += 1;
+                    }
+                    if ( line.Lodging__c != null && line.Lodging__c > 0 )
+                    {
+                        lodgingCount += line.Lodging__c;
+                        lodgingSize += 1;
+                    }
+                    if ( line.Total_Mill__c != null && line.Total_Mill__c > 0 )
+                    {
+                        totalMillCount += line.Total_Mill__c;
+                        totalMillSize += 1;
+                    }
+                    if ( line.Whole_Mill__c != null && line.Whole_Mill__c > 0 )
+                    {
+                        wholeMillCount += line.Whole_Mill__c;
+                        wholeMillSize += 1;
+                    }
+                }
+
+                System.debug(LoggingLevel.WARN, '---> doing math for this row');
+                if ( size > 0 )
+                {
+
+                    if ( yieldCount > 0 )
+                    {
+                        System.debug(LoggingLevel.WARN, '---> yieldCount, size: ' + yieldCount + ', ' + size );
+                        this.yield =  Integer.valueOf ( yieldCount / yieldSize );
+                    }
+                    if ( maturityDaysCount > 0 )
+                    {
+                        System.debug(LoggingLevel.WARN, '---> maturity, size: ' + maturityDaysCount + ', ' + size );
+                        this.maturityDays = Integer.valueOf ( maturityDaysCount / maturityDaysSize );
+                    }
+                    if ( lodgingCount > 0 )
+                    {
+                        System.debug(LoggingLevel.WARN, '---> lodging, size: ' + lodgingCount + ', ' + size );
+                        this.lodging = Integer.valueOf ( lodgingCount / lodgingSize );
+                    }
+                    if ( totalMillCount > 0 )
+                    {
+                        System.debug(LoggingLevel.WARN, '---> total mill, size: ' + totalMillCount + ', ' + size );
+                        //this.totalMill = Integer.valueOf ( totalMillCount / size );
+                        this.totalMill = Integer.valueOf ( totalMillCount / totalMillSize );
+                    }
+                    if ( wholeMillCount > 0 )
+                    {
+                        System.debug(LoggingLevel.WARN, '---> wholeMill, size: ' + wholeMillCount + ', ' + size );
+                        //this.wholeMill = Integer.valueOf ( wholeMillCount / size );
+                        this.wholeMill = Integer.valueOf ( wholeMillCount / wholeMillSize );
+                    }
+                }
+            }
+
+
+        }
+    }
+
+
+}

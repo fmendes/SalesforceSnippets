@@ -1,0 +1,29 @@
+//List<Account> aL = [ SELECT ID 
+//                   FROM Account 
+//                   WHERE RecordType.Name = 'Vendor' ];
+
+List<Refund__c> rL = [ SELECT ID, Amount_Identified_Dollars__c 
+                      , Service__c, Vendor__c
+                     FROM Refund__c 
+                     WHERE Service__c = 'a01P00000023mCK' ];
+
+Schema.DescribeFieldResult fr = Refund__c.State_Identified__c.getDescribe();
+List<Schema.PicklistEntry> pleList = fr.getPicklistValues();
+Schema.DescribeFieldResult fr2 = Refund__c.Collection_Type__c.getDescribe();
+List<Schema.PicklistEntry> pleList2 = fr2.getPicklistValues();
+
+for( Refund__c r : rL ) {
+    r.ID = null;
+    r.State_Identified__c = '';
+    Decimal rand = Math.random();
+    if( rand > .5 ) {
+    	r.Amount_Identified_Dollars__c = r.Amount_Identified_Dollars__c * 2;
+    } else {
+    	r.Amount_Identified_Dollars__c = r.Amount_Identified_Dollars__c / 2;
+    }
+    Integer i = Math.round( rand * ( pleList.size() - 1 ) );
+    r.State_Identified__c = pleList[ i ].getValue();
+    Integer j = Math.round( rand * ( pleList2.size() - 1 ) );
+    r.Collection_Type__c = pleList2[ j ].getValue();
+}
+insert rL;

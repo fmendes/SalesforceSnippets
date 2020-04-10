@@ -1,0 +1,12 @@
+	// get the object name from the ID
+	String objName = '';
+	Map<String, Schema.SObjectType> gd = Schema.getGlobalDescribe();
+	for( Schema.SObjectType stype : gd.values() ) {
+		Schema.DescribeSObjectResult r = stype.getDescribe();
+		String prefix = r.getKeyPrefix();
+		if( prefix != null && refID.startsWith( prefix ) ) {
+			objName = r.getName();
+			break;
+		}
+	}
+	system.debug( objName );

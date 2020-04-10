@@ -1,0 +1,30 @@
+
+
+/**********************************************************************
+* Name:   	AuraHelper
+* Author: 	Strategic Growth, Inc. (www.strategicgrowthinc.com)
+* Date: 	11-Feb-2020
+* ======================================================
+* ======================================================
+* Purpose: The purpose of this class is to                                                            
+* 
+* ======================================================
+* ======================================================
+* History:                                                            
+* VERSION	DATE            INITIALS	DESCRIPTION/FEATURES ADDED
+* 1.0     	11-Feb-2020     CS			Initial Development           
+*   
+to use with sessionIDCommunityTileComponent
+
+***********************************************************************/
+
+
+public class AuraHelper
+{
+    @AuraEnabled(cacheable=true)
+    public static String getSessionId()
+    {
+        String sessionId = UserInfo.getSessionId();
+        return sessionId;
+    }
+}

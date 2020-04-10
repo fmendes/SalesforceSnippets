@@ -1,0 +1,43 @@
+
+
+	public static Set<String> getChangedFields( SObject newObj, SObject oldObj, Set<String> fields ) {
+		// return list of fields that have changed from old to the new version of the record
+		Set<String> changedFields = new Set<String>();
+		if( oldObj == null ) {
+			return changedFields;
+		}
+		for( String fieldName : fields ) {
+			if( newObj.get( fieldName ) != oldObj.get( fieldName ) ) {
+				changedFields.add( fieldName );
+			}
+		}
+		return changedFields;
+	}
+	
+
+	public static Boolean detectChanges( SObject newObj, SObject oldObj, List<String> fieldList ) {
+		for( String aField : fieldList ) {
+			if( newObj.get( aField ) != oldObj.get( aField ) ) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+//...
+
+		List<String> fieldList = new List<String> {
+				'Birthdate', 'MailingCity', 'MailingStreet', 'MailingState'
+				, 'MailingPostalCode', 'Phone', 'MobilePhone', 'Email', 'RecordTypeID' };
+
+		for( Contact c : newContactList ) {
+			Contact oldContact = oldContactMap.get( c.ID );
+
+			if( oldContact != null ) {
+				// detect whether a relevant field has changed
+				Boolean fieldChanged = detectChanges( c, oldContact, fieldList );
+				// only copy fields for the community profiles
+				if( fieldChanged && recTypeIDToProfileIDMap.containsKey( c.RecordTypeID ) ) {
+					contactMap.put( c.ID, c );
+				}
+//...

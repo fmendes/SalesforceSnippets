@@ -1,0 +1,179 @@
+
+
+        <script>
+            // at each refresh, this script will collect the translated class names and their original names in English in a map
+            // then it will scan the class filter dropdown and replace each text with the respective translation
+            // this is the workaround for not being able to directly translate the picklist values automatically
+
+			// prepopulate translation map with initial translations
+			var translationMap = new Object();
+
+			// collect the translated campaign types into the translation map
+			function collectTranslatedCampaignTypes() {
+				var typeElement = document.getElementsByClassName( 'className' );
+				var nonTranslatedTypeElement = document.getElementsByClassName( 'classNameOriginal' );
+				// go through each translated type element and its corresponding original version
+				for( i = 0; i < typeElement.length; i++ ) {
+                    // get the first child and skip it if it is a script (Salesforce adds weird stuff in my HTML for IE11)
+                    var node = typeElement[ i ].firstChild;
+                    if( node.tagName.toLowerCase() === 'script' ) {
+                        node = node.nextSibling;
+                    }
+
+                    var nodeContent = node.innerText;
+					console.log( 'typeElement= ' + nodeContent );
+					// associate translated type with original type in the translation map
+                    if( ! ( nonTranslatedTypeElement[ i ].innerText in translationMap ) ) {
+    					translationMap[ nonTranslatedTypeElement[ i ].innerText ] = nodeContent;
+                    }
+				}
+			}
+            // translate each option in the class filter picklist
+            function translateClassNameFilterOptions() {
+                var classFilter = document.getElementById( '{!$Component.theForm.classFilterField}' );
+                var selectedClass = classFilter.selectedIndex;
+                for( var i = 0; i < classFilter.length; i++ ) {
+                    console.log( 'Class option= ' + classFilter.options[ i ].value );
+                    // check whether there is a translated value
+                    if( classFilter.options[ i ].value in translationMap ) {
+                        var translatedText = translationMap[ classFilter.options[ i ].value ];
+                        console.log( 'translation= ' + translatedText );
+                        // replace option with the translated version
+                        var translatedOption = new Option( translatedText, classFilter.options[ i ].value, false, false );
+                        classFilter.options[ i ] = translatedOption;
+                    }
+                }
+                // preserve selection after the original options were replaced
+                classFilter.selectedIndex = selectedClass;
+
+                sortSelectOptions( classFilter, true );
+            }
+            // sort options in the dropdown
+            function sortSelectOptions( selectElement, skipFirstOption ) {
+                console.log( 'skipFirstOption= ' + skipFirstOption );
+                var tmpArray = new Array();
+                for( var i = 0; i < selectElement.options.length; i++ ) {
+                    tmpArray[ i ] = new Array();
+                    tmpArray[ i ][ 0 ] = selectElement.options[ i ].text;
+                    tmpArray[ i ][ 1 ] = selectElement.options[ i ].value;
+                }
+
+                // remove first option if flag is on
+                if( skipFirstOption ) {
+                    tmpArray.shift();
+                }
+
+                tmpArray.sort();
+                console.log( tmpArray );
+
+                for( var i = 0; i < tmpArray.length; i++ ) {
+                    var j = i;
+                    if( skipFirstOption ) {
+                        console.log( 'skipping first option' );
+                        j++;
+                    }
+                    selectElement.options[ j ] = null;
+                    console.log( tmpArray[ i ] );
+                    var op = new Option( tmpArray[ i ][ 0 ], tmpArray[ i ][ 1 ] );
+                    selectElement.options[ j ] = op;
+                }
+            }
+
+            // display/hide the modal form
+            function toggleForm() {
+                console.log( 'Toggling form' );
+                var formOverlay = document.getElementById( '{!$Component.theForm.registrationOverlay}' );
+                var formDiv = document.getElementById( '{!$Component.theForm.registrationFormWrapper}' );
+                formOverlay.classList.toggle( 'hideElement' );
+                formDiv.classList.toggle( 'hideElement' );
+            }
+
+            // translate each date in the list to the locale date format
+			function convertDateSpans() {
+				var dateSpanList = document.getElementsByClassName( 'formattedDate' );
+				//console.log( dateSpanList );
+
+				// go through each span element and convert the date to the locale
+				for( i = 0; i < dateSpanList.length; i++ ) {
+					var dateSpan = dateSpanList[ i ];
+
+					// convert date to locale and stuff it in the span element
+                    var originalDate = dateSpan.innerText;
+					var localeFormatteDt = getConvertedDateFromString( originalDate ); //getLocaleFormattedDate( year, month, day );
+					dateSpan.innerText = localeFormatteDt;
+
+                    // add translation to the map
+                    if( ! ( originalDate in translationMap ) ) {
+                        translationMap[ originalDate ] = localeFormatteDt;
+                        console.log( originalDate + ' = ' + localeFormatteDt );
+                    }
+				}
+			}
+            // parse a single date and translate it to the locale format
+			function getConvertedDateFromString( theDateString ) {
+				// parse date yyyy/mm/dd and translate to locale
+				var posMonth = theDateString.indexOf( '/' );
+				//console.log( 'posMonth= ' + posMonth );
+				var posAfterMonth = theDateString.indexOf( '/', posMonth + 1 );
+				//console.log( 'posAfterMonth= ' + posAfterMonth );
+
+				var year = theDateString.substring( 0, posMonth );
+				var month = theDateString.substring( posMonth + 1, posAfterMonth );
+				var day = theDateString.substring( posAfterMonth + 1, posAfterMonth + 5 );
+				console.log( 'posMonth= ' + posMonth + ' | posAfterMonth= ' + posAfterMonth + ' | y-m-d= ' + year + '-' + month + '-' + day );
+
+				// convert date to locale and stuff it in the span element
+				var localeFormatteDt = getLocaleFormattedDate( year, month, day );
+				return localeFormatteDt;
+			}
+			// NOTE:  this is the only way to automatically translate the date respecting the locale in Javascript
+			function getLocaleFormattedDate( year, month, day ) {
+				//var date = new Date( Date.UTC( year, month - 1, day - 1 ) );
+				var date = new Date( year, month - 1, day );
+				var options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+				var formattedDate = date.toLocaleDateString( '{! LEFT( LANG, 2 ) }', options );
+				return capitalizeFirstLetter( formattedDate.trim() );
+			}
+			function capitalizeFirstLetter( textValue ) {
+				return textValue.charAt(0).toUpperCase() + textValue.slice(1);
+			}
+
+            function translateDropdownOptions( filterField ) {
+                for( var i = 0; i < filterField.length; i++ ) {
+                    console.log( 'Option= ' + filterField.options[ i ].value );
+                    // check whether there is a translated value
+                    if( filterField.options[ i ].value in translationMap ) {
+                        var translatedText = translationMap[ filterField.options[ i ].value ];
+                        console.log( 'translation= ' + translatedText );
+                        // replace option with the translated version
+                        var translatedOption = new Option( translatedText, filterField.options[ i ].value, false, false );
+                        filterField.options[ i ] = translatedOption;
+                    }
+                }
+            }
+
+            // translate each option in the date filter picklist
+            function translateDateFilterOptions() {
+                var dateFilter = document.getElementById( '{!$Component.theForm.dateFilterField}' );
+                var selectedDate = dateFilter.selectedIndex;
+                translateDropdownOptions( dateFilter );
+                // preserve selection after the original options were replaced
+                dateFilter.selectedIndex = selectedDate;
+            }
+
+            function refreshTranslations() {
+                // perform translations after filter refresh
+                translateClassNameFilterOptions();
+                convertDateSpans();
+                translateDateFilterOptions();
+            }
+
+            function displayRegistrationForm() {
+                if( '{!selectedClassID}' !== '' ) {
+                    var formOverlay = document.getElementById( '{!$Component.theForm.registrationOverlay}' );
+                    var formDiv = document.getElementById( '{!$Component.theForm.registrationFormWrapper}' );
+                    formOverlay.classList.remove( 'hideElement' );
+                    formDiv.classList.remove( 'hideElement' );
+                }
+            }
+        </script>

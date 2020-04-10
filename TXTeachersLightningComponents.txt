@@ -1,0 +1,406 @@
+<aura:component implements="force:appHostable,flexipage:availableForAllPageTypes" access="global" >
+	
+    <div>
+       <div>
+           <c:CoachAssignmentSearch />
+       </div>
+<!--
+       <div>
+           <c:CoachAssignmentMap />       
+       </div>
+-->
+       <div>
+           <c:CoachAssignmentList />       
+       </div>
+
+       <div>
+           <c:CoachAssignmentUpdate />
+       </div>
+
+    </div>
+
+</aura:component>
+
+
+
+----------------------------------------------------------------------
+----------------------------------------------------------------------
+----------------------------------------------------------------------
+----------------------------------------------------------------------
+
+
+<aura:component controller="SG_CoachAssignmentController" >
+    
+  <aura:attribute name="errorMsg" type="String" />
+    <!--
+    <aura:attribute name="candidateList" type="Account[]" />
+    -->
+    <aura:attribute name="campusList" type="Account[]" />
+    <aura:attribute name="coachList" type="Account[]" />
+    <aura:attribute name="districtList" type="Account[]" />
+    <aura:attribute name="certificationStatusList" type="String[]" />
+    <aura:attribute name="certificationTypeList" type="String[]" />
+    <aura:attribute name="stateList" type="String[]" />
+    <aura:attribute name="selectedCampus" type="String" />
+    <!--
+    <aura:attribute name="selectedRadius" type="Integer" />
+    -->
+    <aura:attribute name="selectedCoach" type="String" />
+    <aura:attribute name="assignedStatus" type="String" />
+    <aura:attribute name="selectedCertificationStatus" type="String" />
+    <aura:attribute name="selectedCertificationType" type="String" />
+    <aura:attribute name="selectedDistrict" type="String" />
+    <aura:attribute name="selectedState" type="String" />
+    <aura:attribute name="teachingStart" type="Date" />
+    <aura:attribute name="teachingEnd" type="Date" />
+    <aura:attribute name="certificationStart" type="Date" />
+    <aura:attribute name="certificationEnd" type="Date" />
+
+    <aura:handler name="init" value="{!this}" action="{!c.doInit}" />
+
+    <aura:registerEvent name="CandidatesRetrieved" type="c:CandidatesRetrieved" />
+
+<div class="slds">
+    <!-- padding around the whole page -->
+    <div class="slds-p-around--small">
+    
+        <aura:if isTrue="{!v.errorMsg != null}">
+            <ui:message title="Error" severity="error" closable="true">
+                {!v.errorMsg}
+            </ui:message>
+        </aura:if>
+        
+        <!-- search section -->
+        
+        <!-- this component positions all elements in a 4 col form -->
+        <c:MultiColumnForm fieldsetHeaderText="Search Criteria" size="4">
+            <aura:set attribute="elementList">
+                <lightning:select aura:id="campusPicklist" name="campusPicklist"
+                                  value="{!v.selectedCampus}"
+                                  label="Campus">
+                    <option value="">--None--</option>
+                    <aura:iteration items="{!v.campusList}" var="cmps">
+                        <option label="{!cmps.ID}" text="{!cmps.Name}" />
+                    </aura:iteration>
+              </lightning:select>
+
+                <!--
+                <lightning:select aura:id="radius" name="radius"
+                                  value="{!v.selectedRadius}"
+                                  label="Search Radius">
+                    <option value="">- -None- -</option>
+                    <option value="5">5 miles</option>
+                    <option value="10">10 miles</option>
+                    <option value="20">20 miles</option>
+                    <option value="50">50 miles</option>
+              </lightning:select>
+                -->
+
+                <lightning:select aura:id="districtPicklist" name="districtPicklist"
+                                  value="{!v.selectedDistrict}"
+                                  label="District">
+                    <option value="">--None--</option>
+                    <aura:iteration items="{!v.districtList}" var="d">
+                        <option label="{!d.ID}" text="{!d.Name}" />
+                    </aura:iteration>
+              </lightning:select>
+
+                <lightning:select aura:id="coachPicklist" name="coachPicklist"
+                                  value="{!v.selectedCoach}"
+                                  label="Coach">
+                    <option value="">--None--</option>
+                    <aura:iteration items="{!v.coachList}" var="ch">
+                        <option label="{!ch.ID}" text="{!ch.Name}" />
+                    </aura:iteration>
+              </lightning:select>
+            
+                <lightning:select aura:id="assignedStatus" name="assignedStatus"
+                                  value="{!v.assignedStatus}"
+                                  label="Assigned/Unassigned">
+                    <option value="">--None--</option>
+                    <option value="Assigned">Assigned</option>
+                    <option value="Unassigned">Unassigned</option>
+              </lightning:select>
+            
+                <lightning:select aura:id="certificationStatus" name="certificationStatus"
+                                  value="{!v.selectedCertificationStatus}"
+                                  label="Certification Status">
+                    <option value="">--None--</option>
+                    <aura:iteration items="{!v.certificationStatusList}" var="cs">
+                        <option label="{!cs}" text="{!cs}" />
+                    </aura:iteration>
+              </lightning:select>
+            
+                <lightning:select aura:id="certificationType" name="certificationType"
+                                  value="{!v.selectedCertificationType}"
+                                  label="Certification Type">
+                    <option value="">--None--</option>
+                    <aura:iteration items="{!v.certificationTypeList}" var="ct">
+                        <option label="{!ct}" text="{!ct}" />
+                    </aura:iteration>
+              </lightning:select>
+
+                <lightning:select aura:id="statePicklist" name="statePicklist"
+                                  value="{!v.selectedState}"
+                                  label="State">
+                    <option value="">--None--</option>
+                    <aura:iteration items="{!v.stateList}" var="s">
+                        <option label="{!s}" text="{!s}" />
+                    </aura:iteration>
+              </lightning:select>
+            
+                <ui:inputDate aura:id="teachingStart" label="Teaching Start" 
+                              value="{!v.teachingStart}" updateOn="change"
+                              format="MM/dd/yyyy"
+                              displayDatePicker="true"/>
+                <ui:inputDate aura:id="teachingEnd" label="Teaching End" 
+                              value="{!v.teachingEnd}" updateOn="change" 
+                              format="MM/dd/yyyy" 
+                              displayDatePicker="true"/>
+                <ui:inputDate aura:id="certificationStart" label="Certification Start" 
+                              value="{!v.certificationStart}" updateOn="change" 
+                              format="MM/dd/yyyy" 
+                              displayDatePicker="true"/>
+                <ui:inputDate aura:id="certificationEnd" label="Certification End" 
+                              value="{!v.certificationEnd}" updateOn="change" 
+                              format="MM/dd/yyyy" 
+                              displayDatePicker="true"/>
+
+            
+
+            </aura:set>
+        </c:MultiColumnForm>
+
+        <div class="slds-grid slds-grid--align-center">
+            <!-- icon names can be found in https://lightningdesignsystem.com/icons/#utility -->
+            <lightning:button label="Search"
+                              iconName="utility:search"
+                              iconPosition="left"
+                              variant="brand"
+                              onclick="{!c.doSearch}"
+                              />
+            <lightning:button label="Clear"
+                              iconName="utility:close"
+                              iconPosition="left"
+                              variant="neutral"
+                              onclick="{!c.doClear}"
+                              />
+        </div>
+        
+    </div>
+</div>
+    
+</aura:component>
+
+({
+    doInit : function( component, event, helper ) {
+        // call server to retrieve options for each field
+    helper.getCampusCoachDistrictAccounts( component );
+
+    helper.getPicklistValues( component, "v.certificationTypeList", "Intern_Certification_Area__c", "Certification_Type__c" );
+    helper.getPicklistValues( component, "v.certificationStatusList", "Intern_Certification_Area__c", "Status__c" );
+    helper.getPicklistValues( component, "v.stateList", "Account", "State__c" );
+
+    // default radius
+    //component.set( "v.selectedRadius", 5 );
+    }
+
+    , doSearch : function( component, event, helper ) {
+    // collect parameters
+    var paramMap = new Object();
+    var fieldList = [ "selectedCampus", "selectedDistrict", "selectedCoach", "assignedStatus"
+              , "selectedCertificationStatus", "selectedCertificationType", "selectedState"
+              , "teachingStart", "teachingEnd", "certificationStart", "certificationEnd" ]; //, "selectedRadius"
+    for( var i = 0; i < fieldList.length; i++ ) {
+      var aField = fieldList[ i ];
+      paramMap[ aField ] = component.get( "v." + aField );
+    }
+
+    // call server and retrieve list of candidates
+    console.log( paramMap );
+    helper.doSearch( component, "v.candidateList", paramMap );
+    }
+
+    , doClear : function( component, event, helper ) {
+    // reset fields
+    var fieldList = [ "selectedCampus", "selectedDistrict", "selectedCoach", "assignedStatus"
+              , "selectedCertificationStatus", "selectedCertificationType", "selectedState"
+              , "teachingStart", "teachingEnd", "certificationStart", "certificationEnd" ]; //, "selectedRadius"
+    for( var i = 0; i < fieldList.length; i++ ) {
+      var aField = fieldList[ i ];
+      component.set( "v." + aField, "" );
+    }
+
+    // clear results
+        var event = $A.get( "e.c:CandidatesRetrieved" );
+        event.setParams( { "candidateList" : [] } );
+        event.fire();
+  }
+})
+
+
+({
+    getCampusCoachDistrictAccounts: function( component ) {
+    // call server method to get list of accounts
+        var gcAction = component.get( "c.getAccounts" );
+        gcAction.setCallback( this, function( a ) {
+            if( ! component.isValid() || a.getState() !== "SUCCESS" ) {
+              //var errorMsg = component. 
+                return;
+            }
+            var resultList = a.getReturnValue();
+
+      // split accounts into lists per type
+      var listMap = new Map();
+      listMap.set( "Campus", [] );
+      listMap.set( "Coach", [] );
+      listMap.set( "District", [] );
+      for( var i = 0; i < resultList.length; i++ ) {
+        // add each account to the list that correspond to the account type inside the map
+        var anAccount = resultList[ i ];
+        listMap.get( anAccount.Type ).push( anAccount );
+      }
+
+      // store each list from the map in the proper variable
+          component.set( "v.campusList", listMap.get( "Campus" ) );
+          component.set( "v.coachList", listMap.get( "Coach" )  );
+          component.set( "v.districtList", listMap.get( "District" )  );
+      });
+      $A.enqueueAction( gcAction );
+  }
+
+  , getPicklistValues: function( component, theList, theObject, theField ) {
+    // populate list dropdown
+        var gplAction = component.get( "c.getPicklistValues" );
+        gplAction.setParams( { 
+                "objectName": theObject
+                , "fieldName": theField } );
+        gplAction.setCallback( this, function( a ) {
+            if( ! component.isValid() || a.getState() !== "SUCCESS" ) {
+              //var errorMsg = component.
+                return;
+            }
+            var resultList = a.getReturnValue();
+          component.set( theList, resultList );
+      });
+      $A.enqueueAction( gplAction );
+  }
+
+  , doSearch: function( component, theList, paramMap ) {
+        var gcAction = component.get( "c.getCandidates" );
+    gcAction.setParams( { "paramMap" : paramMap } );
+        gcAction.setCallback( this, function( a ) {
+            if( ! component.isValid() || a.getState() !== "SUCCESS" ) {
+              //var errorMsg = component.
+                return;
+            }
+            var resultList = a.getReturnValue();
+
+      // issue event with the list of records so that the 
+      // other components can respond by displaying the data
+            var event = $A.get( "e.c:CandidatesRetrieved" );
+            event.setParams( { "candidateList" : resultList } );
+            event.fire();
+      });
+      $A.enqueueAction( gcAction );
+  }
+})
+
+
+
+
+
+
+
+
+----------------------------------------------------------------------
+----------------------------------------------------------------------
+----------------------------------------------------------------------
+----------------------------------------------------------------------
+
+
+
+
+<aura:component controller="SG_CoachAssignmentController" >
+
+  <aura:attribute name="errorMsg" type="String" />
+    <aura:attribute name="candidateList" type="Account[]" />
+
+    <aura:handler name="init" value="{!this}" action="{!c.doInit}" />
+
+    <aura:handler event="c:CandidatesRetrieved" action="{!c.handleCandidatesRetrieved}"/>
+
+<div class="slds">
+
+        <aura:if isTrue="{!v.errorMsg != null}">
+            <ui:message title="Error" severity="error" closable="true">
+                {!v.errorMsg}
+            </ui:message>
+        </aura:if>
+
+        <c:TableWithCheckboxes aura:id="cbxTable"
+                            columnHeaderList="Name,Campus,District,Type,Status,Start Date,End Date,Assigned,Map"
+                            columnNameList="Name,Campus,District,CertType,CertStatus,StartDate,EndDate,Assigned,Map_URL"
+                            rowList="{!v.candidateList}" 
+                            onSelectAll="{!c.selectedAll2}"
+                            onSelection="{!c.onCheckSelection}"><!-- ,City,State,Zip ,PersonMailingCity,PersonMailingState,PersonMailingPostalCode -->
+        </c:TableWithCheckboxes>
+
+</div>
+  
+</aura:component>
+
+({
+    doInit : function( component, event, helper ) {
+    
+  }
+
+    , handleCandidatesRetrieved : function( component, event, helper ) {
+    var candidateList = event.getParam( "candidateList" );
+    console.log( candidateList );
+    component.set( "v.candidateList", candidateList );
+            
+        // execute component's method
+        var cbxTable = component.find( "cbxTable" );
+        cbxTable.tableInit();
+  }
+    
+    , selectedAll2 : function(component, event, helper) {
+        // this will be onSelectAll in spite of how it is named on this side
+        console.log( event.getName() );
+        
+        // the reference to cbxTable, the local instance of the checkboxTable component
+        console.log( event.getSource() );
+        
+        var cbxTable = event.getSource();
+        // just to test how a parent can change the child component
+        cbxTable.set( "v.fieldsetHeaderText", 'SELECTED!' );
+    }
+    
+    , onCheckSelectAll : function(component, event, helper) {
+        // get selectAll
+        var theControl = component.find( "selectAll" );
+        var selectAll = theControl.get( "v.value" );
+        var checkboxList = component.find( 'selection' );
+        if( ! checkboxList ) {
+            return;
+        }
+        for( var i = 0; i < checkboxList.length; i++ ) {
+            checkboxList[ i ].set( "v.value", selectAll );
+        }
+    }
+    
+    , onCheckSelection : function(component, event, helper) {
+        console.log( 'onCheckSelection on the owner' );
+        var checkboxList = component.find( 'selection' );
+        var selectAll = true;
+        for( var i = 0; i < checkboxList.length; i++ ) {
+            var state = checkboxList[ i ].get( "v.value" );
+            if( state == false ) {
+                selectAll = false;
+            }
+        }
+        var theControl = component.find( "selectAll" );
+        theControl.set( "v.value", selectAll );
+    }
+})

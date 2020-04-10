@@ -1,0 +1,4 @@
+
+                    <apex:outputText styleClass="title" value="{!$Label.site.error}">
+                        <apex:param value="{!$Site.ErrorDescription}"/>
+                    </apex:outputText>

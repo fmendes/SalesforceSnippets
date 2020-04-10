@@ -1,0 +1,488 @@
+public with sharing class MergeContactController {
+    // internal class that enables users to choose between values from up to 3 different contact fields
+    public with sharing class SelectableContactValue {
+        public String ColumnName { get; set; }
+        public String InternalName { get; set; }
+        public List<SelectOption> Value { get; set; }
+        public String SelectedValue { get; set; }
+        public Boolean Disabled { get; set; }
+        public String DataType { get; set; }
+    }
+    // internal class that prepends a boolean field (Selected) to the Contact
+    public with sharing class SelectableContact {
+        public Boolean Selected { get; set; }
+        public Contact c { get; set; }
+        public Id Id { get{ return c.Id; } }
+        public String LastName { get{ return c.LastName ; } }
+        public String FirstName { get{ return c.FirstName ; } }
+        public String MiddleName { get{ return c.Middle_Name__c ; } }
+        public String Degree { get{ return c.Degree__c ; } }
+        public String Email { get{ return c.Email ; } }
+        public String HomePhone { get{ return c.HomePhone ; } }
+        public String Work_Phone { get{ return c.Work_Phone__c ; } }
+        public String MobilePhone { get{ return c.MobilePhone ; } }
+        public String Address_Line_1 { get{ return c.Address_Line_1__c ; } }
+        public String Address_Line_2 { get{ return c.Address_Line_2__c ; } }
+        public String City { get{ return c.City__c; } }
+        public String State { get{ return c.State__c ; } }
+        public String Zipcode { get{ return c.Zipcode__c; } }
+        public SelectableContact( Contact objC ) {
+            c = objC;
+            Selected = false;
+        }
+    }
+
+    private String[] strColumns;
+
+    // lists contacts after clicking Find Contacts
+    private List<Contact> Results { get; set; }
+
+    // map to look up owner id
+    private Map<Id,User> mapUsers { get; set; }
+
+    // master record to which the other contacts will be merged
+    public Contact MasterC { get; set; }
+
+    // list of Contact fields - to allow user to select one value from a list of values for each field
+    public List<SelectableContactValue> MergeFields { get; set; }
+    
+    // list to allow a checkbox for the user to select the contact
+    public List<SelectableContact> SearchResults { get; set; }
+
+    // map to look up Contact by Id - used when collecting the values selected by the user
+    // and when displaying the field value options
+    public Map<Id,Contact> mapSelectedC { get; set; }
+    public Integer MergeSize { 
+        get { 
+            return mapSelectedC.size();
+        }
+    }
+    public String Name1 { 
+        get { 
+            return mapSelectedC.values()[ 0 ].Name;
+        }
+    }
+    public String Name2 { 
+        get { 
+            return mapSelectedC.values()[ 1 ].Name;
+        }
+    }
+    public String Name3 { 
+        get { 
+            return MergeSize > 2 ? mapSelectedC.values()[ 2 ].Name : '';
+        }
+    }
+    
+    public String nameSearched { get; set; }
+    public Integer ResultsCount { get; set; }
+    public String MsgToUser { get; set; }
+    public Integer Step { get; set; }
+    public String StepHeader { 
+        get {
+            if( Step == 1 ) 
+                return 'Step 1. Select the records to merge';
+            if( Step == 2 ) 
+                return 'Step 2. Select the values to retain';
+            return 'Invalid Step';
+        }
+    }
+
+    // constructor
+    public MergeContactController() {
+        // place wizard in the first step
+        Step = 1;
+        MsgToUser = '';
+        ResultsCount = 0;
+        String strColumnList = 'LastName,FirstName,Middle_Name__c,Suffix__c,Title,Gender__c,Lead_Source_1__c,Lead_Source_Text__c,OwnerId,Locums_Candidate__c,Residency_End__c,Degree__c,Specialty__c,Specialty_2__c,Specialty_Other__c,Active_Military__c,Directorship_Experience__c,Deceased__c,Mail_Opt_Out__c,Address_Line_1__c,Address_Line_2__c,City__c,State__c,Zipcode__c,Country__c,OtherStreet,OtherCity,OtherState,OtherPostalCode,OtherCountry,DoNotCall,Phone,HomePhone,Work_Phone__c,MobilePhone,OtherPhone,Pager__c,HasOptedOutOfFax,Fax,HasOptedOutOfEmail,Email,Contacts_Email_No_2__c,Contacts_Email_No_3__c,US_Citizen__c,Birthdate,SSN__c,UPIN__c,NPI__c,Birthplace__c,Foreign_Languages__c,Children_Information__c,Hobbies__c,Spouse_Name__c,Spouse_Occupation__c,Spouse_Home_State__c,Geographic_Area_of_Interest__c,States_of_Interest__c,Drivers_License_Number__c,Drivers_License_State__c,Drivers_License_Expiration_Date__c,Owning_Region__c,Owning_Candidate_Status__c,Owning_Candidate_Stage__c,Risk_Category__c,Sent_To_Credentialing__c,EmTrac_Processed_Date__c,Previous_Owner__c,RecruitingID__c,PhysicianNumber__c,MeNumber__c,AMAOnly__c';
+        strColumns = strColumnList.split( ',' );
+        
+        // preload the owner look up map
+        mapUsers = new Map<Id,User>( [ SELECT Id, Name, IsActive FROM User ] );
+
+        // if there are parameters, use them to immediately display duplicate contacts
+        //&srch={!Contact.Name}
+        String strParam = ApexPages.CurrentPage().getParameters().get( 'srch' );
+        if( strParam != null && ! strParam.equals( '' ) ) {
+            nameSearched = strParam;
+            findContacts();
+        }
+    }
+
+    public PageReference findContacts() {
+        // search for contacts whose name contain the expression typed by the user
+        String strName = nameSearched + '%';
+
+        // let user prepend % if she wants
+        //if( nameSearched.length() < 6 )
+        //    strName = '%' + strName;
+
+
+        Results = [ SELECT Id, Name, LastName,FirstName,Middle_Name__c,Suffix__c,Title,Gender__c
+                    ,Lead_Source_1__c,Lead_Source_Text__c,OwnerId,Locums_Candidate__c
+                    ,Residency_End__c,Degree__c,Specialty__c,Specialty_2__c
+                    ,Specialty_Other__c,Active_Military__c,Directorship_Experience__c
+                    ,Deceased__c,Mail_Opt_Out__c,Address_Line_1__c,Address_Line_2__c,City__c
+                    ,State__c,Zipcode__c,Country__c,OtherStreet,OtherCity,OtherState
+                    ,OtherPostalCode,OtherCountry,DoNotCall,Phone,HomePhone,Work_Phone__c
+                    ,MobilePhone,OtherPhone,Pager__c,HasOptedOutOfFax,Fax,HasOptedOutOfEmail
+                    ,Email,Contacts_Email_No_2__c,Contacts_Email_No_3__c,US_Citizen__c
+                    ,Birthdate,SSN__c,UPIN__c,NPI__c,Birthplace__c,Foreign_Languages__c
+                    ,Children_Information__c,Hobbies__c,Spouse_Name__c,Spouse_Occupation__c
+                    ,Spouse_Home_State__c,Geographic_Area_of_Interest__c,States_of_Interest__c
+                    ,Drivers_License_Number__c,Drivers_License_State__c,Drivers_License_Expiration_Date__c
+                    ,Owning_Region__c,Owning_Candidate_Status__c,Owning_Candidate_Stage__c,Risk_Category__c
+                    ,Sent_To_Credentialing__c,EmTrac_Processed_Date__c,Previous_Owner__c,RecruitingID__c
+                    ,PhysicianNumber__c,MeNumber__c,AMAOnly__c
+                         FROM Contact 
+                         WHERE Name LIKE :strName
+                         ORDER BY City__c
+                         LIMIT 50 ];
+
+        // copy list of contacts to make them selectable
+        SearchResults = new List<SelectableContact> ();
+        for( Contact objC : Results ) {
+            SelectableContact objSC = new SelectableContact( objC );
+
+            // if there is only 2 contacts, select them automatically for convenience
+            if( Results.size() == 2 )
+                objSC.Selected = true;
+            SearchResults.add( objSC );
+        }
+
+        ResultsCount = SearchResults.size();
+
+        MsgToUser = '';
+        Step = 1;
+        return null;
+    }
+
+
+    public PageReference cancel() {
+        // return to Contacts tab
+        return new PageReference( '/003/o' );
+    }
+
+    public PageReference previous() {
+        Step --;
+        return null;
+    }
+
+    public PageReference next() {
+        try {
+            MsgToUser = '';
+
+            if( Step == 1 ) {
+                if( ResultsCount < 1 ) {
+                    MsgToUser = 'Please find at least 2 contacts.';
+                    return null;
+                }
+
+                // check whether the user selected at least 2 contacts
+                // collect the selected contacts
+                mapSelectedC = new Map<Id,Contact>();
+                for( SelectableContact objSC : SearchResults ) 
+                    if( objSC.Selected ) 
+                        mapSelectedC.put( objSC.C.Id, objSC.C );
+
+                if( mapSelectedC.size() < 2 ) {
+                    MsgToUser = 'Please select at least 2 contacts.';
+                    return null;
+                }
+
+                if( mapSelectedC.size() > 3 ) {
+                    MsgToUser = 'Please select less than 4 contacts.';
+                    return null;
+                }
+
+                // get Contact internal description
+                SObjectType objType = Schema.getGlobalDescribe().get( 'Contact' );
+                DescribeSObjectResult objDef = objType.getDescribe();
+
+                // get list of fields of Contact
+                Map<String, SObjectField> objFields = objDef.fields.getMap();
+
+                // collect the values to make available for selection
+                MergeFields = new List<SelectableContactValue> ();
+
+                // add Master Record option, pre-selected to the first record
+                SelectableContactValue objSCV = new SelectableContactValue();
+                objSCV.ColumnName = 'Master Record';
+                objSCV.Value = new List<SelectOption>();
+                for( SObject objRow : mapSelectedC.values() ) 
+                    objSCV.Value.add( new SelectOption( objRow.Id, '' ) );
+                objSCV.SelectedValue = mapSelectedC.values()[ 0 ].Id;
+                MergeFields.add( objSCV );
+
+                for( String strCol : strColumns ) {
+                    objSCV = new SelectableContactValue();
+
+                    // get external description for the Contact field 
+                    Schema.SObjectField objField = objFields.get( strCol );
+                    if( objField == null ) {
+                        MsgToUser += '|' + strCol + ' was not found.';
+                        continue;
+                    }
+                    Schema.DescribeFieldResult objFieldDescribed = objField.getDescribe();
+
+                    // set SCV object to display Contact field name and reset other fields
+                    objSCV.ColumnName = objFieldDescribed.getLabel();
+                    objSCV.InternalName = strCol;
+                    objSCV.Value = new List<SelectOption>();
+                    objSCV.SelectedValue = null;
+                    // determine whether the field is a checkbox
+                    objSCV.DataType = String.valueOf( objFieldDescribed.getType() );
+
+                    // populate SCV object with options for the current Contact field
+                    Boolean bDisable = true;
+                    String strFirstValue = '*FRIST TIME VALEU*';    // intentionally mispelled
+                    for( SObject objRow : mapSelectedC.values() ) {
+                        String strValue = '';
+
+                        // if field is a checkbox, use Yes/No
+                        if( objSCV.DataType.equals( 'BOOLEAN' ) ) {
+                            Boolean bValue = (Boolean) objRow.get( strCol );
+                            if( bValue )
+                                strValue = 'Yes';
+                            else
+                                strValue = 'No';
+                        }
+                        else
+                            // if field is text/picklist, get the value
+                            if( objRow.get( strCol ) != null ) {
+                                strValue = String.valueOf( objRow.get( strCol ) );
+                                if( strValue.length() > 80 )
+                                    strValue = strValue.substring( 0, 79 );
+                            }
+
+                        // convert owner id into the owner name
+                        Boolean bUserActive = false;
+                        if( strCol.equals( 'OwnerId' ) ) {
+                            bUserActive = mapUsers.get( strValue ).IsActive;
+                            strValue = mapUsers.get( strValue ).Name;
+                        }
+
+                        // add the value as an option associated with the Contact Id
+                        objSCV.Value.add( new SelectOption( objRow.Id, strValue ) );
+
+                        // store the first value to see later on if all of the values are equal
+                        if( strFirstValue.equals( '*FRIST TIME VALEU*' ) )
+                            strFirstValue = strValue; 
+
+                        // if value is different for any of the 3 contacts, enable radio button
+                        if( bDisable && ! strFirstValue.equals( strValue ) )
+                            bDisable = false;
+
+                        // pre-select the first non-null value
+                        if( strValue != '' )
+                            if( objSCV.SelectedValue == null )
+                                if( ! strCol.equals( 'OwnerId' ) )
+                                    objSCV.SelectedValue = objRow.Id;
+                                else
+                                    // if column is owner, only select if user is active
+                                    if( bUserActive ) 
+                                        objSCV.SelectedValue = objRow.Id;
+                    }
+
+                    // if all equal (or all null), disable/omit selection
+                    objSCV.Disabled = bDisable;
+
+                    // add field with value options to the list of fields to merge
+                    MergeFields.add( objSCV );
+                }
+            }
+
+            if( Step == 2 ) 
+                return doMerge();
+
+            // place wizard in the next step
+            Step ++;
+        }
+        catch( Exception e ) {
+            StandardEmail.ReportError( e, 'Could not retrieve and display values to be selected for merge.' );
+        }
+        return null;
+    }
+
+    public PageReference doMerge() {
+        try {
+            MsgToUser = '';
+
+            // create the master Contact
+            String strMasterId = MergeFields[ 0 ].SelectedValue;
+            masterC = new Contact( Id = strMasterId );
+
+            // copy selected values to the respective field on the master Contact
+            for( SelectableContactValue objSCV : MergeFields ) {
+                // skip Master Record
+                if( objSCV.ColumnName.equals( 'Master Record' ) )
+                    continue;
+                    
+                // skip nulls
+                //if( objSCV.InternalName == null )
+                //    MsgToUser += objSCV.ColumnName + ' is null.';
+                
+                // convert selected value to the Contact column value
+                String strValue = objSCV.SelectedValue;
+                if( strValue != null ) {
+                    SObject objC = mapSelectedC.get( strValue );
+                    strValue = String.valueOf( objC.get( objSCV.InternalName ) );
+                }
+
+                // convert values from Yes/No to true/false
+                if( objSCV.DataType.equals( 'BOOLEAN' ) )
+                    if( strValue.equals( 'Yes' ) || strValue.equals( 'true' ) )
+                        masterC.put( objSCV.InternalName, true );
+                    else
+                        masterC.put( objSCV.InternalName, false );
+                else
+                    // skip null values
+                    if( strValue != null ) {
+                        if( objSCV.DataType.equals( 'DOUBLE' ) ) 
+                            masterC.put( objSCV.InternalName, Double.valueOf( strValue ) );
+                        else 
+                            if( objSCV.DataType.equals( 'DATE' ) ) 
+                                masterC.put( objSCV.InternalName, Date.valueOf( strValue ) );
+                            else 
+                                if( objSCV.DataType.equals( 'DATETIME' ) ) 
+                                    masterC.put( objSCV.InternalName, DateTime.valueOf( strValue ) );
+                                else
+                                    masterC.put( objSCV.InternalName, strValue );
+                    }
+            }
+
+            // create the merge list with the other contacts to be copied and have their child transferred
+            List<Contact> lstMerge = new List<Contact>();
+            for( SelectOption objOption : MergeFields[ 0 ].Value ) {
+                String strId = objOption.getValue();
+                if( ! strId.equals( strMasterId ) )
+                    lstMerge.add( new Contact( Id = strId ) );
+            }
+
+            // execute the merge
+            merge masterC lstMerge;
+
+            // display the newly merged contact
+            return new PageReference( '/' + masterC.Id );
+            
+            // if successful, display new master record
+            //masterC = [ SELECT Id, Name, LastName,FirstName,Middle_Name__c,Suffix__c,Title,Gender__c,Lead_Source_1__c,Lead_Source_Text__c,OwnerId,Locums_Candidate__c,Residency_End__c,Degree__c,Specialty__c,Specialty_2__c,Specialty_Other__c,Active_Military__c,Directorship_Experience__c,Deceased__c,Mail_Opt_Out__c,Address_Line_1__c,City__c,State__c,Zipcode__c,Country__c,OtherStreet,OtherCity,OtherState,OtherPostalCode,OtherCountry,DoNotCall,Phone,HomePhone,Work_Phone__c,MobilePhone,OtherPhone,Pager__c,HasOptedOutOfFax,Fax,HasOptedOutOfEmail,Email,Contacts_Email_No_2__c,Contacts_Email_No_3__c,US_Citizen__c,Birthdate,SSN__c,UPIN__c,NPI__c,Birthplace__c,Foreign_Languages__c,Children_Information__c,Hobbies__c,Spouse_Name__c,Spouse_Occupation__c,Spouse_Home_State__c,Geographic_Area_of_Interest__c,States_of_Interest__c,Drivers_License_Number__c,Drivers_License_State__c,Drivers_License_Expiration_Date__c,Owning_Region__c,Owning_Candidate_Status__c,Owning_Candidate_Stage__c,Risk_Category__c,Sent_To_Credentialing__c,EmTrac_Processed_Date__c,Previous_Owner__c,RecruitingID__c,PhysicianNumber__c,MeNumber__c,AMAOnly__c
+            //                 FROM Contact 
+            //                 WHERE Id = :masterC.Id 
+            //                 LIMIT 1 ][ 0 ];
+        }
+        catch( Exception e ) {
+            StandardEmail.ReportError( e, 'Could not merge contacts.' );
+        }
+        return null;
+    }
+
+    public static TestMethod void TestEverything() {
+        // create 3 duplicate contacts with same name, but different other fields
+        Contact objC = TestHelper.CreateContact( 'Ray', 'Davault' );
+        objC.Email = 'davault@ray.com';
+        objC.Address_Line_1__c = 'PO BOX 12345';
+        objC.Locums_Candidate__c = false;
+        update objC;
+
+        Contact objC2 = TestHelper.CreateContact( 'Ray', 'Davault' );
+        objC2.Email = 'ray@davault.com';
+        objC2.Locums_Candidate__c = true;
+        update objC2;
+
+        Contact objC3 = TestHelper.CreateContact( 'Ray', 'Davault' );
+        objC3.Address_Line_1__c = '123 Nowhere Rd';
+        objC3.Lead_Source_1__c = 'Conference';
+        update objC3;
+
+        // contact to be excluded from merge
+        Contact objC4 = TestHelper.CreateContact( 'Ray', 'Davault III' );
+
+        // create note, credential and candidate records attached to 
+        // each of the duplicate contacts
+        List<Credential__c> lstCred = TestHelper.CreateCredentials( 2, objC2 );
+        Note objN = TestHelper.CreateNote( objC3 );
+        Facility__c objF = TestHelper.CreateFacility( 'Testing Merge' );
+        Candidate__c objCand = TestHelper.CreateCandidate( objC, objF );
+
+        // emulate user searching and not finding anything
+        MergeContactController objMCC = new MergeContactController();
+        objMCC.nameSearched = 'xxxxx';
+        objMCC.findContacts();
+
+        // test error when there is no selection
+        objMCC.next();
+        system.assertEquals( 'Please find at least 2 contacts.', objMCC.MsgToUser, 'No selection error test' );
+
+        // emulate user searching for Ray Davault duplicates
+        objMCC.nameSearched = 'Ray Davault';
+        objMCC.findContacts();
+
+        // test navigation with no duplicate selected
+        objMCC.next();
+        system.assertEquals( 'Please select at least 2 contacts.', objMCC.MsgToUser, 'No selection error test' );
+
+        // emulate user picking all 4 duplicates and getting an error
+        List<SelectableContact> lstSC = objMCC.SearchResults; 
+        for( SelectableContact objSC : lstSC ) 
+            objSC.Selected = true;
+        objMCC.next();
+        system.assertEquals( 'Please select less than 4 contacts.', objMCC.MsgToUser, 'No selection error test' );
+
+        // emulate user picking all duplicates whose last name is Davault only
+        lstSC = objMCC.SearchResults; 
+        for( SelectableContact objSC : lstSC ) 
+            objSC.Selected = objSC.LastName.equals( 'Davault' );
+        
+        // test StepHeader    
+        String strValue = objMCC.StepHeader;
+
+        // test navigation
+        objMCC.next();
+        objMCC.previous();
+        objMCC.next();
+
+        // test Name1, Name2, Name3
+        strValue = objMCC.StepHeader + objMCC.Name1+ objMCC.Name2+ objMCC.Name3;
+
+        // emulate user picking some field values to merge
+        List<SelectableContactValue> lstSCV = objMCC.MergeFields;
+        lstSCV[ 0 ].SelectedValue = objC.Id;    // master record for merge is the 1st one
+        for( SelectableContactValue objSCV : lstSCV ) {
+            if( objSCV.ColumnName.equals( 'Address Line 1' ) )
+                objSCV.SelectedValue = objC3.Id;    // select Address 123 Nowhere Rd
+            else
+            if( objSCV.ColumnName.equals( 'Email' ) )
+                objSCV.SelectedValue = objC2.Id;    // select Email ray@davault.com
+            else
+            if( objSCV.ColumnName.equals( 'Locums?' ) )
+                objSCV.SelectedValue = objC2.Id;    // select Locums checked
+            //else
+            //    objSCV.SelectedValue = objC.Id;    // default selection to first contact
+        }
+        PageReference objPR = objMCC.doMerge();
+
+        // verify merge page redirection
+        String strURL = objPR.getUrl();
+        system.assertEquals( true, strURL.contains( objC.Id ), 'Merge URL Return Test ' + strURL );
+
+        objC = [ SELECT Id, Name, Email, Locums_Candidate__c, Address_Line_1__c, Lead_Source_1__c 
+                    FROM Contact 
+                    WHERE Id = :objC.Id 
+                    LIMIT 1 ];
+        system.assertEquals( 'ray@davault.com', objC.Email, 'Merge Email Test' );
+        system.assertEquals( '123 Nowhere Rd', objC.Address_Line_1__c, 'Merge Address Test' );
+        system.assertEquals( 'Conference', objC.Lead_Source_1__c , 'Merge Lead Source Test' );
+        system.assertEquals( true, objC.Locums_Candidate__c, 'Merge Locums Test' );
+
+        // test whether note, candidate and credential has been transferred to master contact
+        Note objNTest = [ SELECT Id, ParentId FROM Note WHERE Id = :objN.Id LIMIT 1 ];
+        system.assertEquals( objC.Id, objNTest.ParentId, 'Note merge test' );
+        Credential__c objCredTest = [ SELECT Id, Contact__c FROM Credential__c WHERE Id = :lstCred[ 0 ].Id LIMIT 1 ];
+        system.assertEquals( objC.Id, objCredTest.Contact__c, 'Credential merge test' );
+        Candidate__c objCandTest = [ SELECT Id, Contact__c FROM Candidate__c WHERE Id = :objCand.Id LIMIT 1 ];
+        system.assertEquals( objC.Id, objCandTest.Contact__c, 'Candidate merge test' );
+
+        // test cancel
+        objMCC.cancel();
+    }
+}

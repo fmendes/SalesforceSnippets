@@ -1,0 +1,29 @@
+Messaging.SingleEmailMessage[] msgList = new Messaging.SingleEmailMessage[] {};
+List<Contact> cList = new List<Contact>();
+Contact c1 = new Contact(
+FirstName = 'First', LastName = 'TEST', Email = 'fmendes@hotmail.com' );
+Contact c2 = new Contact(
+        FirstName = 'Second', LastName = 'TEST', Email = 'fmendes@email.com' );
+cList.add( c1 ); cList.add( c2 );
+insert cList;
+    Messaging.SingleEmailMessage aSingleMsg = new Messaging.SingleEmailMessage();
+    aSingleMsg.setSaveAsActivity( true );
+    aSingleMsg.setTemplateID( '00X0x000000MJV2' );
+    aSingleMsg.setOrgWideEmailAddressID( '0D26A000000Cd7g' );
+    aSingleMsg.setTargetObjectID( c1.ID );
+    aSingleMsg.setTreatTargetObjectAsRecipient( true );
+    msgList.add( aSingleMsg );
+Messaging.SingleEmailMessage aSingleMsg2 = new Messaging.SingleEmailMessage();
+aSingleMsg2.setSaveAsActivity( true );
+aSingleMsg2.setTemplateID( '00X0x000000MJV2' );
+aSingleMsg2.setOrgWideEmailAddressID( '0D26A000000Cd7g' );
+aSingleMsg2.setTargetObjectID( c2.ID );
+aSingleMsg2.setTreatTargetObjectAsRecipient( true );
+msgList.add( aSingleMsg2 );
+
+c2.Email = 'fmendes@outlook.com';
+update c2;
+
+system.debug( 'msgList= ' + msgList );
+Messaging.SendEmailResult[] resultList = Messaging.sendEmail( msgList, false );
+system.debug( resultList );

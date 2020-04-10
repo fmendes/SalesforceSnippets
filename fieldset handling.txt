@@ -1,0 +1,208 @@
+
+
+	public static List<Schema.FieldSetMember> CompletionFields {
+		get {
+			if( CompletionFields == null ) {
+				CompletionFields = SObjectType.Account_Type__c.FieldSets.Completion_Fields.getFields();
+			}
+			return CompletionFields;
+		}
+		set;
+	}
+
+
+
+	...
+
+
+
+	public static String AccountTypeFields { 
+		get {
+			if( AccountTypeFields == null ) {
+				AccountTypeFields = '';
+				Set<String> fieldsAlreadyAdded = new Set<String>();
+				for( Schema.FieldSetMember aField : CompletionFields ) {
+					AccountTypeFields = AccountTypeFields + ', ' + aField.fieldPath;
+					fieldsAlreadyAdded.add( aField.fieldPath );
+				}
+				for( Schema.FieldSetMember aField : DrillerFields ) {
+					if( fieldsAlreadyAdded.contains( aField.fieldPath ) ) {
+						continue;
+					}
+					fieldsAlreadyAdded.add( aField.fieldPath );
+					AccountTypeFields = AccountTypeFields + ', ' + aField.fieldPath;
+				}
+				for( Schema.FieldSetMember aField : OperatorFields ) {
+					if( fieldsAlreadyAdded.contains( aField.fieldPath ) ) {
+						continue;
+					}
+					fieldsAlreadyAdded.add( aField.fieldPath );
+					AccountTypeFields = AccountTypeFields + ', ' + aField.fieldPath;
+				}
+				for( Schema.FieldSetMember aField : ReporterFields ) {
+					if( fieldsAlreadyAdded.contains( aField.fieldPath ) ) {
+						continue;
+					}
+					fieldsAlreadyAdded.add( aField.fieldPath );
+					AccountTypeFields = AccountTypeFields + ', ' + aField.fieldPath;
+				}
+				AccountTypeFields = AccountTypeFields.substring( 1 );
+			}
+			return AccountTypeFields;
+		}
+		set;
+	}
+
+
+
+	...
+
+
+
+	public static List<Schema.FieldSetMember> QuickCreateFields {
+		get {
+			if( QuickCreateFields == null ) {
+				QuickCreateFields = SObjectType.Account.FieldSets.QuickCreateFields.getFields();
+			}
+			return QuickCreateFields;
+		}
+		set;
+	}
+	public static String QuickCreateFieldList { 
+		get {
+			if( QuickCreateFieldList == null ) {
+				QuickCreateFieldList = getListOfFields( QuickCreateFields );
+			}
+			return QuickCreateFieldList;
+		}
+		set;
+	}
+
+
+	...
+
+
+	public static String getListOfFields( List<Schema.FieldSetMember> fieldSetList ) {
+		String fieldList = '';
+		for( Schema.FieldSetMember aField : fieldSetList ) {
+			fieldList = fieldList + ', ' + aField.fieldPath;
+		}
+		return fieldList.substring( 1 );
+	}
+
+
+
+	...
+
+
+	
+	public void retrieveAccountInfo( String acctID ) {
+		List<Account> acctList;
+		String acctSOQL = 'SELECT ID, Comp_Type__c, ' + QuickCreateFieldList 
+							+' FROM Account '
+							+' WHERE ';
+		if( acctID != null && acctID != '' ) {
+			acctSOQL = acctSOQL + 'ID = \'' + acctID + '\'';
+
+		} else {
+			String keyword = '%' + accountSearch + '%';
+			if( accountSearch.contains( '*' ) ) {
+				keyword = accountSearch.replace( '*', '%' );
+			}
+			acctSOQL = acctSOQL + 'Name LIKE \'' + keyword + '\'';
+
+		}
+		acctList = Database.query( acctSOQL );
+		if( acctList.size() <= 0 ) {
+			return;
+		}
+
+		theAccount = acctList[ 0 ];
+
+		// NOTE:  common fields between types:  Last_Active__c Add_Date__c Partial_Dir_Update__c Day_rate__c Dir_Update__c Division__c Division_Seq__c
+		// Work_Area__c
+		List<Account_Type__c> accountTypeList;
+		if( theAccount.ID != null ) {
+			String acctIDParam = '\'' + theAccount.ID + '\'';
+			String acctTypeSOQL = String.format( 
+									'SELECT ID, {0}, RecordTypeID, RecordType.Name, Account__c '
+									+' FROM Account_Type__c '
+									+' WHERE Account__c = {1} ', new String[] { AccountTypeFields, acctIDParam } );
+system.debug( acctTypeSOQL );
+			accountTypeList = Database.query( acctTypeSOQL );
+		}
+
+
+	...
+
+
+	public static Map<String, String> fieldConversionMap = new Map<String, String> {
+		'Annual_Diesel_Volume__c' => 'Volume_Annual__c'
+		, 'Annual_Gasoline_Volume__c' => 'Volume_Annual__c'
+		, 'Diesel_Rebate__c' => 'Rebate__c' 
+		, 'Gas_Rebate__c' => 'Rebate__c' 
+		, 'Diesel_Rebate_Years__c' => 'Rebate_Years__c'
+		, 'Gas_Rebate_Years__c' => 'Rebate_Years__c'
+		, 'Facility_Allowance_Diesel__c' => 'Facility_Allowance__c'
+		, 'Facility_Allowance_Gas__c' => 'Facility_Allowance__c'
+		, 'BIP_Image_Funds_Dollars_per_Gallon__c' => 'BIP_Image_Fund__c'
+		, 'BIP_Upfront_Dollars_per_Gallon__c' => 'BIP_Upfront_Fund__c'
+		, 'Years_Remaining_on_Unam__c' => 'Unams_Years_Remaining__c' 
+		, 'New_Self_Am__c' => 'Selfam__c' 
+		, 'New_Self_AM_Term__c' => 'Selfam_Years__c' 
+		, 'Var_Rebate_Gas_Year_1__c' => 'Variable_Rebate_Yr_1__c'
+		, 'Var_Rebate_Gas_Year_2__c' => 'Variable_Rebate_Yr_2__c'
+		, 'Var_Rebate_Gas_Year_3__c' => 'Variable_Rebate_Yr_3__c'
+		, 'Var_Rebate_Gas_Year_4__c' => 'Variable_Rebate_Yr_4__c'
+		, 'Var_Rebate_Gas_Year_5__c' => 'Variable_Rebate_Yr_5__c'
+		, 'Var_Rebate_Gas_Year_6__c' => 'Variable_Rebate_Yr_6__c'
+		, 'Var_Rebate_Gas_Year_7__c' => 'Variable_Rebate_Yr_7__c'
+		, 'Var_Rebate_Gas_Year_8__c' => 'Variable_Rebate_Yr_8__c'
+		, 'Var_Rebate_Gas_Year_9__c' => 'Variable_Rebate_Yr_9__c'
+		, 'Var_Rebate_Gas_Year_10__c' => 'Variable_Rebate_Yr_10__c'
+	};
+
+	public static void copyFields( SObject target, SObject source, List<Schema.FieldSetMember> fieldList ) {		
+		for( Schema.FieldSetMember aField : fieldList ) {
+			// copy each field in the field set but check first whether it is converted in the map
+			String targetField = fieldConversionMap.get( aField.getFieldPath() );
+			if( targetField == null ) {
+				targetField = aField.getFieldPath();
+			}
+			target.put( targetField, source.get( aField.getFieldPath() ) );
+		}
+	}
+
+
+	
+
+	public static void copyFields( SObject target, SObject source
+			, List<Schema.FieldSetMember> targetFieldList
+			, List<Schema.FieldSetMember> sourceFieldList ) {
+		for( Integer i = 0; i < sourceFieldList.size(); i++ ) {
+			Schema.FieldSetMember sourceField = sourceFieldList[ i ];
+			Schema.FieldSetMember targetField = targetFieldList[ i ];
+			// copy each field in the field set but check first whether it is converted in the map
+			target.put( targetField.getFieldPath(), source.get( sourceField.getFieldPath() ) );
+		}
+	}
+
+
+
+
+<apex:pageBlockTable value="{!quoteLineItems}" var="qli" >
+    <!-- list of fields to make editable -->
+    <apex:variable var="editableFieldList" value="Quantity,Pre_Discount_Price__c" />
+
+    <apex:repeat value="{!$ObjectType.QuoteLineItem.FieldSets.Sales_Forecast_Page_Detail_Fields}" var="f" >
+        <apex:column value="{!qli[ f ]}"
+                     rendered="{! FIND( f, editableFieldList ) <= 0 }" />
+
+        <apex:column rendered="{! FIND( f, editableFieldList ) > 0 }" >
+            <apex:facet name="header">{!f.label}
+            </apex:facet>
+            <apex:inputField value="{!qli[ f ]}" />
+        </apex:column>
+    </apex:repeat>
+
+</apex:pageBlockTable>

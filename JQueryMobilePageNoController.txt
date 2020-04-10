@@ -1,0 +1,339 @@
+<apex:page docType="html-5.0"
+           showHeader="false" sidebar="false"
+           standardController="Account">          
+    <apex:stylesheet value="{!URLFOR($Resource.MobileSample_Resources_jQueryMobile, 'jquery.mobile-1.3.0.min.css')}"/>
+    <apex:includeScript value="{!URLFOR($Resource.MobileSample_Resources_jQueryMobile, 'jquery-1.9.1.min.js')}"/>
+    <apex:includeScript value="{!URLFOR($Resource.MobileSample_Resources_jQueryMobile, 'jquery.mobile-1.3.0.min.js')}"/>
+    <apex:includeScript value="{!URLFOR($Resource.MobileSample_Resources_jQueryMobile, 'cordova.force.js')}"/>
+    <apex:includeScript value="{!URLFOR($Resource.MobileSample_Resources_jQueryMobile, 'backbone/underscore-1.4.4.min.js')}"/>
+    <apex:includeScript value="{!URLFOR($Resource.MobileSample_Resources_jQueryMobile, 'force.entity.js')}"/>
+    <apex:includeScript value="{!URLFOR($Resource.MobileSample_Resources_jQueryMobile, 'SObjectData.js')}"/>
+
+    <head>
+        <title>Accounts</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+        <c:RemoteTK />
+        
+        <script type="text/javascript">
+            var $j = jQuery.noConflict();
+            var client = new remotetk.Client();
+            Force.init( null, null, client, null );
+
+            var Accounts = new SObjectData();
+            Accounts.errorHandler = showError;
+            var Units = new SObjectData();
+            Units.errorHandler = showError;
+            var CallReportUnits = new SObjectData();
+            CallReportUnits.errorHandler = showError;
+            var SearchedUnits = new SObjectData();
+            SearchedUnits.errorHandler = showError;
+
+            var accountID;
+            var callReportID;
+
+            $j( document ).ready( function() {
+                accountID = getURLParameter( 'ID' );
+                callReportID = getURLParameter( 'callReportID' );
+                setButtonClickHandlers();
+                showUnitsForAccount();
+                showAccountName();
+            } );
+
+            function getURLParameter( sParam ) {
+                var sPageURL = window.location.search.substring( 1 );
+                var sURLVariables = sPageURL.split( '&' );
+                for( var i = 0; i < sURLVariables.length; i++ ) {
+                    var sParameterName = sURLVariables[ i ].split( '=' );
+                    if( sParameterName[ 0 ].toUpperCase() === sParam.toUpperCase() ) {
+                        return sParameterName[ 1 ];
+                    }
+                }
+            }
+
+            function setButtonClickHandlers() {
+                $j( '#searchUnitsByName' ).click( function( e ) {
+                    searchUnitsByName( e );
+                } );
+                $j( '#addSelectedUnitsToMainList' ).click( function( e ) {
+                    addSelectedUnitsToMainList( e );
+                } );
+                $j( 'saveCallReport' ).click( function( e ) {
+                    saveCallReport( e );
+                } );
+                /*
+                $j( '#addUnit' ).click( function( e ) {
+                    e.preventDefault();
+                    $j.mobile.showPageLoadingMsg();
+                    // popup add unit dialog
+                    $j('#name').val('');
+                    $j('#region').val('');
+                    $j('#area').val('');
+                    $j('#error').html('');
+                    $j('#AccountId').val('');
+                    $j.mobile.changePage('#detailpage', {changeHash: true});
+                    $j.mobile.hidePageLoadingMsg();
+                } );
+
+                $j('#save').click(function(e) {
+                   addUpdateAccount(e);
+                });
+
+                $j('#delete').click(function(e) {
+                   deleteAccount(e);
+                });
+                */
+            }
+
+            function showAccountName() {
+                Accounts.fetch( 'soql', "SELECT ID, Name FROM Account WHERE ID = '" +accountID+ "'"
+                    , function() {
+                        showAccountInfo( Accounts.data()[ 0 ] );
+                    } );
+            }
+            function showAccountInfo( accountRecord ) {
+                $j( '#accountName' ).html( 'Account: ' +accountRecord.Name );
+            }
+
+            function showUnitsForAccount() {
+                Units.fetch( 'soql', "SELECT ID, Name FROM Unit__c WHERE Refinery__c = '" +accountID+ "' LIMIT 100"
+                    , function() {
+                        if( ! callReportID ) {
+                            showUnitCheckboxes();
+                            return;
+                        }
+
+                        // fetch from Call_Report_Unit__c to get which units were selected for this call report
+                        CallReportUnits.fetch( 'soql', "SELECT ID, Unit__c, Unit__r.Name FROM Call_Report_Unit__c WHERE Call_Report__c = '"
+                                        +callReportID+ "' LIMIT 100"
+                            , function() {
+                                showUnitCheckboxes();
+                            } );
+                    } );
+            }
+            function showUnitCheckboxes() {
+                // create checkboxes for each unit
+                $j( '#uList' ).empty();
+                $j.each( Units.data()
+                    , function() {
+                        createUnitCheckbox( '#uList', 'cbx-', this.Id, this.Name, false );
+                     } );
+
+                if( callReportID ) {
+                    // check the checkboxes for units in Call_Report_Unit__c
+                    $j.each( CallReportUnits.data()
+                        , function() {
+                            // check whether unit already has a checkbox
+                            if ( $j( "#cbx-" +this.Unit__c ).length ) {
+                                // check it
+                                $j( "#cbx-" +this.Unit__c ).prop( 'checked', true );
+
+                            } else {
+                                // if unit doesn't have a checkbox, create it checked
+                                createUnitCheckbox( '#uList', 'cbx-', this.Unit__c, this.Unit__r.Name, true );
+                            }
+                         } );
+                }
+
+                $j.mobile.hidePageLoadingMsg();
+                $j( '#uList' ).listview( 'refresh' );
+            }
+            function createUnitCheckbox( targetUL, prefix = "cbx-", unitID, unitName, checked ) {
+                var newLi = $j( '<li></li>' );
+
+                var newLink = $j( '<label style="width: 100%; display: inline-block;" ><input type="checkbox" id="'
+                            +prefix + unitID+ '" ' +( checked ? 'checked': '' )+ ' />' +unitName+ '</label>' );
+
+                newLi.append( newLink );
+                newLi.appendTo( targetUL );
+            }
+
+            function searchUnitsByName( e ) {
+                // search units containing name
+                var unitName = $j( '#unitNameInput' ).val();
+                SearchedUnits.fetch( 'soql', "SELECT ID, Name FROM Unit__c WHERE Name LIKE '%" +unitName+ "%' LIMIT 100"
+                    , function() {
+                        showSearchedUnits();
+                    } );
+            }
+            function showSearchedUnits( e ) {
+                // create checkboxes for each unit in the search results
+                $j( '#searchedUnitList' ).empty();
+                $j.each( SearchedUnits.data()
+                    , function() {
+                        createUnitCheckbox( '#searchedUnitList', 'cbx-search-', this.Id, this.Name, false );
+                     } );
+                $j( '#searchedUnitList' ).listview( 'refresh' );
+            }
+            function addSelectedUnitsToMainList( e ) {
+                // assign the checked checkboxes to the main unit list
+                var selectedUnits = [];
+                $j.each( SearchedUnits.data()
+                    , function() {
+                        // skip unselected units
+                        if( ! $j( "#cbx-search-" +this.Id ).prop( 'checked' ) ) {
+                            return;
+                        }
+
+                        // check whether selected unit is already in the list
+                        if( $j( "#cbx-" +this.Id ).length ) {
+                            // if it is, then check it
+                            $j( "#cbx-" +this.Id ).prop( 'checked', true );
+
+                        } else {
+                            // if unit doesn't have a checkbox, create it checked
+                            createUnitCheckbox( '#uList', 'cbx-', this.Id, this.Name, true );
+                        }
+                    } );
+
+                $j( '#uList' ).listview( 'refresh' );
+            }
+
+            function saveCallReport( e ) {
+                // delete existing call report units
+                if( callReportID ) {
+                    var listOfCRUnits = [];
+                    $j.each( CallReportUnits.data()
+                        , function() {
+                            // collect ids
+                            listOfCRUnits.push( this.Id );
+                        } );
+
+                    // delete the Call Report Units with these IDs
+                    CallReportUnits.delSet( 'Call_Report_Unit__c', listOfCRUnits
+                        , function() {
+                            // TODO:  proceed to save the selected units
+                        }, showError );
+                }
+
+                // TODO:  proceed to save the selected units
+                // TODO:  check which units were selected
+                //$j( '#uList' )
+            }
+
+            function showError( e ) {
+                console.log( e );
+                $j( '#error' ).html( e[ 0 ].message );
+            }
+
+            /*
+            function addUpdateAccount(e){
+                e.preventDefault();
+                var aId = $j('#AccountId').val();
+                var record = Accounts.findRecordById(aId);
+                if(record == null) { //new record
+                    record = Accounts.create();
+                }
+                record.Name = $j('#name').val();
+                record.Region__c = $j('#region').val();
+                record.Area__c = $j('#area').val();
+                Accounts.sync(record,successCallback);
+            }
+            function deleteAccount(e){
+                e.preventDefault();
+                Accounts.remove(Accounts.findIndexById($j('#AccountId').val()),successCallback);
+            }
+
+            function successCallback(r){
+                getAllAccounts();
+                $j.mobile.changePage('#listpage', {changeHash: true});
+            }
+            */
+        </script>    
+    </head>
+
+    <body>
+
+        <!-- page 1 -->
+
+        <div id="unitPage" data-role="page" data-theme="b" data-title="Call Report - Units">                
+            <div data-role="header" data-position="fixed">
+                <h2>Call Report - Units</h2>
+                <a href='#' id="saveCallReport" class='ui-btn-left' data-theme="b" data-icon='check'>Save</a>
+                <a href='#' id="next" class='ui-btn-right' data-role='button' data-theme="b" data-icon='arrow-r'>Next</a>
+            </div>
+
+            <div data-role="content" data-theme="c" class="ui-corner-bottom ui-content ui-body-c" role="main" >
+                <h2 id="accountName" class="ui-title" role="heading"></h2>
+            </div>
+
+            <div id="UnitList" data-role="content" >
+                <ul id="uList" data-inset="true" data-role="listview" 
+                    data-theme="c" data-dividertheme="b">
+                </ul>
+            </div>
+
+            <div data-role="footer"> 
+                <a href='#addUnitPopup' id="addUnit" class='ui-btn-right' data-role='button' data-icon='add' data-theme="b"
+                        data-transition="flip" >Add Unit</a>
+            </div>
+        </div>
+
+        <!-- add unit dialog for page 1 -->
+
+        <div id="addUnitPopup" data-role="page"  data-theme="b" data-title="Call Report - Add Units">
+
+            <div data-role="header" data-theme="b" class="ui-corner-top ui-header ui-bar-a" role="banner">
+                <h1 class="ui-title">Add Unit</h1>
+            </div>
+
+            <div data-role="content" data-theme="c" class="ui-corner-bottom ui-content ui-body-c" role="main">
+                    
+                <div data-role="fieldcontain">
+                    <label for="unitNameInput">Unit Name:</label>
+                    <input name="unitNameInput" id="unitNameInput" type="search" />
+                </div>
+                    
+                
+                <a id="searchUnitsByName" href='#' class='ui-btn-right' data-role='button' data-icon='search' 
+                    data-theme="b" data-inline="true" data-mini="true" >Search</a>
+                
+                <div data-role="content" class="ui-controlgroup-controls" >
+                    <ul id="searchedUnitList" data-inset="true" data-role="listview" 
+                        data-theme="c" data-dividertheme="b" style="height: 195px; overflow-y: scroll;">
+                    </ul>
+                </div>
+                
+                <a href='#' id="addSelectedUnitsToMainList" data-rel="back" class='ui-btn-right' data-role='button' data-theme="b"
+                        data-transition="flip" data-inline="true" data-icon="check" >Select</a>
+                <a href='#' data-rel="back" class='ui-btn-right' data-role='button' data-theme="c"
+                        data-transition="flip" data-inline="true" data-icon="delete" >Cancel</a>
+                <!--
+                <a href="#" data-role="button" data-transition="flip" data-inline="true" data-rel="back" data-theme="c" data-corners="true" 
+                   data-shadow="true" data-iconshadow="true" data-wrapperels="span" class="ui-btn ui-shadow ui-btn-corner-all ui-btn-inline ui-btn-up-c">
+                    <span class="ui-btn-inner ui-btn-corner-all"><span class="ui-btn-text">Cancel</span></span></a>
+                <a id="addSelectedUnitsToMainList" href="#" data-role="button" data-transition="flip" data-inline="true" data-rel="back" data-theme="b" 
+                    data-corners="true" data-shadow="true" data-iconshadow="true" data-wrapperels="span" 
+                    class="ui-btn ui-shadow ui-btn-corner-all ui-btn-inline ui-btn-up-b"><span class="ui-btn-inner ui-btn-corner-all">
+                    <span class="ui-btn-text">Save</span></span></a>
+                    -->
+            </div>
+        </div>
+
+        <!-- page 2 -->
+
+        <div id="detailpage" data-role="page" data-theme="b">
+            <div data-role="header" data-position="fixed">
+                <a href='#unitPage' id="back2AccountList" class='ui-btn-left' data-icon='arrow-l' data-direction="reverse" data-transition="flip">Back</a>
+                <h1>Account Details</h1>
+            </div>
+            <div data-role="content">
+                <div data-role="fieldcontain">
+                    <label for="name">Name:</label>
+                    <input name="name" id="name" />
+                </div>
+                <div data-role="fieldcontain">
+                    <label for="region">Region:</label>
+                    <input name="region" id="region" />
+                </div>
+                <div data-role="fieldcontain">
+                    <label for="area">Area:</label>
+                    <input name="area" id="area"/>
+                </div>
+                <h2 style="color:red" id="error"></h2><br/>
+                <input type="hidden" id="AccountId" />
+                <button id="save" data-role="button" data-icon="check" data-inline="true" data-theme="b" class="save">Save</button>
+                <button id="delete" data-role="button" data-icon="delete" data-inline="true" class="destroy">Delete</button>
+            </div>    
+        </div>  
+    </body>    
+</apex:page>

@@ -1,0 +1,131 @@
+<apex:page controller="VFC_ContactMerge" doctype="html-5.0" >
+	<script type="text/javascript">
+	function post( path, params, method ) {
+		method = method || "post"; // Set method to post by default if not specified.
+
+		// The rest of this code assumes you are not using a library.
+		// It can be made less wordy if you use one.
+		var form = document.createElement("form");
+		form.setAttribute("method", method);
+		form.setAttribute("action", path);
+
+		for(var key in params) {
+			if(params.hasOwnProperty(key)) {
+				var hiddenField = document.createElement("input");
+				hiddenField.setAttribute("type", "hidden");
+				hiddenField.setAttribute("name", key);
+				hiddenField.setAttribute("value", params[key]);
+
+				form.appendChild(hiddenField);
+			 }
+		}
+
+		document.body.appendChild(form);
+		form.submit();
+	}
+	function getHiddenField( key, param ) {
+		var hiddenField = document.createElement( "input" );
+		hiddenField.setAttribute( "type", "hidden" );
+		hiddenField.setAttribute( "name", key );
+		hiddenField.setAttribute( "value", param );
+		return hiddenField;
+	}
+	</script>
+
+	<apex:form >
+
+		<apex:pagemessages />
+		<input type="hidden" id="_CONFIRMATIONTOKEN" name="_CONFIRMATIONTOKEN" />
+
+		<apex:pageblock id="pbMerge" title="Contact Merge">
+			<apex:pageblockbuttons >
+				<apex:commandbutton value="Merge" action="{!submit}" />
+				<apex:commandbutton value="Cancel" action="{!submit}" />
+			</apex:pageblockbuttons>
+
+			<apex:pageblocksection >
+				<apex:pageblocksectionitem >
+					<apex:outputlabel for="contact1" value="First Contact" />
+					<apex:inputfield id="contact1" value="{!c1.ContactID}" />
+				</apex:pageblocksectionitem>
+
+				<apex:pageblocksectionitem >
+					<apex:outputlabel for="contact2" value="Second Contact" />
+					<apex:inputfield id="contact2" value="{!c2.ContactID}" />
+				</apex:pageblocksectionitem>
+			</apex:pageblocksection>
+			<!--
+			<apex:outputtext value="{! $Api.Session_ID }" />
+			<apex:commandlink value="Merge" action="{! URLFOR($Action.Contact.Merge) }" />
+			-->
+		</apex:pageblock>
+	</apex:form>
+
+	<script type="text/javascript">
+	if( window.attachEvent ) {
+		window.attachEvent( 'onload', redirectToMerge() );
+	} else {
+		if( window.onload ) {
+			var curronload = window.onload;
+			var newonload = function(evt) {
+	            curronload(evt);
+		        redirectToMerge(evt);
+			};
+			window.onload = newonload;
+		} else {
+			window.onload = redirectToMerge;
+		}
+	}
+
+	function redirectToMerge() {
+		var paramC1 = "{!$CurrentPage.parameters.cid2}";
+		if( paramC1 != null && paramC1 != "" ) {
+			var token = window.PreferenceBits.prototype.csrfToken;
+			alert( token );
+
+			var form = document.createElement( "form" );
+			form.setAttribute( "method", "POST" );
+			form.setAttribute( "action", "/merge/conmergewizard.jsp" );
+
+			var hiddenField = getHiddenField( "_CONFIRMATIONTOKEN", token );
+			form.appendChild( hiddenField );
+			hiddenField = getHiddenField( "cid", '{!$CurrentPage.parameters.cid1}' );
+			form.appendChild( hiddenField );
+			hiddenField = getHiddenField( "cid", '{!$CurrentPage.parameters.cid2}' );
+			form.appendChild( hiddenField );
+			hiddenField = getHiddenField( "buttonPressed", '0' );
+			form.appendChild( hiddenField );
+			hiddenField = getHiddenField( "currentStage", '0' );
+			form.appendChild( hiddenField );
+			hiddenField = getHiddenField( "id", '001630000082FSj' );
+			form.appendChild( hiddenField );
+			hiddenField = getHiddenField( "retURL", '/001630000082FSj' );
+			form.appendChild( hiddenField );
+			hiddenField = getHiddenField( "visited_0", '1' );
+			form.appendChild( hiddenField );
+			hiddenField = getHiddenField( "goNext", 'Next' );
+			form.appendChild( hiddenField );
+			hiddenField = getHiddenField( "srch", '' );
+			form.appendChild( hiddenField );
+
+			document.body.appendChild( form );
+			form.submit();
+
+			/*post( "/merge/conmergewizard.jsp"
+				, {
+					_CONFIRMATIONTOKEN: token
+					, cid: [ '{!$CurrentPage.parameters.cid1}', '{!$CurrentPage.parameters.cid2}' ]
+					, buttonPressed: '0'
+					, currentStage: '0'
+					, id: '/001630000082FSj'
+					, retURL: '/'
+					, visited_0: '1'
+					, goNext: 'Next'
+					, srch: ''
+				} );
+				*/
+				//'{!$CurrentPage.parameters.CONFIRMATIONTOKEN}'
+		}
+	}
+	</script>
+</apex:page>

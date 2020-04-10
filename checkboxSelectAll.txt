@@ -1,0 +1,56 @@
+	//////////////////////////////////////////////// map with selection and flag
+
+	public List<Installation__c> installList { get; set; }
+	public Map<String, Boolean> installSelectionMap { get; set; }
+	public Boolean selectAll { get; set; }
+
+
+	//////////////////////////////////////////////// after retrieval
+
+	for( Installation__c inst : installList ) {
+		installSelectionMap.put( inst.ID, true );
+	}
+	selectAll = true;
+
+	//////////////////////////////////////////////// methods to call from page
+
+	public PageReference resetSelection() {
+		for( Installation__c inst : installList ) {
+			installSelectionMap.put( inst.ID, selectAll );
+		}
+
+		return null;
+	}
+	public PageReference syncSelection() {
+		selectAll = true;
+		for( Installation__c inst : installList ) {
+			if( installSelectionMap.get( inst.ID ) == false ) {
+				selectAll = false;
+				break;
+			}
+		}
+
+		return null;
+	}
+
+//////////////////////////////////////////////// VF page table with checkboxes
+
+<apex:pageBlockTable id="pbtInstallSelection" value="{!installList}" var="i" >
+	<apex:column>
+		<apex:facet name="header">
+			<apex:inputCheckbox value="{!selectAll}">
+				<apex:actionSupport event="onclick" action="{!resetSelection}" 
+					status="ajaxStatus" reRender="pbtInstallSelection" />
+			</apex:inputCheckbox>
+		</apex:facet>
+		<apex:inputCheckbox value="{!installSelectionMap[ i.ID ]}" >
+			<apex:actionSupport event="onclick" action="{!syncSelection}"
+				reRender="pbtInstallSelection" />
+		</apex:inputCheckbox>
+	</apex:column>
+	<!--
+	<apex:column value="{!i.Name}" />
+	<apex:column value="{!i.Status__c}" />
+	<apex:column value="{!i.Installed_Date__c}" />
+	-->
+</apex:pageBlockTable>
