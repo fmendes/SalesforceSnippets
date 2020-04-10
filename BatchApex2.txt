@@ -1,6 +1,6 @@
 /***************************************************
-* Name:         SG_BatchTransferShares
-* Author:       Strategic Growth, Inc. (www.strategicgrowthinc.com)
+* Name:         Main_BatchTransferShares
+* Author:       myCompany, Inc. (www.myCompany.com)
 * Date:         03 Apr 2020
 * ==================================================
 * ==================================================
@@ -14,8 +14,8 @@
 * 
 ****************************************************/
 
-global class SG_BatchTransferShares implements Database.Batchable<sObject>, Database.Stateful, Schedulable {
-    public static final String jobName = 'SGI - Process Share Transfers - Monthly Run';
+global class Main_BatchTransferShares implements Database.Batchable<sObject>, Database.Stateful, Schedulable {
+    public static final String jobName = 'myCompany - Process Share Transfers - Monthly Run';
 
     // Seconds Minutes Hours Day_of_month Month Day_of_week Optional_year
     public static final String DEFAULT_SCHEDULE = '0 30 2 15 * ?'; // every 15th at 2:30 am
@@ -27,14 +27,14 @@ global class SG_BatchTransferShares implements Database.Batchable<sObject>, Data
 
     global Map<ID, Investment__c> investmentMap;
 
-    global SG_BatchTransferShares() {
+    global Main_BatchTransferShares() {
         // default to last month, but on the 15th
         startDate = Date.today().addMonths( -1 );
         startDate = Date.newInstance( startDate.year(), startDate.month(), 15 );
         initialize();
     }
 
-    global SG_BatchTransferShares( Date startDateParam ) {
+    global Main_BatchTransferShares( Date startDateParam ) {
         startDate = startDateParam;
         initialize();
     }
@@ -117,7 +117,7 @@ global class SG_BatchTransferShares implements Database.Batchable<sObject>, Data
     }
 
     global void execute( SchedulableContext sc ) {
-        SG_BatchTransferShares batchProcess = new SG_BatchTransferShares();
+        Main_BatchTransferShares batchProcess = new Main_BatchTransferShares();
         batchID = Database.executeBatch( batchProcess, batchProcess.BatchSize );
     }
 
@@ -138,7 +138,7 @@ global class SG_BatchTransferShares implements Database.Batchable<sObject>, Data
             schedTime = DEFAULT_SCHEDULE;
         }
 
-        SG_BatchTransferShares batchProcess = new SG_BatchTransferShares();
+        Main_BatchTransferShares batchProcess = new Main_BatchTransferShares();
         System.schedule( jobName, schedTime, batchProcess );
     }
 

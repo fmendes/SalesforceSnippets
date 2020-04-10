@@ -1,6 +1,6 @@
 /**********************************************************************
 * Name:     VFC_CoachAssignmentTool
-* Author:   Strategic Growth, Inc. (www.strategicgrowthinc.com)
+* Author:   myCompany, Inc. (www.myCompany.com)
 *  
 * ======================================================
 * ======================================================
@@ -761,7 +761,7 @@ public with sharing class VFC_CoachAssignmentTool
         //campus_qry += ' AND (Id IN (SELECT Campus_Account__c FROM Intern_Employment__c WHERE Active__c = true ) ) ';
         if ( campusIds != null && campusIds.size() > 0 )
         {
-            String campusIdsStr = SG_DisplayUtils.getFormattedIdList( campusIds );
+            String campusIdsStr = Main_DisplayUtils.getFormattedIdList( campusIds );
             campus_qry += ' AND (Id IN (' + campusIdsStr + ') ) ';
         }
         campus_qry += ' LIMIT 500'; // max size is 1000 - so 1/2 and 1/2 for coach/campus
@@ -799,7 +799,7 @@ public with sharing class VFC_CoachAssignmentTool
         {
             hasError = true;
             errorMsg = e.getMessage();
-            SG_DisplayUtils.addError( e.getMessage() );
+            Main_DisplayUtils.addError( e.getMessage() );
             System.debug(LoggingLevel.WARN, '---> message, stacktrace: ' + e.getMessage() + ' ' + e.getStackTraceString() );
 
         }
@@ -842,7 +842,7 @@ public with sharing class VFC_CoachAssignmentTool
             //campus_qry += ' AND (Id IN (SELECT Campus_Account__c FROM Intern_Employment__c WHERE Active__c = true ) ) ';
             if ( campusIds != null && campusIds.size() > 0 )
             {
-                String campusIdsStr = SG_DisplayUtils.getFormattedIdList( campusIds );
+                String campusIdsStr = Main_DisplayUtils.getFormattedIdList( campusIds );
                 campus_qry += ' AND (Id IN (' + campusIdsStr + ') ) ';
             }
 
@@ -881,7 +881,7 @@ public with sharing class VFC_CoachAssignmentTool
             {
                 hasError = true;
                 errorMsg = e.getMessage();
-                SG_DisplayUtils.addError( e.getMessage() );
+                Main_DisplayUtils.addError( e.getMessage() );
                 System.debug(LoggingLevel.WARN, '---> message, stacktrace: ' + e.getMessage() + ' ' + e.getStackTraceString() );
 
             }
@@ -1224,7 +1224,7 @@ public with sharing class VFC_CoachAssignmentTool
         String formattedSubqueryIds = null;
         if ( subQueryIds != null && subQueryIds.size() > 0 )
         {
-            formattedSubQueryIds = SG_DisplayUtils.getFormattedIdList( subQueryIds );
+            formattedSubQueryIds = Main_DisplayUtils.getFormattedIdList( subQueryIds );
             cand_qry += ' AND Id IN (' + formattedSubqueryIds + ')';
         }
 

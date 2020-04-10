@@ -15,7 +15,7 @@ URLFOR( $Action.Holiday__c.New, null
       inputs: URL parameters in brackets and separate them with commas ex: [param1="value1", param2="value2"]
       no override: boolean (defaults to false), set to true to display the standard Salesforce page instead of custom page
 
-<apex:page id="ProductOptions" standardController="Product2" extensions="SG_VFC_ProductOptions" lightningStylesheets="true">
+<apex:page id="ProductOptions" standardController="Product2" extensions="Controller_ProductOptions" lightningStylesheets="true">
 <apex:form>
     <apex:pageBlock >
 

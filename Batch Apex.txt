@@ -1,6 +1,6 @@
 /**********************************************************************
-* Name:     SG_PercentageWonLost
-* Author:   Strategic Growth, Inc. (www.strategicgrowthinc.com)
+* Name:     Main_PercentageWonLost
+* Author:   myCompany, Inc. (www.myCompany.com)
 *
 * ======================================================
 * ======================================================
@@ -16,26 +16,26 @@
 
 /*
 
-USAGE:  SG_PercentageWonLost.scheduleMe( '0 30 2 * * ?' ); // every day at 2:30am
+USAGE:  Main_PercentageWonLost.scheduleMe( '0 30 2 * * ?' ); // every day at 2:30am
 
 */
-global class SG_PercentageWonLost implements Database.Batchable<sObject>, Database.Stateful, Schedulable {
-    public static final String jobName = 'SGI - Percentage Won/Lost calculation - Nightly Run';
+global class Main_PercentageWonLost implements Database.Batchable<sObject>, Database.Stateful, Schedulable {
+    public static final String jobName = 'myCompany - Percentage Won/Lost calculation - Nightly Run';
 
     global final Integer BatchSize = 1200;
     global String theQuery;
     global ID batchID;
 
     //This allows for a query to be passed into the batchapex class
-    global SG_PercentageWonLost( String q ) {
+    global Main_PercentageWonLost( String q ) {
         theQuery = q;
         initialize();
     }
-    global SG_PercentageWonLost( Date currDt ) {
+    global Main_PercentageWonLost( Date currDt ) {
         //currentDate = currDt;
         initialize();
     }
-    global SG_PercentageWonLost() {
+    global Main_PercentageWonLost() {
         initialize();
         setDefaultQuery();
     }
@@ -78,7 +78,7 @@ global class SG_PercentageWonLost implements Database.Batchable<sObject>, Databa
 
     global void execute( SchedulableContext sc ) {
         // do YTD rollups
-        SG_PercentageWonLost y = new SG_PercentageWonLost();
+        Main_PercentageWonLost y = new Main_PercentageWonLost();
         batchID = Database.executeBatch( y, y.BatchSize );
     }
 
@@ -100,7 +100,7 @@ global class SG_PercentageWonLost implements Database.Batchable<sObject>, Databa
             schedTime = '0 30 2 * * ?';// everyday 2:30am
         }
 
-        SG_PercentageWonLost ytdr = new SG_PercentageWonLost();
+        Main_PercentageWonLost ytdr = new Main_PercentageWonLost();
         System.schedule( jobName, schedTime, ytdr );
     }
 

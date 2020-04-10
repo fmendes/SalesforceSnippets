@@ -1,5 +1,5 @@
 <apex:page id="Loan" standardController="Loan__c"
-           extensions="SG_VFC_Loan"
+           extensions="Controller_Loan"
            showHeader="false"
            sideBar="false"
            applyHtmlTag="false"

@@ -1,4 +1,4 @@
-<aura:component controller="SG_LX_MessageToUser"
+<aura:component controller="Main_LX_MessageToUser"
                 implements="force:appHostable,flexipage:availableForAllPageTypes,flexipage:availableForRecordHome,force:hasRecordId,forceCommunity:availableForAllPageTypes" 
                 access="global" >
     
@@ -62,8 +62,8 @@
 
 
 /**********************************************************************
-* Name:     SG_LX_MessageToUser
-* Author:   Strategic Growth, Inc. (www.strategicgrowthinc.com)
+* Name:     Main_LX_MessageToUser
+* Author:   myCompany, Inc. (www.myCompany.com)
 *  
 * ======================================================
 * ======================================================
@@ -76,7 +76,7 @@
 * 1.0       Nov 2018        FF              initial development
 *   
 ***********************************************************************/
-public class SG_LX_MessageToUser {
+public class Main_LX_MessageToUser {
 
     @AuraEnabled
     public static String getUserMessage() {
@@ -93,7 +93,7 @@ public class SG_LX_MessageToUser {
         CommunityWizardSettings__c settings = CommunityWizardSettings__c.getInstance();
         
         // get Active Opportunity Stage Names
-        Set<String> activeOpptyStageSet = SG_DisplayUtils.parseIncomingStringIntoSet( settings.Active_Opportunity_Stages__c );
+        Set<String> activeOpptyStageSet = Main_DisplayUtils.parseIncomingStringIntoSet( settings.Active_Opportunity_Stages__c );
                 
         // Find Open Opportunities
         List<Opportunity> activeOpptyList = 
@@ -115,7 +115,7 @@ public class SG_LX_MessageToUser {
 
 
 @isTest
-public class SG_LX_MessageToUser_Test {
+public class Main_LX_MessageToUser_Test {
     @TestSetup
     public static void createData() {
         
@@ -171,7 +171,7 @@ public class SG_LX_MessageToUser_Test {
     }
     
     public static TestMethod void myUnitTest() {
-        String msg = SG_LX_MessageToUser.getUserMessage();
+        String msg = Main_LX_MessageToUser.getUserMessage();
         
         system.assertEquals( 'TEST MSG', msg, 'Testing Intrinsic Message' );
     }

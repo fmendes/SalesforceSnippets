@@ -1,4 +1,4 @@
-<apex:page id="${NAME}" standardController="Account" extensions="SG_VFC_${NAME}" docType="html-5.0"
+<apex:page id="${NAME}" standardController="Account" extensions="Controller_${NAME}" docType="html-5.0"
 showHeader="false" sideBar="false" lightningStylesheets="true" applyBodyTag="false" applyHtmlTag="false">
 
 <html xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" lang="en">

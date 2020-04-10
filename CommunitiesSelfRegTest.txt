@@ -1,5 +1,5 @@
 @IsTest
-public with sharing class SG_VFC_CommunitiesSelfReg_Test {
+public with sharing class Controller_CommunitiesSelfReg_Test {
 
     @TestSetup
     public static void createData() {
@@ -21,11 +21,11 @@ public with sharing class SG_VFC_CommunitiesSelfReg_Test {
     public static void testCommunitiesSelfRegController() {
         Test.startTest();
 
-        SG_VFC_CommunitiesSelfReg controller = new SG_VFC_CommunitiesSelfReg();
+        Controller_CommunitiesSelfReg controller = new Controller_CommunitiesSelfReg();
         controller.firstName = 'FirstName';
         controller.lastName = 'LastName';
         controller.email = 'test@force.com';
-        controller.companyName = 'SGI TEST Co.';
+        controller.companyName = 'myCompany TEST Co.';
         controller.companyNMLS = '12340';
         controller.contactNMLS = '1234';
         //controller.communityNickname = 'test';
@@ -50,7 +50,7 @@ public with sharing class SG_VFC_CommunitiesSelfReg_Test {
         try{
             Integer i = 1 / 0;
         } catch( Exception e ) {
-            SG_VFC_CommunitiesSelfReg.handleSingleError( sp, e );
+            Controller_CommunitiesSelfReg.handleSingleError( sp, e );
         }
     }
 
@@ -60,11 +60,11 @@ public with sharing class SG_VFC_CommunitiesSelfReg_Test {
 
         Test.setCurrentPage( Page.CommunitiesSelfReg );
 
-        SG_VFC_CommunitiesSelfReg controller = new SG_VFC_CommunitiesSelfReg();
+        Controller_CommunitiesSelfReg controller = new Controller_CommunitiesSelfReg();
         controller.firstName = 'FirstName';
         controller.lastName = 'LastName';
         controller.email = 'test@force.com';
-        controller.companyName = 'SGI TEST Co.';
+        controller.companyName = 'myCompany TEST Co.';
         controller.companyNMLS = '4312';
         controller.contactNMLS = '54321';
         controller.password = 'abcd1234';
@@ -88,11 +88,11 @@ public with sharing class SG_VFC_CommunitiesSelfReg_Test {
 
         Test.setCurrentPage( Page.CommunitiesSelfReg );
 
-        SG_VFC_CommunitiesSelfReg controller = new SG_VFC_CommunitiesSelfReg();
+        Controller_CommunitiesSelfReg controller = new Controller_CommunitiesSelfReg();
         controller.firstName = 'FirstName';
         controller.lastName = 'LastName';
         controller.email = 'test@force.com';
-        controller.companyName = 'SGI TEST Co.';
+        controller.companyName = 'myCompany TEST Co.';
         controller.companyNMLS = '43120';
         controller.contactNMLS = '54321';
         controller.password = 'abcd1234';

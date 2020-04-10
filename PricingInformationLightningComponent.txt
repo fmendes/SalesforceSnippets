@@ -1,6 +1,6 @@
 PricingInformation.cmp
 
-<aura:component controller="SG_PricingInformationController"
+<aura:component controller="Main_PricingInformationController"
     implements="force:lightningQuickActionWithoutHeader,force:hasRecordId" >
 
     <aura:attribute name="hasErrors" type="Boolean" description="Indicate whether there were failures or not" />
@@ -496,9 +496,9 @@ PricingInformationHelper.js
     }
 })
 
-SG_PricingInformationController.cls
+Main_PricingInformationController.cls
 
-public class SG_PricingInformationController {
+public class Main_PricingInformationController {
 
     @AuraEnabled
     public static List<QuoteLineItem> getQLIList( Id quoteId ) {

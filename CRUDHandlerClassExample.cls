@@ -1,4 +1,4 @@
-public with sharing class SG_VFC_ProjectDailies {
+public with sharing class Controller_ProjectDailies {
 
     public List<String> tabList = new List<String> { 'daily', 'location', 'crew'
             , 'equipment', 'subcontractor' };
@@ -189,7 +189,7 @@ public with sharing class SG_VFC_ProjectDailies {
     public Map<String, RelatedObjListHandler> relatedObjMap { get; set; }
     public String selectedObj { get; set; }
 
-    public SG_VFC_ProjectDailies( ApexPages.StandardController controller ) {
+    public Controller_ProjectDailies( ApexPages.StandardController controller ) {
         if( ! Test.isRunningTest() ) {
             controller.addFields( new List<String> { 'Arrival_Time__c', 'Category__c', 'Click_Pounds__c'
                     , 'Counter_1_Start__c', 'Counter_1_Stop__c', 'Counter_2_Start__c', 'Counter_2_Stop__c'

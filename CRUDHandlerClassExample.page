@@ -1,5 +1,5 @@
 <apex:page id="ProjectDailies" standardController="Daily__c"
-           extensions="SG_VFC_ProjectDailies" lightningStylesheets="true" >
+           extensions="Controller_ProjectDailies" lightningStylesheets="true" >
     <!-- standardStylesheets="false"
            lightningStylesheets="true" -->
 

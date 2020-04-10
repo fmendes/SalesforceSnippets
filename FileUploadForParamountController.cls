@@ -1,4 +1,4 @@
-public without sharing class SG_VFC_Loan {
+public without sharing class Controller_Loan {
     public static String defaultStatus = '10-Received';
     public static String approvalStatus = '50-Approved';
     public static String rejectionStatus = '90-Rejected';
@@ -16,7 +16,7 @@ public without sharing class SG_VFC_Loan {
 
     public Boolean refreshPage { get; set; }
 
-    public SG_VFC_Loan( ApexPages.StandardController sc ) {
+    public Controller_Loan( ApexPages.StandardController sc ) {
         if( ! Test.isRunningTest() ) {
             sc.addFields( new String[] { 'Name' } );
         }

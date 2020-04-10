@@ -7,7 +7,7 @@
 
 		// create an account
 		Account a = new Account();
-		a.Name = 'SGI Test';
+		a.Name = 'myCompany Test';
 		a.Zip_Code__c = z.ID;
 		insert a;
 
@@ -29,7 +29,7 @@
 
 		// create opportunity
 		Opportunity o = new Opportunity();
-		o.Name = 'SGI Oppty Test';
+		o.Name = 'myCompany Oppty Test';
 		o.AccountId = a.ID;
 		o.CampaignId = c.ID;
 		o.Opportunity_Type__c = 'Ancillary';

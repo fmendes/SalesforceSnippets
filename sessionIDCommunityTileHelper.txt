@@ -2,7 +2,7 @@
 
 /**********************************************************************
 * Name:   	AuraHelper
-* Author: 	Strategic Growth, Inc. (www.strategicgrowthinc.com)
+* Author: 	myCompany, Inc. (www.myCompany.com)
 * Date: 	11-Feb-2020
 * ======================================================
 * ======================================================

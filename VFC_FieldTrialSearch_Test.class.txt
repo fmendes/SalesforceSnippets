@@ -1,6 +1,6 @@
 /**********************************************************************
 * Name:     VFC_FieldTrialSearch_Test
-* Author:   Strategic Growth, Inc. (www.strategicgrowthinc.com)
+* Author:   myCompany, Inc. (www.myCompany.com)
 *  
 * ======================================================
 * ======================================================

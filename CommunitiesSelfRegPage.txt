@@ -1,5 +1,5 @@
 <apex:page id="communitiesSelfRegPage" showHeader="false"
-      controller="SG_VFC_CommunitiesSelfReg"
+      controller="Controller_CommunitiesSelfReg"
       title="{!$Label.site.user_registration}">
 
   <link rel="stylesheet" type="text/css" href="/css/sfdc_210.css" />

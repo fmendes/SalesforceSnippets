@@ -1,7 +1,7 @@
 <!--
 /**********************************************************************
 * Name:     FieldTrialSearch
-* Author:   Strategic Growth, Inc. (www.strategicgrowthinc.com)
+* Author:   myCompany, Inc. (www.myCompany.com)
 * 
 * ======================================================
 * ======================================================

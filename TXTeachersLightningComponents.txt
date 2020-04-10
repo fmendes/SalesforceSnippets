@@ -29,7 +29,7 @@
 ----------------------------------------------------------------------
 
 
-<aura:component controller="SG_CoachAssignmentController" >
+<aura:component controller="Main_CoachAssignmentController" >
     
   <aura:attribute name="errorMsg" type="String" />
     <!--
@@ -321,7 +321,7 @@
 
 
 
-<aura:component controller="SG_CoachAssignmentController" >
+<aura:component controller="Main_CoachAssignmentController" >
 
   <aura:attribute name="errorMsg" type="String" />
     <aura:attribute name="candidateList" type="Account[]" />

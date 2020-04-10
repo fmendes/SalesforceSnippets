@@ -3,7 +3,7 @@ public with sharing class VFC_Controller_Test {
 	@TestSetup
 	public static void setupData() {
 		Account a = new Account();
-		a.Name = 'SGI Test One';
+		a.Name = 'myCompany Test One';
 		a.Type = 'Customer';
 		a.Channel__c = 'Reseller';
 		a.RecordType = new RecordType( Name = 'Site' );
@@ -17,7 +17,7 @@ public with sharing class VFC_Controller_Test {
 
 		Opportunity o = new Opportunity();
 		o.AccountID = a.ID;
-		o.Name = 'SGI Test 1';
+		o.Name = 'myCompany Test 1';
 		o.StageName = firstStage;
 		o.CloseDate = Date.today();
 		o.RecordType = new RecordType( Name = 'Fixed' );

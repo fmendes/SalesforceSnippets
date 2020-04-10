@@ -1,8 +1,8 @@
-public with sharing class SG_CreateDividend {
+public with sharing class Main_CreateDividend {
     public ApexPages.StandardController controller;
     public Account theRecord { get; set; }
 
-    public SG_CreateDividend( ApexPages.StandardController controllerParam ) {
+    public Main_CreateDividend( ApexPages.StandardController controllerParam ) {
         controller = controllerParam;
 
         if( Test.isRunningTest() == false ) {

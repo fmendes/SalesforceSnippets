@@ -1,7 +1,7 @@
 /**
  * An apex page controller that supports self registration of users in communities that allow self registration
  */
-public without sharing class SG_VFC_CommunitiesSelfReg {
+public without sharing class Controller_CommunitiesSelfReg {
 
     public String firstName { get; set;}
     public String lastName { get; set;}
@@ -29,7 +29,7 @@ public without sharing class SG_VFC_CommunitiesSelfReg {
     public String companyNMLS { get; set; }
     public String contactNMLS { get; set; }
 
-    public SG_VFC_CommunitiesSelfReg() {
+    public Controller_CommunitiesSelfReg() {
         String expid = ApexPages.currentPage().getParameters().get('expid');
         if( expId != null ) {
             Site.setExperienceId( expId );
