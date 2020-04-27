@@ -1,3 +1,1 @@
-
-
-		OpportunityStage closedWon = [SELECT Id, ApiName FROM OpportunityStage WHERE IsWon = true AND IsClosed = true LIMIT 1];
+OpportunityStage closedWon = [SELECT Id, ApiName FROM OpportunityStage WHERE IsWon = true AND IsClosed = true LIMIT 1];

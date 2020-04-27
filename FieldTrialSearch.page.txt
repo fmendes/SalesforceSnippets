@@ -1,20 +1,4 @@
-<!--
-/**********************************************************************
-* Name:     FieldTrialSearch
-* Author:   myCompany, Inc. (www.myCompany.com)
-* 
-* ======================================================
-* ======================================================
-* Purpose:                                                      
-* 
-* ======================================================
-* ======================================================
-* History:                                                            
-* VERSION   DATE            INITIALS      DESCRIPTION/FEATURES ADDED
-* 1.0       12-Aug-2016     rwd           Initial Development           
-*   
-***********************************************************************/ 
--->
+
 
 
 <apex:page id="FieldTrialSearch" standardController="Field_Trial__c" extensions="VFC_FieldTrialSearch" docType="html-5.0">

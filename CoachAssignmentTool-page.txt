@@ -1,22 +1,3 @@
-<!--
-/**********************************************************************
-* Name:     CoachAssignmentTool
-* Author:   myCompany, Inc. (www.myCompany.com)
-* 
-* ======================================================
-* ======================================================
-* Purpose:                                                      
-* 
-* ======================================================
-* ======================================================
-* History:                                                            
-* VERSION   DATE            INITIALS      DESCRIPTION/FEATURES ADDED
-* 1.0       02-Oct-2017     rwd           Initial Development           
-*   
-***********************************************************************/ 
--->
-
-
 <apex:page id="CoachAssignmentTool" standardController="Account" extensions="VFC_CoachAssignmentTool" title="Coach Assignment" docType="html-5.0" showHeader="false" sideBar="false" cache="false">
 
     <head>

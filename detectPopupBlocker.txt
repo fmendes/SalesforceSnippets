@@ -1,6 +1,6 @@
 
 console.log( '*** open coupon window with token' );
-var newWin = window.open( "http://bbros.honorlab.com/inmar-coupon-embed/#login/{!IDPNToken}"
+var newWin = window.open( "http://inmar-coupon-site-embed/#login/{!IDPNToken}"
 	, "_blank", "location=no,menubar=no,toolbar=no,titlebar=no,status=no" );
 
 var popupsDisabled = ! newWin || newWin.closed || typeof newWin.closed=='undefined';

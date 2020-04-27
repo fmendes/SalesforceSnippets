@@ -1,18 +1,3 @@
-/**********************************************************************
-* Name:     VFC_CoachAssignmentTool
-* Author:   myCompany, Inc. (www.myCompany.com)
-*  
-* ======================================================
-* ======================================================
-* Purpose:                                                      
-* 
-* ======================================================
-* ======================================================
-* History:                                                            
-* VERSION   DATE            INITIALS      DESCRIPTION/FEATURES ADDED
-* 1.0       02-Oct-2017     rwd           Initial Development           
-*   
-***********************************************************************/
 
 
 public with sharing class VFC_CoachAssignmentTool

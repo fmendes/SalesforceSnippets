@@ -112,7 +112,7 @@
         </div>
       </div>
     </div>
-      <div id="footer">© 2019 Stearns Lending. All rights reserved.</div>
+      <div id="footer">Real estate/finance company footer.</div>
   </div>
 
 </apex:page>

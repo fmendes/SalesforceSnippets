@@ -1,8 +1,9 @@
-List<PricebookEntry> pbeL = [ SELECT ID, Pricebook_Ext_ID__c, Item_Number__c
-FROM PricebookEntry
-WHERE Pricebook_Ext_ID__c = null 
-   AND Pricebook2.IsStandard = true 
-LIMIT 4000 ];
+List<PricebookEntry> pbeL = [ 
+	SELECT ID, Pricebook_Ext_ID__c, Item_Number__c
+	FROM PricebookEntry
+	WHERE Pricebook_Ext_ID__c = null 
+	   AND Pricebook2.IsStandard = true 
+	LIMIT 4000 ];
 
 for( PricebookEntry pbe : pbeL ) {
     pbe.Pricebook_Ext_ID__c = pbe.Item_Number__c;

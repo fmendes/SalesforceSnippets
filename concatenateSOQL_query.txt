@@ -1,28 +1,28 @@
 
-    public static List<Pricing__c> getPricingList( ID aRecordID, String aFamily ) {
-        List<String> soqlList = new List<String> {
-                'SELECT ID, Name, Product_Family__c, Product_Family_Sub_Type__c '
-                , ', Tier_Definition__c, Tier_Min__c, Tier_Max__c, Price__c '
-                , ', Product_Part_Id__c, Grouping_by_Product_Family__c, Facility_Type__c '
-                , ', Country__c, Country_Name__c, Account__c, Sort_Order__c '
-                , ', Account__r.Tier_Shift__c '
-                , 'FROM Pricing__c '
-                , 'WHERE Account__c = \'', aRecordID, '\' '
-        };
+public static List<Pricing__c> getPricingList( ID aRecordID, String aFamily ) {
+    List<String> soqlList = new List<String> {
+            'SELECT ID, Name, Product_Family__c, Product_Family_Sub_Type__c '
+            , ', Tier_Definition__c, Tier_Min__c, Tier_Max__c, Price__c '
+            , ', Product_Part_Id__c, Grouping_by_Product_Family__c, Facility_Type__c '
+            , ', Country__c, Country_Name__c, Account__c, Sort_Order__c '
+            , ', Account__r.Tier_Shift__c '
+            , 'FROM Pricing__c '
+            , 'WHERE Account__c = \'', aRecordID, '\' '
+    };
 
-        if( aFamily != null ) {
-            soqlList.add( ' AND Product_Family__c = \'' );
-            soqlList.add( aFamily );
-            soqlList.add( '\' ' );
-        }
-
-        soqlList.add( 'ORDER BY Sort_Order__c' );
-
-        String soql = String.join( soqlList, '' );
-        system.debug( 'SOQL= ' + soql );
-
-        List<Pricing__c> pricingList = Database.query( soql );
-        system.debug( 'pricingList= ' + pricingList );
-
-        return pricingList;
+    if( aFamily != null ) {
+        soqlList.add( ' AND Product_Family__c = \'' );
+        soqlList.add( aFamily );
+        soqlList.add( '\' ' );
     }
+
+    soqlList.add( 'ORDER BY Sort_Order__c' );
+
+    String soql = String.join( soqlList, '' );
+    system.debug( 'SOQL= ' + soql );
+
+    List<Pricing__c> pricingList = Database.query( soql );
+    system.debug( 'pricingList= ' + pricingList );
+
+    return pricingList;
+}
