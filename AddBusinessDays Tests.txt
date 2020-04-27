@@ -4,5 +4,5 @@ system.debug( 'adt= ' + adt );
 adt = adt.addMinutes( 1 );
 system.debug( 'adt+1= ' + adt );
 
-DateTime nextBusinessDt = BusinessHours.add( SG_WorkdayCalculationHelper.orgsHours.ID, adt, 32400000 );
+DateTime nextBusinessDt = BusinessHours.add( WorkdayCalculationHelper.orgsHours.ID, adt, 32400000 );
 system.debug( 'nextBusinessDt= ' + nextBusinessDt );
