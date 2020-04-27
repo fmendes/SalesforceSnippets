@@ -1,72 +1,72 @@
 
-		Zip_Code__c z = new Zip_Code__c();
-		z.Name = '75001';
-		z.City__c = 'Anywhere';
-		z.State__c = 'TX';
-		insert z;
+Zip_Code__c z = new Zip_Code__c();
+z.Name = '75001';
+z.City__c = 'Anywhere';
+z.State__c = 'TX';
+insert z;
 
-		// create an account
-		Account a = new Account();
-		a.Name = 'myCompany Test';
-		a.Zip_Code__c = z.ID;
-		insert a;
+// create an account
+Account a = new Account();
+a.Name = 'myCompany Test';
+a.Zip_Code__c = z.ID;
+insert a;
 
-		// create a campaign
-		Campaign c = new Campaign();
-		c.Name = 'Test Campaign';
-		c.IsActive = true;
-		c.StartDate = Date.today();
-		c.Type = 'Email';
-		c.Status = 'In Progress';
-		insert c;
+// create a campaign
+Campaign c = new Campaign();
+c.Name = 'Test Campaign';
+c.IsActive = true;
+c.StartDate = Date.today();
+c.Type = 'Email';
+c.Status = 'In Progress';
+insert c;
 
-        OpportunityStage closedWon =
-                [ SELECT Id, ApiName
-                FROM OpportunityStage
-                WHERE IsWon = true
-                    AND IsClosed = true
-                LIMIT 1 ];
+OpportunityStage closedWon =
+        [ SELECT Id, ApiName
+        FROM OpportunityStage
+        WHERE IsWon = true
+            AND IsClosed = true
+        LIMIT 1 ];
 
-		// create opportunity
-		Opportunity o = new Opportunity();
-		o.Name = 'myCompany Oppty Test';
-		o.AccountId = a.ID;
-		o.CampaignId = c.ID;
-		o.Opportunity_Type__c = 'Ancillary';
-		o.Line_of_Business__c = 'Ancillary';
-		o.Product_Mix__c = 'Billing';
-		o.Number_of_Employees__c = 1;
-		o.CloseDate = Date.today();
-		o.Effective_Date__c = Date.today();
-		o.StageName = closedWon.ApiName;
-		insert o;
+// create opportunity
+Opportunity o = new Opportunity();
+o.Name = 'myCompany Oppty Test';
+o.AccountId = a.ID;
+o.CampaignId = c.ID;
+o.Opportunity_Type__c = 'Ancillary';
+o.Line_of_Business__c = 'Ancillary';
+o.Product_Mix__c = 'Billing';
+o.Number_of_Employees__c = 1;
+o.CloseDate = Date.today();
+o.Effective_Date__c = Date.today();
+o.StageName = closedWon.ApiName;
+insert o;
 
-        // fix glitch of standard pricebook not working
-        ID stdPBId = Test.getStandardPricebookId();
-        Pricebook2 stdPB = new Pricebook2();
-        stdPB.ID = stdPBId;
-        stdPB.IsActive = true;
-        update stdPB;
+// fix glitch of standard pricebook not working
+ID stdPBId = Test.getStandardPricebookId();
+Pricebook2 stdPB = new Pricebook2();
+stdPB.ID = stdPBId;
+stdPB.IsActive = true;
+update stdPB;
 
-		// create product
-		Product2 p = new Product2();
-		p.Name = 'Test product';
-		p.Family = 'Test Family';
-		p.IsActive = true;
-		insert p;
+// create product
+Product2 p = new Product2();
+p.Name = 'Test product';
+p.Family = 'Test Family';
+p.IsActive = true;
+insert p;
 
-		// create standard pricebook entry
-		PricebookEntry standardPBE = new PricebookEntry();
-		standardPBE.Pricebook2ID = stdPBId;
-		standardPBE.Product2ID = p.ID;
-		standardPBE.UnitPrice = 4800;
-		standardPBE.IsActive = true;
-		insert standardPBE;
+// create standard pricebook entry
+PricebookEntry standardPBE = new PricebookEntry();
+standardPBE.Pricebook2ID = stdPBId;
+standardPBE.Product2ID = p.ID;
+standardPBE.UnitPrice = 4800;
+standardPBE.IsActive = true;
+insert standardPBE;
 
-		// add product/pbe to oppties
-		OpportunityLineItem oli1 = new OpportunityLineItem();
-		oli1.PricebookEntryId = standardPBE.ID;
-		oli1.OpportunityId = o.ID;
-		oli1.Quantity = 10;
-		oli1.UnitPrice = 4800;
-		insert oli1;
+// add product/pbe to oppties
+OpportunityLineItem oli1 = new OpportunityLineItem();
+oli1.PricebookEntryId = standardPBE.ID;
+oli1.OpportunityId = o.ID;
+oli1.Quantity = 10;
+oli1.UnitPrice = 4800;
+insert oli1;

@@ -1,20 +1,20 @@
 public class DateUtils{
 
   	public static final Map<String,Integer> dayOfWeekNameMap = new Map<String,Integer>{  'SUNDAY' => 0,
-																		                                                                                   'MONDAY' => 1,
-																		                                                                                   'TUESDAY' => 2,
-																		                                                                                   'WEDNESDAY' => 3,
-																		                                                                                   'THURSDAY' => 4,
-																		                                                                                   'FRIDAY' => 5,
-																		                                                                                   'SATURDAY' => 6};
+	'MONDAY' => 1,
+	'TUESDAY' => 2,
+	'WEDNESDAY' => 3,
+	'THURSDAY' => 4,
+	'FRIDAY' => 5,
+	'SATURDAY' => 6};
     
   	public static final Map<Integer,String> dayOfWeekNumberMap = new Map<Integer,String>{  0 => 'Sunday',
-																	                                                                                          1 => 'Monday',
-																	                                                                                          2 => 'Tuesday',
-																	                                                                                          3 => 'Wednesday',
-																	                                                                                          4 => 'Thursday',
-																	                                                                                          5 => 'Friday',
-																	                                                                                          6 => 'Saturday'};
+       1 => 'Monday',
+       2 => 'Tuesday',
+       3 => 'Wednesday',
+       4 => 'Thursday',
+       5 => 'Friday',
+       6 => 'Saturday'};
     public static final Integer SUNDAY = 0;
     public static final Integer MONDAY = 1;
     public static final Integer TUESDAY = 2;

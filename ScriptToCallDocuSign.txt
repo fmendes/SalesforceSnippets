@@ -4,7 +4,7 @@ String envelopeID = '8547155d-67fc-48dd-8ba6-aa449735c532';
 Map<String, Map<String, String>> recipientInfoMap =
         DocuSignWebService.getRecipientsForEnvelope( envelopeID );
 
-recipientInfoMap.get( 'Drew Burks' ).put(
+recipientInfoMap.get( 'Atticus Finch' ).put(
         'clientUserId', 'be5ee069-a4e1-4b45-87a4-72ec6b770aca' );
 recipientInfoMap.get( 'Joe O\'Shaughnessy' ).put(
         'clientUserId', '0146544d-cc82-4bed-bd6e-a5cfd451030c' );

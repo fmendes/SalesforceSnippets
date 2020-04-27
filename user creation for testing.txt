@@ -1,30 +1,30 @@
 
-		String orgId = Userinfo.getOrganizationID();		
-		String uniqueEmail = 'test@' + orgId + '.net.test';
-		User anUser = new User( Alias = 'TST'
-						, CommunityNickname = 'TST'
-						, Email = uniqueEmail
-						, EmailEncodingKey = 'UTF-8'
-						, LastName = 'Testing'
-						, LanguageLocaleKey = 'en_US'
-						, LocaleSidKey = 'en_US'
-						, Profile = new Profile( Name = 'Standard User' )
-						, TimezoneSidKey = 'America/Los_Angeles'
-						, UserName = uniqueEmail );
-		insert anUser;
+String orgId = Userinfo.getOrganizationID();		
+String uniqueEmail = 'test@' + orgId + '.net.test';
+User anUser = new User( Alias = 'TST'
+				, CommunityNickname = 'TST'
+				, Email = uniqueEmail
+				, EmailEncodingKey = 'UTF-8'
+				, LastName = 'Testing'
+				, LanguageLocaleKey = 'en_US'
+				, LocaleSidKey = 'en_US'
+				, Profile = new Profile( Name = 'Standard User' )
+				, TimezoneSidKey = 'America/Los_Angeles'
+				, UserName = uniqueEmail );
+insert anUser;
 
-		// use org id to make username universally unique
-		String orgId = UserInfo.getOrganizationId();
+// use org id to make username universally unique
+String orgId = UserInfo.getOrganizationId();
 
-		User aGuest = new User();
-		aGuest.LastName = 'guest user';
-		aGuest.Profile = new Profile( Name = 'Partner Community User' );
-		aGuest.UserName = 'guest@' + orgId + '.user.com';
-		aGuest.Alias = 'guest1';
-		aGuest.Email = 'guest@user.com';
-		aGuest.CommunityNickname = 'guest2';
-		aGuest.LocaleSidKey = 'en_US';
-		aGuest.EmailEncodingKey = 'UTF-8';
-		aGuest.LanguageLocaleKey = 'en_US';
-		aGuest.TimeZoneSidKey = 'America/Chicago';
-		insert aGuest;
+User aGuest = new User();
+aGuest.LastName = 'guest user';
+aGuest.Profile = new Profile( Name = 'Partner Community User' );
+aGuest.UserName = 'guest@' + orgId + '.user.com';
+aGuest.Alias = 'guest1';
+aGuest.Email = 'guest@user.com';
+aGuest.CommunityNickname = 'guest2';
+aGuest.LocaleSidKey = 'en_US';
+aGuest.EmailEncodingKey = 'UTF-8';
+aGuest.LanguageLocaleKey = 'en_US';
+aGuest.TimeZoneSidKey = 'America/Chicago';
+insert aGuest;

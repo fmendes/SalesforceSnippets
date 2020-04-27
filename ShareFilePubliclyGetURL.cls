@@ -1,18 +1,4 @@
-/**********************************************************************
-* Name:     VFC_Call_Report
-* Author:   myCompany, Inc. (www.myCompany.com)
-*  
-* ======================================================
-* ======================================================
-* Purpose:                                                      
-* 
-* ======================================================
-* ======================================================
-* History:                                                            
-* VERSION   DATE            INITIALS      DESCRIPTION/FEATURES ADDED
-* 1.0       10-Aug-2017     fmf           Initial Development           
-*   
-***********************************************************************/
+
 
 public class VFC_Call_Report {
 	public String callReportID { get; set; }
@@ -21,7 +7,7 @@ public class VFC_Call_Report {
 	public String crName;
 	public String errorMsg { get; set; }
 
-	// 11/16/2017 rwd -- Sending the Call Report
+
 	public Boolean canEmailReport {get;set;}
 
 	// class members related to Unit
@@ -243,7 +229,7 @@ public class VFC_Call_Report {
 		// it was getting too complicated with many side effects when keeping a single variable for both
 		productStewardshipString = cr.Product__c;
 		productStewardship = convertYesNoToBoolean( productStewardshipString );
-		freshARTProductsOnSiteString = cr.Fresh_ART_Products_On_Site__c;
+		freshARTProductsOnSiteString = cr.Fresh_TRACompany_Products_On_Site__c;
 		freshARTProductsOnSite = convertYesNoToBoolean( freshARTProductsOnSiteString );
 		System.debug( 'productStewardshipString= ' + productStewardshipString );
 		System.debug( 'freshARTProductsOnSiteString= ' + freshARTProductsOnSiteString );
@@ -338,8 +324,8 @@ public class VFC_Call_Report {
 			if( cr.Product__c != null ) {
 				productStewardshipString = cr.Product__c;
 				productStewardship = cr.Product__c == 'Yes'; //( prodList.size() > 0 );
-				if( cr.Fresh_ART_Products_On_Site__c != null ) {
-					freshARTProductsOnSite = cr.Fresh_ART_Products_On_Site__c == 'Yes';
+				if( cr.Fresh_TRACompany_Products_On_Site__c != null ) {
+					freshARTProductsOnSite = cr.Fresh_TRACompany_Products_On_Site__c == 'Yes';
 				}
 			}
 		}
@@ -480,8 +466,8 @@ public class VFC_Call_Report {
 		List<Call_Report__c> crList = 
 			[ SELECT ID, Account__c, Name, Executive_Summary__c, Pre_Call_Plan__c, Details__c
 					, Has_an_Account_Strategy_been_written__c, Has_a_Value_Proposition_been_established__c
-					, Do_we_have_ALL_the_right_relationships__c, Does_ART_have_an_advantage_commercially__c
-					, Type__c, Date_Completed__c, Product__c, Fresh_ART_Products_On_Site__c
+					, Do_we_have_ALL_the_right_relationships__c, Does_TRACompany_have_an_advantage_commercially__c
+					, Type__c, Date_Completed__c, Product__c, Fresh_TRACompany_Products_On_Site__c
 					, Call_Report_Name_Append__c, Account_Strategy_Detail__c, Value_Proposition_Detail__c
 					, Account_Relationship_Detail__c, Commercial_Advantage_Detail__c 
 					, OwnerID, Status__c, Target_Plan__c
@@ -865,14 +851,14 @@ public class VFC_Call_Report {
 			errorMsg += '<br /><li>' + fieldMap.get( 'Product__c' ).getDescribe().getLabel() + ' is required.</li>';
 		} else {
 			if( convertedPSFlag == 'Yes' && freshARTProductsOnSite == null ) {
-				errorMsg += '<br /><li>' + fieldMap.get( 'Fresh_ART_Products_On_Site__c' ).getDescribe().getLabel() + ' is required.</li>';
+				errorMsg += '<br /><li>' + fieldMap.get( 'Fresh_TRACompany_Products_On_Site__c' ).getDescribe().getLabel() + ' is required.</li>';
 			}
 		}
 
 		//if( productStewardship && ( productStewardshipString == 'Yes' ) && freshARTProductsOnSite ) {
 		if( convertedPSFlag == 'Yes' && freshARTProductsOnSite == true && prodList.size() <= 0 ) {
 			errorMsg += '<br /><li>Products are required when ' 
-					+ fieldMap.get( 'Fresh_ART_Products_On_Site__c' ).getDescribe().getLabel() 
+					+ fieldMap.get( 'Fresh_TRACompany_Products_On_Site__c' ).getDescribe().getLabel() 
 					+ ' is Yes.</li>';
 		}
 		System.debug( 'errorMsg= ' + errorMsg );
@@ -912,7 +898,7 @@ public class VFC_Call_Report {
 	// Has_an_Account_Strategy_been_written__c => Account_Strategy_Detail__c
 	// Has_a_Value_Proposition_been_established__c => Value_Proposition_Detail__c
 	// Do_we_have_ALL_the_right_relationships__c => Account_Relationship_Detail__c
-	// Does_ART_have_an_advantage_commercially__c => Commercial_Advantage_Detail__c
+	// Does_TRACompany_have_an_advantage_commercially__c => Commercial_Advantage_Detail__c
 	private void deleteDetailsIfNotNeeded()
 	{
 		if(cr != null)
@@ -926,7 +912,7 @@ public class VFC_Call_Report {
 			if (cr.Do_we_have_ALL_the_right_relationships__c == false)
 				cr.Account_Relationship_Detail__c = null;
 
-			if (cr.Does_ART_have_an_advantage_commercially__c == false)
+			if (cr.Does_TRACompany_have_an_advantage_commercially__c == false)
 				cr.Commercial_Advantage_Detail__c = null;
 		}
 	}
@@ -956,7 +942,7 @@ public class VFC_Call_Report {
 
 				if( cr.Product__c == 'Yes' ) {
 					System.debug( 'freshARTProductsOnSite= ' + freshARTProductsOnSite );
-					cr.Fresh_ART_Products_On_Site__c = freshARTProductsOnSite == true ? 'Yes' : 'No';
+					cr.Fresh_TRACompany_Products_On_Site__c = freshARTProductsOnSite == true ? 'Yes' : 'No';
 				}
 			}
 
@@ -1054,7 +1040,7 @@ public class VFC_Call_Report {
 			}
 			
 			// delete products if no longer needed
-			if( cr.Product__c == 'No' ) { //|| cr.Fresh_ART_Products_On_Site__c == 'No' ) {
+			if( cr.Product__c == 'No' ) { //|| cr.Fresh_TRACompany_Products_On_Site__c == 'No' ) {
 				System.debug( 'deleting previous call report produts' );
 				delete [ SELECT ID FROM Call_Report_Product__c WHERE Call_Report__c = :callReportID ];
 
