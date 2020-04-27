@@ -2,7 +2,8 @@
 
 <link rel="stylesheet" type="text/css" href="{!URLFOR($Resource.evt__EventManagement,'styles/fullcalendar.css')}" />  
 
-<script src="https://www.google.com/jsapi?key=ABQIAAAAC7Ltv_3xEtJuuoY0LLIU0BQLNlfCSZsNWrNrjOuv5jQjg1XmWxTBmlNjfmUYoQnNBdSSobucYtoG8A" type="text/javascript"></script>
+<script src="https://www.google.com/jsapi?key=SOME KEY HERE" type="text/javascript"></script>
+
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
 <script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.10.3/jquery-ui.min.js"></script>
 <script src="//cdnjs.cloudflare.com/ajax/libs/fullcalendar/1.6.4/fullcalendar.min.js"></script>

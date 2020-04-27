@@ -6,13 +6,15 @@ Contact c2 = new Contact(
         FirstName = 'Second', LastName = 'TEST', Email = 'fmendes@email.com' );
 cList.add( c1 ); cList.add( c2 );
 insert cList;
-    Messaging.SingleEmailMessage aSingleMsg = new Messaging.SingleEmailMessage();
-    aSingleMsg.setSaveAsActivity( true );
-    aSingleMsg.setTemplateID( '00X0x000000MJV2' );
-    aSingleMsg.setOrgWideEmailAddressID( '0D26A000000Cd7g' );
-    aSingleMsg.setTargetObjectID( c1.ID );
-    aSingleMsg.setTreatTargetObjectAsRecipient( true );
-    msgList.add( aSingleMsg );
+
+Messaging.SingleEmailMessage aSingleMsg = new Messaging.SingleEmailMessage();
+aSingleMsg.setSaveAsActivity( true );
+aSingleMsg.setTemplateID( '00X0x000000MJV2' );
+aSingleMsg.setOrgWideEmailAddressID( '0D26A000000Cd7g' );
+aSingleMsg.setTargetObjectID( c1.ID );
+aSingleMsg.setTreatTargetObjectAsRecipient( true );
+msgList.add( aSingleMsg );
+
 Messaging.SingleEmailMessage aSingleMsg2 = new Messaging.SingleEmailMessage();
 aSingleMsg2.setSaveAsActivity( true );
 aSingleMsg2.setTemplateID( '00X0x000000MJV2' );

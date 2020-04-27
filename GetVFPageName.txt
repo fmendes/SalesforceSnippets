@@ -1,13 +1,13 @@
-	public string getVFPageName() {
-		String pageName = ApexPages.CurrentPage().getUrl();
-		pageName = pageName.replaceFirst( '/apex/', '' );
-		pageName = EncodingUtil.urlEncode( pageName, 'UTF-8' );
+public string getVFPageName() {
+	String pageName = ApexPages.CurrentPage().getUrl();
+	pageName = pageName.replaceFirst( '/apex/', '' );
+	pageName = EncodingUtil.urlEncode( pageName, 'UTF-8' );
 
-		// %3F is question mark
-		String[] pageNameExtra = pageName.split( '%3F', 0 );
-		pageName = pageNameExtra[ 0 ];
+	// %3F is question mark
+	String[] pageNameExtra = pageName.split( '%3F', 0 );
+	pageName = pageNameExtra[ 0 ];
 
-		system.debug( 'pageName= ' + pageName );
+	system.debug( 'pageName= ' + pageName );
 
-		return pageName;
-	}
+	return pageName;
+}

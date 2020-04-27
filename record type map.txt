@@ -1,39 +1,39 @@
-    Schema.DescribeSObjectResult dsor = Schema.SObjectType.Economic_Model_Line_Item__c;
-    Map<String,Schema.RecordTypeInfo> rtMapByName = dsor.getRecordTypeInfosByName();
-    lineItemGasOrUnbranded.RecordTypeId = rtMapByName.get( 'Branded' ).getRecordTypeId();
+Schema.DescribeSObjectResult dsor = Schema.SObjectType.Economic_Model_Line_Item__c;
+Map<String,Schema.RecordTypeInfo> rtMapByName = dsor.getRecordTypeInfosByName();
+lineItemGasOrUnbranded.RecordTypeId = rtMapByName.get( 'Branded' ).getRecordTypeId();
 
-    Map<String, Schema.RecordTypeInfo> acctRtMap = Schema.SObjectType.Account.getRecordTypeInfosByName();
-    Id acctRecordTypeId = acctRtMap.get( 'Standard' ).getRecordTypeId();
+Map<String, Schema.RecordTypeInfo> acctRtMap = Schema.SObjectType.Account.getRecordTypeInfosByName();
+Id acctRecordTypeId = acctRtMap.get( 'Standard' ).getRecordTypeId();
 
-	Id devRecordTypeId = Schema.SObjectType.Account.getRecordTypeInfosByName().get( 'Development' ).getRecordTypeId();
+Id devRecordTypeId = Schema.SObjectType.Account.getRecordTypeInfosByName().get( 'Development' ).getRecordTypeId();
 
-	public static List<RecordType> recordTypeList {
-		get {
-			if( recordTypeList == null ) { 
-				recordTypeList = [ SELECT ID, DeveloperName, SobjectType FROM RecordType ];
-			}
-			return recordTypeList;
+public static List<RecordType> recordTypeList {
+	get {
+		if( recordTypeList == null ) { 
+			recordTypeList = [ SELECT ID, DeveloperName, SobjectType FROM RecordType ];
 		}
-		set;
+		return recordTypeList;
 	}
-	public static Map<ID,RecordType> recordTypesByIDMap {
-		get{ 
-			if( recordTypesByIDMap == null ) {
-				recordTypesByIDMap = new Map<ID,RecordType>( recordTypeList );
-			}
-			return recordTypesByIDMap;
+	set;
+}
+public static Map<ID,RecordType> recordTypesByIDMap {
+	get{ 
+		if( recordTypesByIDMap == null ) {
+			recordTypesByIDMap = new Map<ID,RecordType>( recordTypeList );
 		}
-		set;
+		return recordTypesByIDMap;
 	}
-	public static Map<String,ID> recordTypeMapByNameAndType {
-		get {
-			if( recordTypeMapByNameAndType == null ) {
-				recordTypeMapByNameAndType = new Map<String,ID>();
-				for( RecordType aType : recordTypeList ) {
-					recordTypeMapByNameAndType.put( aType.DeveloperName + '|' + aType.SobjectType, aType.ID );
-				}
+	set;
+}
+public static Map<String,ID> recordTypeMapByNameAndType {
+	get {
+		if( recordTypeMapByNameAndType == null ) {
+			recordTypeMapByNameAndType = new Map<String,ID>();
+			for( RecordType aType : recordTypeList ) {
+				recordTypeMapByNameAndType.put( aType.DeveloperName + '|' + aType.SobjectType, aType.ID );
 			}
-			return recordTypeMapByNameAndType;
 		}
-		set;
+		return recordTypeMapByNameAndType;
 	}
+	set;
+}
