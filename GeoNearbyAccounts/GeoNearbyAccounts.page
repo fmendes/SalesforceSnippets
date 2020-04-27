@@ -1,22 +1,8 @@
 <apex:page showHeader="false" standardController="Account" extensions="VFC_GeoNearbyAccounts" >
 
     <!--
-    **************************************************************************************************************************
-    * Name:     GeoNearbyAccounts
-    * Author:   Strategic Growth, Inc. (www.strategicgrowthinc.com)
-    * Date:     November 2016
-    * =========================================================================================================================
-    * =========================================================================================================================
     * Purpose: This is the visualforce page that pulls information from the "VFC_GeoNearbyAccounts" controller class. To display
     *           a map onto the screen for the current and nearby accounts
-    *
-    * =========================================================================================================================
-    * =========================================================================================================================
-    * History:
-    * VERSION   DATE            INITIALS      DESCRIPTION/FEATURES ADDED
-    * 1.0       November 2016   SGI           Initial Build
-    *
-    ****************************************************************************************************************************
      -->
 
 

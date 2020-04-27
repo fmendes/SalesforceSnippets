@@ -1170,6 +1170,41 @@
         <members>sf_scm__Notification__c</members>
         <members>sf_scm__PushSubscription__c</members>
         <members>sf_scm__UserNotification__c</members>
+        <members>AccountBrand</members>
+        <members>Agent_Badge__c</members>
+        <members>Agent_Compliance__c</members>
+        <members>Agent_Contract__c</members>
+        <members>Agent_Fulfillment__c</members>
+        <members>Carrier_Product_Option__c</members>
+        <members>Carrier_Product__c</members>
+        <members>ChannelProgram</members>
+        <members>ChannelProgramLevel</members>
+        <members>ChannelProgramMember</members>
+        <members>CommSubscription</members>
+        <members>CommSubscriptionChannelType</members>
+        <members>EngagementChannelType</members>
+        <members>ExternalEventMapping</members>
+        <members>Integration_Log__c</members>
+        <members>Marketing_Program_Participation__c</members>
+        <members>Marketing_Program__c</members>
+        <members>NetworkMember</members>
+        <members>Ownership_Setting__mdt</members>
+        <members>PartyConsent</members>
+        <members>Policy_Note__c</members>
+        <members>Policy__c</members>
+        <members>Producer_Commission__c</members>
+        <members>Producer_License__c</members>
+        <members>bre__BR_Event__c</members>
+        <members>bre__BR_Events_Zone__c</members>
+        <members>bre__BR_Participation__c</members>
+        <members>bre__BrEvents_Settings__c</members>
+        <members>bre__Event_Pricing_Package__c</members>
+        <members>bre__Ticket_Order__c</members>
+        <members>gallerydev__Gallery_Images__c</members>
+        <members>gallerydev__Gallery_License__mdt</members>
+        <members>gallerydev__Gallery_Settings__mdt</members>
+        <members>gallerydev__Gallery__c</members>
+        <members>gallerydev__brGallerySettings__c</members>
         <name>CustomObject</name>
     </types>
     <types>
@@ -1241,6 +1276,10 @@
     <types>
         <members>*</members>
         <name>WorkflowRule</name>
+    </types>
+    <types>
+        <members>CampaignInfluence.CampaignInfluence</members>
+        <name>ListView</name>
     </types>
     <version>47.0</version>
 </Package>

@@ -24,7 +24,7 @@ public with sharing class $controller$_Test {
 	@TestSetup
 	public static void setupData() {
 		Account a = new Account();
-		a.Name = 'SGI Test One';
+		a.Name = 'Company Test One';
 		a.Type = 'Customer';
 		a.Channel__c = 'Reseller';
 		a.RecordType = new RecordType( Name = 'Site' );
@@ -32,7 +32,7 @@ public with sharing class $controller$_Test {
 
 		Opportunity o = new Opportunity();
 		o.AccountID = a.ID;
-		o.Name = 'SGI Test 1';
+		o.Name = 'Company Test 1';
 		o.StageName = '50-PIQ Complete';
 		o.CloseDate = Date.today();
 		o.RecordType = new RecordType( Name = 'Fixed' );
