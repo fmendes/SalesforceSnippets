@@ -33,3 +33,38 @@
 Schema.SObjectField sof = fieldMap.get( fieldName );
 
 Schema.DescribeFieldResult dfr = sof.getDescribe();
+
+
+///////////////////// list of updateable non-restricted picklists
+
+
+    public static List<String> picklistFieldList {
+        get {
+            if( picklistFieldList == null ) {
+                picklistFieldList = new List<String>();
+                Schema.DescribeSObjectResult dsr = Quality_Control__c.sObjectType.getDescribe();
+
+                // get list of fields for Quality_Control__c
+                Map<String, Schema.SObjectField> fieldMap = dsr.fields.getMap();
+
+                // collect only picklist fields
+                for( String aKey : fieldMap.keySet() ) {
+                    // skip non-updateable fields and non-picklists and picklists that are restricted
+                    Schema.DescribeFieldResult dfr = fieldMap.get( aKey ).getDescribe();
+                    DisplayType dt = dfr.getType();
+                    if( ! dfr.isUpdateable()
+                            || ( dt != DisplayType.PICKLIST && dt != DisplayType.MULTIPICKLIST )
+                            || dfr.isRestrictedPicklist() ) {
+                        continue;
+                    }
+
+                    // collect picklist name
+                    String fieldName = dfr.getName();
+                    picklistFieldList.add( fieldName );
+                }
+            }
+            system.debug( 'picklistFieldList= ' + picklistFieldList );
+            return picklistFieldList;
+        }
+        set;
+    }
