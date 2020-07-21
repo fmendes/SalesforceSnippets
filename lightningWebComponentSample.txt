@@ -1,0 +1,23 @@
+			myCmp.html
+
+<template>
+    <template for:each={fields} for:item="f" >
+        <p key={f}>"{f}"</p>
+    </template>
+</template>
+
+
+			myCmp.js
+
+import { LightningElement,api,wire,track } from 'lwc';
+
+export default class myCmp extends LightningElement {
+
+    @api fieldList;
+    fieldList = 'test1,test2,test3';
+
+    get fields() {
+        console.log( this.fieldList.split()[ 0 ] );
+        return ( this.fieldList ) ? this.fieldList.split( "," ) : [];
+    }
+}

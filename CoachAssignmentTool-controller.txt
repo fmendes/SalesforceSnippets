@@ -1,0 +1,1513 @@
+
+
+public with sharing class VFC_CoachAssignmentTool
+{
+
+// ************************           PUBLIC VARIABLES          **************************
+    public Account acct { get; set; }
+    public Account coachAccount {get; set;}
+    public Intern_Employment__c employment {get; set;}
+    public Coaches_and_Mentors__c coach {get; set;}
+    public Coaches_and_Mentors__c coachForAssignment {get; set;}
+    public Intern_Certification_Area__c certification {get; set;}
+
+
+    public List<MapWrapper> mapWrappers {get; set;}
+    public List<MapWrapper> coachWrappers {get; set;}
+    public List<MapWrapper> campusWrappers {get; set;}
+    public List<MapWrapper> campusWrappers_unassigned {get; set;}
+
+    public List<CandidateWrapper> candidateWrappers {get; set;}
+    public List<Account> nearbyCampuses {get; set;}
+    public List<Account> nearbyCoaches {get; set;}
+
+    public List<SelectOption> stateOptions {get; set;}
+    public String selectedState {get; set;}
+    public List<SelectOption> assignedStatusOptions {get; set;}
+    public String selectedAssignStatus {get; set;}
+    public List<SelectOption> radiusOptions {get; set;}
+    public String selectedRadius {get; set;}
+
+    public String campusQryFields {get; set;}
+    public String coachQryFields {get; set;}
+    public String theLat {get;set;}
+    public String theLong {get; set;}
+    public String mapCriteria {get; set;}
+    public String baseUrl {get; set;}
+
+    public Boolean hasLocation {get; set;}
+    public Boolean hasCandidates {get; set;}
+    public Boolean hasSearched {get; set;}
+    public Boolean isSelectAll {get; set;}
+
+    public Id searchAcctId {get; set;} // use to establish the center point for the map search
+
+
+    // error handling
+    public Boolean hasError {get; set;}
+    public String errorMsg {get; set;}
+
+    public static final String TYPE_COACH = 'coach';
+    public static final String TYPE_CAMPUS = 'campus';
+    public static final String ASSIGN_QRY_ASSIGNED = 'Assigned';
+    public static final String ASSIGN_QRY_UNASSIGNED = 'Unassigned';
+    public static final String ASSIGN_QRY_BOTH = 'Both';
+
+
+
+
+// ************************           PRIVATE VARIABLES       **************************
+    private ApexPages.StandardController controller;
+    private static final Integer MAX_CAND_SIZE = 200;
+
+
+// ************************           CONSTRUCTOR                                 **************************           
+    public VFC_CoachAssignmentTool(ApexPages.StandardController controller)
+    {
+        System.debug('---> starting VFC_CoachAssignmentTool constructor');
+        this.controller = controller;
+        acct = (Account) controller.getRecord();
+
+        acct = new Account();
+        acct.Billing_Status__c = null;
+        acct.State__c = null;
+        acct.Candidate_Status__c = '';
+
+
+        if ( employment == null )
+        {
+            employment = new Intern_Employment__c();
+            employment.Start_Date__c = null;
+            employment.End_Date__c = null;
+        }
+        if ( coach == null )
+        {
+            coach = new Coaches_and_Mentors__c();
+        }
+        if ( coachForAssignment == null )
+        {
+            coachForAssignment = new Coaches_and_Mentors__c();
+        }
+        if ( certification == null )
+        {
+            certification = new Intern_Certification_Area__c();
+            certification.Certification_Type__c = '';
+        }
+
+        baseUrl = URL.getSalesforceBaseUrl().toExternalForm();
+        init();
+    }
+
+    public void init()
+    {
+        hasLocation = false;
+        resetErrors();
+        hasSearched = false;
+
+        hasCandidates = false;
+        theLat = null;
+        theLong = null;
+
+        mapCriteria = null;
+        isSelectAll = false;
+
+        campusQryFields = 'SELECT Id, Name, ParentId, Parent.Name, Phone, BillingStreet, BillingCity, BillingState, BillingCountry, BillingPostalCode, BillingLatitude, BillingLongitude';
+        coachQryFields = 'SELECT Id, Name, ParentId, Parent.Name, Phone, PersonMailingStreet, PersonMailingCity, PersonMailingState, PersonMailingCountry, PersonMailingPostalCode, Coach_Location__Latitude__s, Coach_Location__Longitude__s';
+
+        stateOptions = getStateOptions();
+        assignedStatusOptions = getAssignStatusOptions();
+        radiusOptions = getRadiusOptions();
+
+        System.debug(LoggingLevel.WARN, '---> state options: ' + stateOptions);
+    }
+
+    public PageReference doSelectAll()
+    {
+        System.debug('starting doSelectAll');
+        if ( candidateWrappers != null && candidateWrappers.size() > 0 )
+        {
+            for(CandidateWrapper wrapper : candidateWrappers)
+            {
+                System.debug('setting wrapper check to: ' + isSelectAll);
+                wrapper.isSelected = isSelectAll;
+            }
+        }
+        return null;
+    }
+
+    public List<SelectOption> getAssignStatusOptions()
+    {
+        List<SelectOption> options = new List<SelectOption>();
+        options.add( new SelectOption( '', ASSIGN_QRY_BOTH));
+        options.add( new SelectOption( ASSIGN_QRY_ASSIGNED, ASSIGN_QRY_ASSIGNED));
+        options.add( new SelectOption( ASSIGN_QRY_UNASSIGNED, ASSIGN_QRY_UNASSIGNED));
+
+
+        return options;
+    }
+
+    public List<SelectOption> getRadiusOptions()
+    {
+        List<SelectOption> options = new List<SelectOption>();
+        options.add( new SelectOption( '1','1 mile' ));
+        options.add( new SelectOption( '5','5 miles' ));
+        options.add( new SelectOption( '10', '10 miles'));
+        options.add( new SelectOption( '20', '20 miles'));
+        options.add( new SelectOption( '50', '50 miles'));
+
+
+        return options;
+    }
+
+    public List<SelectOption> getStateOptions()
+    {
+        List<SelectOption> options = new List<SelectOption>();
+        options.add( new SelectOption( '','--None--' ));
+
+        for (AggregateResult ar : [SELECT BillingState, count(id) FROM Account WHERE Type = 'Campus' AND BillingState != NULL
+        GROUP BY BillingState ORDER BY BillingState])
+        {
+            System.debug('State: ' + ar.get('BillingState'));
+            System.debug('Count: ' + ar.get('expr0'));
+            options.add( new SelectOption( (String)ar.get('BillingState'), (String)ar.get('BillingState')) );
+        }
+
+
+        return options;
+    }
+
+    /*public PageReference getCoach()
+    {
+        System.debug(LoggingLevel.WARN, '---> start getCoach after input change');
+
+        return null;
+
+    }*/
+
+    public PageReference doAssign()
+    {
+        System.debug(LoggingLevel.WARN, '---> start doAssign');
+        Boolean hasSelected = false;
+
+        resetErrors();
+
+        Set<Id> existingInternIds = new Set<Id>();
+        List<Coaches_and_Mentors__c> insertList = new List<Coaches_and_Mentors__c>();
+        List<Coaches_and_Mentors__c> existingMentors;
+        List<AccountShare> coachSharesInsertList = new List<AccountShare>();
+        System.debug(LoggingLevel.WARN, '---> coach for assignment: ' + coachForAssignment);
+
+        User coachUser;
+        Id coachUserId;
+
+
+        if ( coachForAssignment.Coach_Mentor_Account__c != null && candidateWrappers != null && candidateWrappers.size() > 0 )
+        {
+
+            try
+            {
+                //coachAccount = [SELECT ID, NAME, Coach_Mentor_User__c FROM Account WHERE Id = :coachForAssignment.Coach_Mentor_Account__c LIMIT 1];
+                //System.debug(LoggingLevel.WARN, '---> coachAccount: ' + coachAccount );
+                List<User> coachUsers = [SELECT Id, Name FROM User WHERE ContactId IN (SELECT Id FROM Contact WHERE AccountId = :coachForAssignment.Coach_Mentor_Account__c)];
+                if ( coachUsers != null && coachUsers.size() > 0 )
+                {
+                    coachUser = coachUsers[0];
+                    coachUserId = coachUser.Id;
+                }
+
+                System.debug(LoggingLevel.WARN, '---> coachUser: ' + coachUser );
+
+            }
+            catch ( Exception e )
+            {
+                System.debug(LoggingLevel.WARN, '---> no coach record for account...');
+                System.debug(LoggingLevel.WARN, '---> message, stacktrace: ' + e.getMessage() + ' ' + e.getStackTraceString() );
+            }
+
+            for (CandidateWrapper wrapper : candidateWrappers)
+            {
+                if (wrapper.isSelected && wrapper.candidate != null)
+                {
+                    hasSelected = true;
+                    Coaches_and_Mentors__c mentor = new Coaches_and_Mentors__c();
+                    mentor.Coach_Mentor_Account__c = coachForAssignment.Coach_Mentor_Account__c;
+                    mentor.Intern_Account__c = wrapper.candidate.Id;
+                    mentor.Start_Date__c = Date.today();
+                    mentor.Role__c = 'Coach'; //todo: label
+
+                    insertList.add(mentor);
+
+                    // add to list so we can see if already has an assignment...
+                    existingInternIds.add(wrapper.candidate.Id);
+
+                    // create a sharing record
+                    if ( coachUserId != null)
+                    {
+                        System.debug(LoggingLevel.WARN, '---> found coach to create sharing rule for');
+                        AccountShare share = new AccountShare();
+                        share.AccountId = wrapper.candidate.Id;
+                        share.AccountAccessLevel = 'EDIT';
+                        share.CaseAccessLevel = 'EDIT';
+                        share.OpportunityAccessLevel = 'EDIT';
+                        //share.UserOrGroupId = coachAccount.Coach_Mentor_User__c;
+                        share.UserOrGroupId = coachUserId;
+                        coachSharesInsertList.add(share);
+                    }
+
+                }
+            }
+
+            if (!hasSelected)
+            {
+                hasError = true;
+                errorMsg = 'Please select candidate(s) to assign';
+                return null;
+            }
+
+            System.debug(LoggingLevel.WARN, '---> looking for existing mentors');
+            System.debug(LoggingLevel.WARN, '---> existing interns: ' + existingInternIds);
+
+            if (existingInternIds != null && existingInternIds.size() > 0)
+            {
+                existingMentors = [SELECT Id FROM Coaches_and_Mentors__c WHERE Intern_Account__c IN :existingInternIds AND Active__c = true];
+            }
+
+            System.debug(LoggingLevel.WARN, '---> insertList for mentors: ' + insertList);
+            if (insertList != null && insertList.size() > 0)
+            {
+                System.debug(LoggingLevel.WARN, '---> about to insert mentors');
+                try
+                {
+                    insert insertList;
+                }
+                catch (Exception e)
+                {
+                    System.debug(LoggingLevel.WARN, '---> message, stacktrace: ' + e.getMessage() + ' ' + e.getStackTraceString());
+                    hasError = true;
+                    errorMsg += e.getMessage();
+                    return null;
+                }
+            }
+
+            System.debug(LoggingLevel.WARN, '---> coach shares: ' + coachSharesInsertList);
+            if (coachSharesInsertList != null && coachSharesInsertList.size() > 0)
+            {
+                System.debug(LoggingLevel.WARN, '---> inserting coach shares');
+                try
+                {
+                    insert coachSharesInsertList;
+                }
+                catch (Exception e)
+                {
+                    System.debug(LoggingLevel.WARN, '---> message, stacktrace: ' + e.getMessage() + ' ' + e.getStackTraceString());
+                    hasError = true;
+                    errorMsg += e.getMessage();
+                    return null;
+                }
+
+            }
+
+            System.debug(LoggingLevel.WARN, '---> existing mentors to end-date: '+ existingMentors);
+            if ( existingMentors != null & existingMentors.size() > 0 )
+            {
+                System.debug(LoggingLevel.WARN, '---> end dating existing mentors');
+                for ( Coaches_and_Mentors__c mentor : existingMentors )
+                {
+                    mentor.End_Date__c = Date.today();
+                }
+                try
+                {
+                    System.debug(LoggingLevel.WARN, '---> mentors to update: ' + existingMentors );
+                    update existingMentors;
+                }
+                catch (Exception e )
+                {
+                    System.debug(LoggingLevel.WARN, '---> message, stacktrace: ' + e.getMessage() + ' ' + e.getStackTraceString() );
+                    hasError = true;
+                    errorMsg += e.getMessage();
+                    return null;
+                }
+
+            }
+        }
+        else
+        {
+            hasError = true;
+            errorMsg = 'Please select a Coach';
+            return null;
+        }
+
+        // todo: add record share
+        return doSearch();
+    }
+
+
+    public PageReference doUnassign()
+    {
+        System.debug(LoggingLevel.WARN, '---> start doUnassign');
+
+        Boolean hasSelected = false;
+        resetErrors();
+
+        Set<Id> existingInternIds = new Set<Id>();
+        List<Coaches_and_Mentors__c> updateList = new List<Coaches_and_Mentors__c>();
+
+
+        System.debug(LoggingLevel.WARN, '---> coach for unassign: ' + coachForAssignment.Coach_Mentor_Account__c);
+        if ( coachForAssignment.Coach_Mentor_Account__c == null )
+        {
+            hasError = true;
+            errorMsg = 'Please select a Coach';
+            return null;
+        }
+
+
+            for (CandidateWrapper wrapper : candidateWrappers)
+            {
+                System.debug(LoggingLevel.WARN, '---> wrapper: ' + wrapper);
+                System.debug(LoggingLevel.WARN, '---> wrapper.isSelected: ' + wrapper.isSelected);
+
+
+                if (wrapper.isSelected)
+                {
+                    hasSelected = true;
+                    existingInternIds.add( wrapper.candidate.Id );
+                }
+            }
+
+            if ( !hasSelected )
+            {
+                hasError = true;
+                errorMsg = 'Please select candidate(s) to unassign';
+                return null;
+            }
+
+            // now query for any assignments for this candidate for this coach
+            if ( existingInternIds != null && existingInternIds.size() > 0 )
+            {
+                updateList = [SELECT Id, Coach_Mentor_Account__c, Intern_Account__c, Start_Date__c, End_Date__c FROM Coaches_and_Mentors__c
+                    WHERE Intern_Account__c IN :existingInternIds
+                    AND Coach_Mentor_Account__c = :coachForAssignment.Coach_Mentor_Account__c
+                    AND Active__c = true ];
+
+                List<Id> candidateIds = new List<Id>();
+                List<Id> coachIds = new List<Id>();
+
+                System.debug(LoggingLevel.WARN, '---> mentors to update: ' + updateList);
+                if ( updateList != null && updateList.size() > 0 )
+                {
+                    System.debug(LoggingLevel.WARN, '---> setting end date to today');
+                    for ( Coaches_and_Mentors__c mentor : updateList )
+                    {
+                        mentor.End_Date__c = Date.today();
+                        candidateIds.add( mentor.Intern_Account__c);
+                        coachIds.add( mentor.Coach_Mentor_Account__c);
+                    }
+
+                    try
+                    {
+                        System.debug(LoggingLevel.WARN, '---> updating updateList');
+                        update updateList;
+
+                        // delete the account shares
+                        if ( coachIds != null && candidateIds != null && coachIds.size() > 0 && candidateIds.size() > 0 )
+                        {
+                            List<AccountShare> coachSharesDelete = [SELECT Id FROM AccountShare WHERE UserOrGroupId IN :coachIds AND AccountId IN :candidateIds];
+                            System.debug(LoggingLevel.WARN, '---> coach shares to delete: ' + coachSharesDelete);
+                            if ( coachSharesDelete != null && coachSharesDelete.size() > 0 )
+                            {
+                                System.debug(LoggingLevel.WARN, '---> deleting coach shares');
+                                delete coachSharesDelete;
+                            }
+                        }
+
+                    }
+                    catch (Exception e )
+                    {
+                        hasError = true;
+                        errorMsg = e.getMessage();
+                        System.debug(LoggingLevel.WARN, '---> message, stacktrace: ' + e.getMessage() + ' ' + e.getStackTraceString() );
+                        return null;
+                    }
+                }
+            }
+
+        if ( hasError )
+        {
+            return null;
+        }
+        else
+        {
+            return doSearch();
+        }
+
+    }
+
+
+    public PageReference doSearch()
+    {
+        System.debug(LoggingLevel.WARN, '---> start doSearch()');
+        resetErrors();
+
+        mapWrappers = new List<MapWrapper>();
+        /*coachWrappers = new List<MapWrapper>();
+        campusWrappers = new List<MapWrapper>();
+        campusWrappers_unassigned = new List<MapWrapper>();
+
+        Map<Id, MapWrapper> coachWrapMap = new Map<Id, MapWrapper>();
+        Map<Id, MapWrapper> campusWrapMap = new Map<Id, MapWrapper>();
+        Map<Id, MapWrapper> campusWrapMap_unassigned = new Map<Id, MapWrapper>();*/
+
+        hasLocation = false;
+        hasCandidates = false;
+        mapCriteria = null; // reset
+        hasSearched = false;
+
+        // do preliminary validations
+        if ( String.isBlank( selectedState) && employment.Campus_Account__c == null && employment.District_Account__c == null )
+        {
+            hasError = true;
+            errorMsg = 'Please select a geographic area to search (State, District, Campus)';
+            hasLocation = false;
+            hasCandidates = false;
+            hasSearched = false;
+            return null;
+        }
+        else
+        {
+            hasSearched = true;
+        }
+
+
+        // set up inputs for the search - the location to search within
+        // now search for candidates
+        System.debug(LoggingLevel.WARN, '---> about to do candidate search');
+        candidateWrappers = doCandidateSearch();
+        Set<Id> campusIds = new Set<Id>();
+
+        // limit the campuses to only those that match the candidate search...
+        if ( candidateWrappers != null && candidateWrappers.size() > 0 )
+        {
+            for ( CandidateWrapper wrap : candidateWrappers )
+            {
+                if ( wrap.campusId != null )
+                {
+                    campusIds.add( wrap.campusId );
+                }
+            }
+        }
+
+        System.debug(LoggingLevel.WARN, '---> campusIds: ' + campusIds );
+
+        setMapSearchCriteria();
+        if ( searchAcctId != null )
+        {
+            System.debug(LoggingLevel.WARN, '---> do a geo search...');
+            // since we are doing a radius of campus/district -- blank out the State to avoid confusion
+            selectedState = null;
+
+            // add the selected campus/district so it will be included in results
+            campusIds.add( searchAcctId );
+
+            List<Account> acctList = [SELECT Id, Name, BillingLatitude, BillingLongitude, Coach_Location__c FROM Account WHERE Id = :searchAcctId];
+            if ( acctList != null && acctList.size() > 0 )
+            {
+                System.debug(LoggingLevel.WARN, '---> account for determining lat/long: ' + acctList[0]);
+
+                Account baseAcct = acctList[0];
+                theLat = String.valueOf( baseAcct.BillingLatitude);
+                theLong = String.valueOf( baseAcct.BillingLongitude);
+                mapWrappers = doRadiusSearch(baseAcct, campusIds );
+            }
+
+        }
+        else if ( searchAcctId == null && String.isNotBlank( selectedState ) )
+        {
+            System.debug(LoggingLevel.WARN, '---> do a state-wide search');
+            mapWrappers = doStateWideSearch( selectedState, campusIds );
+        }
+
+
+
+        // SET UP PINS
+        setPins(mapWrappers, candidateWrappers);
+
+        System.debug(LoggingLevel.WARN, '---> candidate wrappers: ' + candidateWrappers);
+
+        if ( candidateWrappers != null && candidateWrappers.size() > 0 )
+        {
+            hasCandidates = true;
+        }
+
+
+        return null;
+    }
+
+    public void setPins( List<MapWrapper> mapWrappers, List<CandidateWrapper> candidateWrappers )
+    {
+        System.debug(LoggingLevel.WARN, '---> start setPins');
+        // break into coach pins (black)
+        // , campus with ALL of queried candidates assigned to coach (green)
+        // , campus with ANY of queried candidate NOT assigned to coach (red)
+
+        // coach should show counter of ALL active candidates, not just those from query
+
+        coachWrappers = new List<MapWrapper>();
+        campusWrappers = new List<MapWrapper>();
+        campusWrappers_unassigned = new List<MapWrapper>();
+
+        Map<Id, MapWrapper> coachWrapMap = new Map<Id, MapWrapper>();
+        Map<Id, MapWrapper> campusWrapMap = new Map<Id, MapWrapper>();
+        Map<Id, MapWrapper> campusWrapMap_unassigned = new Map<Id, MapWrapper>();
+
+
+        System.debug(LoggingLevel.WARN, '---> building summaries for coaches/campuses');
+        if ( mapWrappers != null && mapWrappers.size() > 0 )
+        {
+            hasLocation = true;
+            System.debug(LoggingLevel.WARN, '---> has Location');
+            Map<Id, MapWrapper> mapWrapMap = new Map<Id, MapWrapper>(); // map of ALL returned wrappers (coach and campus)
+            for ( MapWrapper wrap : mapWrappers )
+            {
+                if ( wrap.coach != null )
+                {
+                    mapWrapMap.put( wrap.coach.Id, wrap );
+                    coachWrapMap.put( wrap.coach.Id, wrap );
+                }
+                else if ( wrap.campus != null )
+                {
+                    System.debug(LoggingLevel.WARN, '---> adding campus: ' + wrap.campus);
+                    mapWrapMap.put( wrap.campus.Id, wrap );
+                    campusWrapMap.put( wrap.campus.Id, wrap );
+
+                }
+            }
+
+            System.debug(LoggingLevel.WARN, '---> after initial coach/campus split');
+            System.debug(LoggingLevel.WARN, '---> coachWrappers: ' + coachWrapMap);
+            System.debug(LoggingLevel.WARN, '---> campusWrappers: ' + campusWrapMap);
+
+            if ( mapWrapMap != null && mapWrapMap.keySet().size() > 0 )
+            {
+                // really need to loop over the candidates and look at their wrapper's employment Id?
+                //
+                // then count the number of total interns employed FROM the current search result
+                // then count the number of those with a coach assignmend
+                // then split into Red pin/green pin
+
+                // loop over results and build a campus map and a coach map
+                // do an agg query for coaches -- set the count, pull from the coach map (B/C agg will not return is 0 count)
+
+                // loop over all returned candidates
+                    // incr counter for campus employment
+                    // incr counter for coach assignment
+                    // use this to determine pin color
+
+                System.debug(LoggingLevel.WARN, '---> doing query for coach count');
+                // get coach totals
+                for ( AggregateResult ar : [SELECT count(id) candCount, Coach_Mentor_Account__c
+                    FROM Coaches_and_Mentors__c
+                    WHERE Coach_Mentor_Account__c IN :mapWrapMap.keySet()
+                    AND Active__c = true
+                    GROUP BY Coach_Mentor_Account__c] )
+                {
+                    Id coachId = (Id) ar.get('Coach_Mentor_Account__c');
+                    MapWrapper coach = coachWrapMap.get( coachId );
+                    System.debug(LoggingLevel.WARN, '---> updating count for coach: ' + coach);
+                    if ( coach != null )
+                    {
+                        coach.candidateCount = (Integer) ar.get('candCount');
+                        System.debug(LoggingLevel.WARN, '---> coach candidate count is: ' + coach.candidateCount );
+                        coachWrapMap.put( coachId, coach );
+                    }
+                }
+
+                System.debug(LoggingLevel.WARN, '---> set the coach list');
+                coachWrappers = coachWrapMap.values();
+
+                // get campus totals and pins
+
+                if ( campusWrapMap != null && campusWrapMap.keySet().size() > 0 && candidateWrappers != null && candidateWrappers.size() > 0 )
+                {
+                    System.debug(LoggingLevel.WARN, '---> looping over candidates to get the campus counts');
+                    for ( CandidateWrapper candidate : candidateWrappers )
+                    {
+                        System.debug(LoggingLevel.WARN, '---> candidate: ' + candidate );
+                        System.debug(LoggingLevel.WARN, '---> campus for candidate: ' + candidate.campusId );
+                        System.debug(LoggingLevel.WARN, '---> coach for candidate: ' + candidate.coachId );
+                        if (candidate.campusId != null)
+                        {
+                            MapWrapper campus = campusWrapMap.get( candidate.campusId );
+                            System.debug(LoggingLevel.WARN, '---> campus from campus hashmap: ' + campus );
+                            if ( campus != null )
+                            {
+                                System.debug(LoggingLevel.WARN, '---> incrementing counter for candidate campus; was: ' + campus.candidateCount);
+                                campus.candidateCount = campus.candidateCount + 1;
+
+                                if ( candidate.coachId != null )
+                                {
+                                    System.debug(LoggingLevel.WARN, '---> incrementing counter for candidate campus WITH COACH; was ' + campus.candidateWithCoachCount);
+                                    campus.candidateWithCoachCount = campus.candidateWithCoachCount + 1;
+                                }
+
+                                //System.debug(LoggingLevel.WARN, '---> candidateCount now: ' + campus.candidateCount);
+                                //System.debug(LoggingLevel.WARN, '---> candidateWithCoachCount now: ' + campus.candidateWithCoachCount);
+                                //System.debug(LoggingLevel.WARN, '---> hasCompleted: ' + campus.hasCompletelyAssigned);
+                            }
+
+                        }
+                    }
+                }
+
+                System.debug(LoggingLevel.WARN, '---> now setting pins for campus');
+                // use a separate IF block from the candidate loop in case there are no candidates
+                if ( campusWrapMap != null && campusWrapMap.keySet().size() > 0 )
+                {
+                    for ( MapWrapper campus : campusWrapMap.values() )
+                    {
+                        System.debug(LoggingLevel.WARN, '---> setting pin for campus: ' + campus );
+                        campus.setHasCompleted();
+                        //if ( campus.candidateCount != null && campus.candidateCount > 0 && campus.candidateCount == campus.candidateWithCoachCount )
+
+                        // if searching for unassigned, don't show the pin if a campus does not have any unassigned people...
+                        if ( selectedAssignStatus == 'Unassigned' && campus.hasCompletelyAssigned )
+                        {
+                            System.debug(LoggingLevel.WARN, '---> do not show pin for unassigned query!');
+                            continue;
+                        }
+
+
+                        if ( campus.candidateWithCoachCount != null && campus.candidateWithCoachCount > 0 )
+                        {
+                            System.debug(LoggingLevel.WARN, '---> setting green pin');
+                            campusWrappers.add( campus );
+                        }
+                        else if ( selectedAssignStatus != ASSIGN_QRY_ASSIGNED)
+                        {
+                            System.debug(LoggingLevel.WARN, '---> setting red pin');
+                            campusWrappers_unassigned.add( campus );
+                        }
+                    }
+                }
+
+            }
+
+        }
+    }
+
+    public void setMapSearchCriteria()
+    {
+        // priority - Campus, then District, then State
+        System.debug(LoggingLevel.WARN, '---> employment: ' + employment);
+        if ( employment.Campus_Account__c != null )
+        {
+            System.debug(LoggingLevel.WARN, '---> returning Campus Id');
+            searchAcctId = employment.Campus_Account__c;
+            mapCriteria = '(by Campus)';
+        }
+        else if ( employment.District_Account__c != null )
+        {
+            System.debug(LoggingLevel.WARN, '---> returning District Id');
+            searchAcctId = employment.District_Account__c;
+            mapCriteria = '(by District)';
+        }
+        else if ( String.isNotBlank(selectedState) )
+        {
+            System.debug(LoggingLevel.WARN, '---> STATE selected - no Id');
+            searchAcctId = null;
+            mapCriteria = '(by State)';
+        }
+    }
+
+    public List<MapWrapper> doStateWideSearch( String state, Set<Id> campusIds )
+    {
+        System.debug(LoggingLevel.WARN, '---> start doStateWideSearch');
+        System.debug(LoggingLevel.WARN, '---> incoming state for search: ' + state );
+
+        // query for results - Coaches/Campuses within the radius of ONE of the following
+        // only search using ONE criteria
+        // priority: campus, then district, then state
+
+        List<MapWrapper> tmpList;
+
+        String distance = '100'; // todo: variable/dropdown
+        if(distance == null) distance = '2';
+        Integer distanceInt = Integer.valueOf(distance);
+
+        // campus query
+        System.debug(LoggingLevel.WARN, '--->  build campus query');
+        String campus_qry = campusQryFields;
+        campus_qry += ' FROM Account';
+        campus_qry += ' WHERE BillingState = \'' + state + '\'';
+        campus_qry += ' AND Type = \'Campus\'';
+        campus_qry += ' AND BillingStreet != NULL';
+
+
+        //campus_qry += ' AND (Id IN (SELECT Campus_Account__c FROM Intern_Employment__c WHERE Active__c = true ) ) ';
+        if ( campusIds != null && campusIds.size() > 0 )
+        {
+            String campusIdsStr = Main_DisplayUtils.getFormattedIdList( campusIds );
+            campus_qry += ' AND (Id IN (' + campusIdsStr + ') ) ';
+        }
+        campus_qry += ' LIMIT 500'; // max size is 1000 - so 1/2 and 1/2 for coach/campus
+
+        System.debug(LoggingLevel.WARN, '---> state-wide map campus query: ' + campus_qry);
+
+        // coach query
+        System.debug(LoggingLevel.WARN, '--->  build coach query');
+        String coach_qry = coachQryFields;
+        coach_qry += ' FROM Account';
+        coach_qry += ' WHERE PersonMailingState = \'' + state + '\'';
+        coach_qry += ' AND Type__pc = \'Coach\'';
+        coach_qry += ' AND PersonMailingStreet != null ';
+        coach_qry += ' AND IsActive__c = true ';
+        if ( coach.Coach_Mentor_Account__c != null )
+        {
+            coach_qry += ' AND Id = \'' + coach.Coach_Mentor_Account__c + '\' ';
+        }
+        coach_qry += ' LIMIT 500'; // max size is 1000 - so 1/2 and 1/2 for coach/campus
+
+
+        System.debug(LoggingLevel.WARN, '---> state-wide map coach query: ' + coach_qry);
+
+
+        try
+        {
+            nearbyCampuses = Database.query(campus_qry);
+            nearbyCoaches = Database.query(coach_qry);
+            System.debug(LoggingLevel.WARN, '---> found campuses: ' + nearbyCampuses);
+            System.debug(LoggingLevel.WARN, '---> found coaches: ' + nearbyCoaches);
+
+            tmpList = getMapWrappers(nearbyCampuses, nearbyCoaches);
+        }
+        catch (Exception e )
+        {
+            hasError = true;
+            errorMsg = e.getMessage();
+            Main_DisplayUtils.addError( e.getMessage() );
+            System.debug(LoggingLevel.WARN, '---> message, stacktrace: ' + e.getMessage() + ' ' + e.getStackTraceString() );
+
+        }
+
+
+
+        return tmpList;
+
+    }
+
+
+
+    public List<MapWrapper> doRadiusSearch( Account a, Set<Id> campusIds )
+    {
+        System.debug(LoggingLevel.WARN, '---> start doRadiusSearch');
+        System.debug(LoggingLevel.WARN, '---> incoming account for base radius: ' + a );
+
+        // query for results - Coaches/Campuses within the radius of ONE of the following
+        // only search using ONE criteria
+        // priority: campus, then district, then state
+
+        List<MapWrapper> wrappers;
+
+        if ( a != null && a.BillingLongitude != null && a.BillingLatitude != null )
+        {
+            String distance = selectedRadius;
+            if ( distance == null ) distance = '50';
+            if(distance == null) distance = '2';
+            Integer distanceInt = Integer.valueOf(distance);
+
+            // campus query
+            System.debug(LoggingLevel.WARN, '--->  build campus query');
+            String campus_qry = campusQryFields;
+            campus_qry += ' FROM Account';
+            campus_qry += ' WHERE';
+            if(!Test.isRunningTest()) campus_qry += ' DISTANCE(BillingAddress, GEOLOCATION(' + a.BillingLatitude + ', ' + a.BillingLongitude + '), \'mi\') < ' + distanceInt;
+            if(!Test.isRunningTest()) campus_qry += ' AND ';
+            campus_qry += ' Type = \'Campus\'';
+            campus_qry += ' AND BillingStreet != NULL';
+            //campus_qry += ' AND (Id IN (SELECT Campus_Account__c FROM Intern_Employment__c WHERE Active__c = true ) ) ';
+            if ( campusIds != null && campusIds.size() > 0 )
+            {
+                String campusIdsStr = Main_DisplayUtils.getFormattedIdList( campusIds );
+                campus_qry += ' AND (Id IN (' + campusIdsStr + ') ) ';
+            }
+
+            if(!Test.isRunningTest()) campus_qry += ' ORDER BY DISTANCE(BillingAddress, GEOLOCATION(' + a.BillingLatitude + ', ' + a.BillingLongitude + '), \'mi\')';
+
+            System.debug(LoggingLevel.WARN, '---> map campus query: ' + campus_qry);
+
+            // coach query
+            System.debug(LoggingLevel.WARN, '--->  build coach query');
+            String coach_qry = coachQryFields;
+            coach_qry += ' FROM Account';
+            coach_qry += ' WHERE';
+            if(!Test.isRunningTest()) coach_qry += ' DISTANCE(Coach_Location__c, GEOLOCATION(' + a.BillingLatitude + ', ' + a.BillingLongitude + '), \'mi\') < ' + distanceInt;
+            if(!Test.isRunningTest()) coach_qry += ' AND ';
+            coach_qry += ' Type__pc = \'Coach\'';
+            coach_qry += ' AND PersonMailingStreet != null ';
+            coach_qry += ' AND IsActive__c = true ';
+            if ( coach.Coach_Mentor_Account__c != null )
+            {
+                coach_qry += ' AND Id = \'' + coach.Coach_Mentor_Account__c + '\' ';
+            }
+            if(!Test.isRunningTest()) coach_qry += ' ORDER BY DISTANCE(Coach_Location__c, GEOLOCATION(' + a.BillingLatitude + ', ' + a.BillingLongitude + '), \'mi\')';
+
+            System.debug(LoggingLevel.WARN, '---> map coach query: ' + coach_qry);
+
+            try
+            {
+                nearbyCampuses = Database.query(campus_qry);
+                nearbyCoaches = Database.query(coach_qry);
+                System.debug(LoggingLevel.WARN, '---> found campuses: ' + nearbyCampuses);
+                System.debug(LoggingLevel.WARN, '---> found coaches: ' + nearbyCoaches);
+
+                wrappers = getMapWrappers(nearbyCampuses, nearbyCoaches);
+            }
+            catch (Exception e )
+            {
+                hasError = true;
+                errorMsg = e.getMessage();
+                Main_DisplayUtils.addError( e.getMessage() );
+                System.debug(LoggingLevel.WARN, '---> message, stacktrace: ' + e.getMessage() + ' ' + e.getStackTraceString() );
+
+            }
+
+        }
+        else
+        {
+            hasError = true;
+            errorMsg = 'No location found for selected District/Campus';
+        }
+
+
+        return wrappers;
+
+    }
+
+    public List<MapWrapper> getMapWrappers( List<Account> campuses, List<Account> coaches )
+    {
+        System.debug(LoggingLevel.WARN, '---> start getMapWrappers');
+        List<MapWrapper> wrappers = new List<MapWrapper>();
+
+        if ( campuses != null && campuses.size() > 0 )
+        {
+            System.debug(LoggingLevel.WARN, '---> building campus wrappers');
+            for ( Account a : campuses )
+            {
+                MapWrapper wrap = new MapWrapper( a, TYPE_CAMPUS );
+                wrappers.add( wrap );
+            }
+        }
+
+        if ( coaches != null && coaches.size() > 0 )
+        {
+            System.debug(LoggingLevel.WARN, '---> building coach wrappers');
+            for ( Account a : coaches )
+            {
+                MapWrapper wrap = new MapWrapper( a, TYPE_COACH );
+                wrappers.add( wrap );
+            }
+        }
+
+        System.debug(LoggingLevel.WARN, '---> wrappers: ' + wrappers );
+        return wrappers;
+    }
+
+
+
+    public List<CandidateWrapper> doCandidateSearch()
+    {
+        // todo: do candidate search
+        //  then based on candidates returned, use those campuses into the Campus search
+
+
+        System.debug(LoggingLevel.WARN, '---> start doCandidateSearch');
+        List<CandidateWrapper> wrappers = new List<CandidateWrapper>();
+        List<Account> cands;
+
+        Boolean assignQry = false;
+        Boolean coachQry = false;
+        Boolean certStatusQry = false;
+        //Boolean certTypeQry = false;
+        Boolean certStartDateQry = false;
+        Boolean empStartDateQry = false;
+
+        String queryFromWhereClause = '';
+
+        Set<Id> subQueryIds = new Set<Id>(); // use this to get around max 2 semi-join statements
+        String subQueryGeoFilter = ''; // use this to filter out some subqueryIds based on Geo (state, district, campus)
+
+        String cand_qry = '';
+
+        queryFromWhereClause += ' FROM Account ';
+        queryFromWhereClause += ' WHERE Type = \'Candidate\' ';
+        queryFromWhereClause += ' AND Employment_Active__c > 0 ';
+        queryFromWhereClause += ' AND Is_Active_Candidate__c = true ';
+
+        ///////
+
+        cand_qry += ' SELECT ID, Name, PersonMailingStreet, PersonMailingCity, PersonMailingState';
+        cand_qry += ', FirstName, LastName, Candidate_Status__c, Billing_Status__c';
+        cand_qry += ', PersonMailingPostalCode, PersonMailingLongitude, PersonMailingLatitude ';
+        cand_qry += ', Observation_1_Deadline__c, Observation_2_Deadline__c, Observation_3_Deadline__c ';
+        cand_qry += ', Observation_4_Deadline__c, Observation_5_Deadline__c, Observation_6_Deadline__c ';
+        cand_qry += ', Observation_Initial_Contact__c ';
+
+
+        //cand_qry += ' , ( SELECT Coach_Mentor_Account__c, Coach_Mentor_Account__r.Name FROM CoachMentor_Assignments__r ';
+        //cand_qry += ' WHERE End_Date__c > TODAY OR End_Date__c = null ORDER BY CreatedDate DESC LIMIT 1 ) ';
+
+        cand_qry += ' , ( SELECT Intern_Account__c, Start_Date__c, End_Date__c, Coach_Mentor_Account__c, Coach_Mentor_Account__r.Name FROM Candidate_Assignments__r ';
+        cand_qry += ' WHERE Active__c = true ORDER BY CreatedDate DESC LIMIT 1 ) ';
+
+        cand_qry += ' , ( SELECT Intern_Account__c, Start_Date__c, End_Date__c, Status__c '; //, Certification_Type__c ';
+        cand_qry += ' FROM Intern_Account_Cert__r WHERE End_Date__c > TODAY OR End_Date__c = null ';
+        cand_qry += ' ORDER BY CreatedDate DESC LIMIT 1 ) ';
+
+        cand_qry += ' , ( SELECT Intern__c, Start_Date__c, End_Date__c, Active__c, Status__c, District_Account__r.Name, ';
+        cand_qry += ' Campus_Account__r.Name FROM Intern_Employment__r WHERE Active__c = true ';
+        cand_qry += ' ORDER BY District_Account__c, Campus_Account__c, CreatedDate DESC LIMIT 1 ) ';
+
+        cand_qry += queryFromWhereClause;
+
+        //querySuffix += ' FROM Account ';
+        //querySuffix += ' WHERE Type = \'Candidate\' ';
+
+        // Criteria
+        System.debug(LoggingLevel.WARN, '---> building criteria');
+
+        // coach status -- Coach_Status__c
+        /*if ( String.isNotBlank( acct.Coach_Status__c) )
+        {
+            cand_qry += ' AND Coach_Status__c = \'' + acct.Coach_Status__c + '\'';
+        }*/
+
+        // state
+        System.debug(LoggingLevel.WARN, '---> selectedState: ' + selectedState);
+        if ( String.isNotBlank( selectedState) )
+        {
+            System.debug(LoggingLevel.WARN, '---> limiting by state');
+            //String filter = ' AND PersonMailingState = \'' + selectedState + '\'';
+            String filter = ' AND BillingState = \'' + selectedState + '\'';
+            cand_qry += filter;
+            subQueryGeoFilter += filter;
+
+        }
+
+        // campus
+        if ( employment.Campus_Account__c != null )
+        {
+            String filter = ' AND (Id IN ( SELECT Intern__c FROM Intern_Employment__c  WHERE Active__c = true AND Campus_Account__c = \'' + employment.Campus_Account__c + '\' ) )';
+            cand_qry += filter;
+            subQueryGeoFilter += filter;
+        }
+
+        // district
+        if ( employment.District_Account__c != null )
+        {
+            String filter = ' AND (Id IN ( SELECT Intern__c FROM Intern_Employment__c  WHERE Active__c = true AND District_Account__c = \'' + employment.District_Account__c + '\' ) )';
+            cand_qry += filter;
+            subQueryGeoFilter += filter;
+        }
+
+
+        // assigned/unassigned
+        if ( String.isNotBlank( selectedAssignStatus ))
+        {
+            assignQry = true;
+            System.debug(LoggingLevel.WARN, '---> assign status not blank: ' + selectedAssignStatus);
+            String filter;
+            if ( selectedAssignStatus == ASSIGN_QRY_ASSIGNED)
+            {
+                filter = ' AND ( Id IN (SELECT Intern_Account__c FROM Coaches_and_Mentors__c WHERE Active__c = true ';
+                if ( coach.Coach_Mentor_Account__c != null )
+                {
+                    filter += ' AND Coach_Mentor_Account__c = \'' + coach.Coach_Mentor_Account__c + '\' ';
+                }
+
+                filter += ' )) ';
+            }
+            else if ( selectedAssignStatus == ASSIGN_QRY_UNASSIGNED)
+            {
+                filter = ' AND ( Id NOT IN (SELECT Intern_Account__c FROM Coaches_and_Mentors__c WHERE Active__c = true )) ';
+            }
+
+            try
+            {
+                // get around SFDC sub-query limits...
+                String subQuery = 'SELECT ID ' + queryFromWhereClause + filter;
+                for ( Account a : Database.query( subQuery ) )
+                {
+                    subQueryIds.add( a.Id );
+                }
+                System.debug(LoggingLevel.WARN, '---> subqueryIds for unassigned ' + subQueryIds);
+
+            }
+            catch ( Exception e )
+            {
+                System.debug(LoggingLevel.WARN, '---> message, stacktrace: ' + e.getMessage() + ' ' + e.getStackTraceString() );
+                hasError = true;
+                errorMsg = e.getMessage();
+            }
+        }
+
+        // coach
+        if ( coach.Coach_Mentor_Account__c != null )
+        {
+            coachQry = true;
+
+            String filter = ' AND ( Id IN (SELECT Intern_Account__c FROM Coaches_and_Mentors__c WHERE Active__c = true AND Coach_Mentor_Account__c = \'' + coach.Coach_Mentor_Account__c + '\'  )) ';
+            try
+            {
+                String subQuery = 'SELECT ID ' + queryFromWhereClause + filter;
+                System.debug(LoggingLevel.WARN, '---> coach subquery: ' + subQuery );
+                for ( Account a : Database.query( subQuery ) )
+                {
+                    subQueryIds.add( a.Id );
+                }
+                System.debug(LoggingLevel.WARN, '---> subqueryIds for coach ' + subQueryIds);
+
+            }
+            catch ( Exception e )
+            {
+                System.debug(LoggingLevel.WARN, '---> message, stacktrace: ' + e.getMessage() + ' ' + e.getStackTraceString() );
+                hasError = true;
+                errorMsg = e.getMessage();
+            }
+        }
+
+
+        // cert status
+        if ( String.isNotBlank(certification.Status__c) )
+        {
+            certStatusQry = true;
+
+            String filter = ' AND (Id IN ( SELECT Intern_Account__c FROM Intern_Certification_Area__c  WHERE Status__c = \'' + certification.Status__c + '\' ) )';
+
+            try
+            {
+                String subQuery = 'SELECT ID ' + queryFromWhereClause + filter;
+                for ( Account a : Database.query( subQuery ) )
+                {
+                    subQueryIds.add( a.Id );
+                }
+                System.debug(LoggingLevel.WARN, '---> subqueryIds for cert status ' + subQueryIds);
+
+            }
+            catch ( Exception e )
+            {
+                System.debug(LoggingLevel.WARN, '---> message, stacktrace: ' + e.getMessage() + ' ' + e.getStackTraceString() );
+                hasError = true;
+                errorMsg = e.getMessage();
+            }
+        }
+
+        // cert type
+        /*if ( String.isNotBlank(certification.Certification_Type__c) )
+        {
+            certTypeQry = true;
+
+            String filter = ' AND (Id IN ( SELECT Intern_Account__c FROM Intern_Certification_Area__c  WHERE Certification_Type__c = \'' + certification.Certification_Type__c + '\' ) )';
+            try
+            {
+                String subQuery = 'SELECT ID ' + queryFromWhereClause + filter;
+                for ( Account a : Database.query( subQuery ) )
+                {
+                    subQueryIds.add( a.Id );
+                }
+                //List<Account> candList = Database.query( subQuery );
+                System.debug(LoggingLevel.WARN, '---> subqueryIds for cert type ' + subQueryIds);
+
+            }
+            catch ( Exception e )
+            {
+                System.debug(LoggingLevel.WARN, '---> message, stacktrace: ' + e.getMessage() + ' ' + e.getStackTraceString() );
+                hasError = true;
+                errorMsg = e.getMessage();
+            }
+        }*/
+
+
+        // cert startDate
+        if ( certification.Start_Date__c != null )
+        {
+            certStartDateQry = true;
+            String dv = getDateStr( certification.Start_Date__c); // format this to strip out an 00:00:00 time -- DO NOT ESCAPE!
+            String filter = ' AND (Id IN ( SELECT Intern_Account__c FROM Intern_Certification_Area__c  WHERE Start_Date__c >= ' + dv + ') )';
+            try
+            {
+                String subQuery = 'SELECT ID ' + queryFromWhereClause + filter;
+                for ( Account a : Database.query( subQuery ) )
+                {
+                    subQueryIds.add( a.Id );
+                }
+                //List<Account> candList = Database.query( subQuery );
+                System.debug(LoggingLevel.WARN, '---> subqueryIds for cert start date ' + subQueryIds);
+
+            }
+            catch ( Exception e )
+            {
+                System.debug(LoggingLevel.WARN, '---> message, stacktrace: ' + e.getMessage() + ' ' + e.getStackTraceString() );
+                hasError = true;
+                errorMsg = e.getMessage();
+            }
+        }
+
+
+
+        // emp startDate
+        if ( employment.Start_Date__c != null )
+        {
+            empStartDateQry = true;
+
+            String dv = getDateStr( employment.Start_Date__c); // format this to strip out an 00:00:00 time -- DO NOT ESCAPE!
+
+            System.debug(LoggingLevel.WARN, '---> employment.Start_Date__c: ' + employment.Start_Date__c);
+            System.debug(LoggingLevel.WARN, '---> format: ' + dv );
+            String filter = ' AND (Id IN ( SELECT Intern__c FROM Intern_Employment__c  WHERE Start_Date__c >= ' + dv + ') )';
+            try
+            {
+                String subQuery = 'SELECT ID ' + queryFromWhereClause + filter;
+                for ( Account a : Database.query( subQuery ) )
+                {
+                    subQueryIds.add( a.Id );
+                }
+                //List<Account> candList = Database.query( subQuery );
+                System.debug(LoggingLevel.WARN, '---> subqueryIds for emp start date ' + subQueryIds);
+
+            }
+            catch ( Exception e )
+            {
+                System.debug(LoggingLevel.WARN, '---> message, stacktrace: ' + e.getMessage() + ' ' + e.getStackTraceString() );
+                hasError = true;
+                errorMsg = e.getMessage();
+            }
+        }
+
+        // cert endDate
+        /*if ( certification.End_Date__c != null )
+        {
+
+            String dv = getDateStr( certification.End_Date__c); // format this to strip out an 00:00:00 time -- DO NOT ESCAPE!
+            cand_qry += ' AND (Id IN ( SELECT Intern_Account__c FROM Intern_Certification_Area__c  WHERE End_Date__c = ' + dv + ') )';
+        }*/
+
+        // emp endDate
+        if ( employment.End_Date__c != null )
+        {
+            String dv = getDateStr( employment.End_Date__c); // format this to strip out an 00:00:00 time -- DO NOT ESCAPE!
+
+            cand_qry += ' AND (Id IN ( SELECT Intern__c FROM Intern_Employment__c  WHERE End_Date__c >= ' + dv +  ') )';
+        }
+
+
+        /*if ( acct.Billing_Status__c != null )
+        {
+            cand_qry += ' AND Billing_Status__c = \'' + acct.Billing_Status__c + '\'';
+        }*/
+
+        System.debug(LoggingLevel.WARN, '---> adding subqueryIds');
+        String formattedSubqueryIds = null;
+        if ( subQueryIds != null && subQueryIds.size() > 0 )
+        {
+            formattedSubQueryIds = Main_DisplayUtils.getFormattedIdList( subQueryIds );
+            cand_qry += ' AND Id IN (' + formattedSubqueryIds + ')';
+        }
+
+
+        System.debug(LoggingLevel.WARN, '---> adding limit');
+        cand_qry += ' ORDER BY LastName ';
+        cand_qry += ' LIMIT ' + MAX_CAND_SIZE;
+
+        System.debug(LoggingLevel.WARN, '---> candidate query: ' + cand_qry);
+
+        try
+        {
+            List<Account> candList = Database.query( cand_qry );
+            System.debug(LoggingLevel.WARN, '---> candList: ' + candList );
+
+            if ( candList != null && candList.size() > 0 )
+            {
+                for ( Account a : candList )
+                {
+                    // we added a bunch of accountIds via subquery to get around SFDC limits; some candidates added violate sub queries further down stream
+                    // do a final parse and only add when meets all criteria
+
+                    CandidateWrapper wrap = new CandidateWrapper(a);
+                    Boolean doAdd = true;
+
+                    System.debug(LoggingLevel.WARN, '---> final parse of wrapper: ' + wrap.candidate.Name );
+                    System.debug(LoggingLevel.WARN, '---> coach on wrapper: ' + wrap.coachId);
+                    System.debug(LoggingLevel.WARN, '---> coach on wrapper: ' + wrap.coachName);
+
+                    if ( assignQry )
+                    {
+                        // if Assign, see if has coach
+                        // if Unassign see if coach is blank...
+                        if ( selectedAssignStatus == ASSIGN_QRY_ASSIGNED && wrap.coachId == null )
+                        {
+                            System.debug(LoggingLevel.WARN, '---> fails assign qry');
+                            doAdd = false;
+                        }
+                        else if ( selectedAssignStatus == ASSIGN_QRY_UNASSIGNED && wrap.coachId != null )
+                        {
+                            System.debug(LoggingLevel.WARN, '---> fails unassign qry');
+                            doAdd = false;
+                        }
+                    }
+
+                    if ( coachQry && coach.Coach_Mentor_Account__c != wrap.coachId )
+                    {
+                        System.debug(LoggingLevel.WARN, '---> fails coach qry');
+                        doAdd = false;
+                    }
+                    if ( certStatusQry && certification.Status__c != wrap.certStatus )
+                    {
+                        System.debug(LoggingLevel.WARN, '---> fails cert status qry');
+                        doAdd = false;
+                    }
+                    /*if ( certTypeQry && certification.Certification_Type__c != wrap.certLevel )
+                    {
+                        System.debug(LoggingLevel.WARN, '---> fails cert type qry');
+                        doAdd = false;
+                    }*/
+                    if ( certStartDateQry && (wrap.startDate == null || wrap.startDate < certification.Start_Date__c ))
+                    {
+                        System.debug(LoggingLevel.WARN, '---> fails emp qry');
+                        doAdd = false;
+                    }
+                    if ( empStartDateQry && (wrap.startDate == null || wrap.startDate < employment.Start_Date__c ))
+                    {
+                        System.debug(LoggingLevel.WARN, '---> fails emp qry');
+                        doAdd = false;
+                    }
+
+                    if ( doAdd )
+                    {
+                        wrappers.add( wrap );
+                    }
+                }
+
+                if ( wrappers != null )
+                {
+                    System.debug(LoggingLevel.WARN, '---> wrappers size: ' + wrappers.size() );
+                }
+
+                if ( wrappers != null && wrappers.size() == MAX_CAND_SIZE )
+                {
+                    hasError = true;
+                    errorMsg = 'Large number of candidates found. Results may be truncated. Please refine your search.';
+                }
+            }
+        }
+        catch (Exception e )
+        {
+            System.debug(LoggingLevel.WARN, '---> message, stacktrace: ' + e.getMessage() + ' ' + e.getStackTraceString() );
+            hasError = true;
+            errorMsg = e.getMessage();
+        }
+
+        System.debug(LoggingLevel.WARN, '---> returning candidate wrappers');
+        return wrappers;
+    }
+
+
+
+    public String getDateStr( Date d )
+    {
+        String rtn;
+        if ( d != null )
+        {
+            Integer day = d.day();
+            String dayValue;
+            if ( day < 10 )
+            {
+                dayValue = '0' + day;
+            }
+            else
+            {
+                dayValue = String.valueOf( day );
+            }
+
+            Integer month = d.month();
+            String monthValue;
+            if ( month < 10 )
+            {
+                monthValue = '0' + month;
+            }
+            else
+            {
+                monthValue = String.valueOf( month );
+            }
+
+
+            rtn = d.year() + '-' + monthValue + '-' + dayValue ;
+        }
+        return rtn;
+    }
+
+    public void resetErrors()
+    {
+        hasError = false;
+        errorMsg = '';
+    }
+
+    public PageReference doReset()
+    {
+        PageReference pageRef = Page.CoachAssignmentTool;
+        pageRef.setRedirect(true);
+        return pageRef;
+    }
+
+
+    public class CandidateWrapper
+    {
+        public Boolean isSelected {get; set;}
+        public Account candidate {get; set;}
+        public String campus {get; set;}
+        public String district {get; set;}
+        public String coachName {get; set;}
+        public Date startDate {get; set;}
+        public Date endDate {get; set;}
+        public String certLevel {get; set;}
+
+
+        // filter fields
+        public Id campusId {get; set;}
+        public Id coachId {get; set;}
+        public Id districtId {get; set;}
+        public String coachStatus {get; set;}
+        public String certificationType {get; set;}
+        public String certStatus {get; set;}
+
+        public Intern_Employment__c employment {get; set;}
+        public Coaches_and_Mentors__c assignment {get; set;}
+        public Coaches_and_Mentors__c coach {get; set;}
+        public Intern_Certification_Area__c certification {get; set;}
+
+        public Boolean hasAssignment {get; set;}
+
+
+        public CandidateWrapper( Account a )
+        {
+            this.isSelected = false;
+            if ( a != null )
+            {
+                this.candidate = a;
+
+                List<Intern_Employment__c> employmentList = a.Intern_Employment__r;
+                if( employmentList != null && employmentList.size() > 0 )
+                {
+                    this.employment = employmentList[0];
+                    this.districtId = employmentList[ 0 ].District_Account__c;
+                    this.district = employmentList[ 0 ].District_Account__r.Name;
+                    this.campus = employmentList[ 0 ].Campus_Account__r.Name;
+                    this.campusId = employmentList[ 0 ].Campus_Account__c;
+                }
+
+                List<Coaches_and_Mentors__c> coachList = a.Candidate_Assignments__r;
+                System.debug(LoggingLevel.WARN, '---> coachList in wrapper: ' + coachList );
+                if( coachList != null && coachList.size() > 0 )
+                {
+                    this.assignment = coachList[0];
+                    if ( assignment != null )
+                    {
+                        this.coachId = assignment.Coach_Mentor_Account__c;
+                        this.coachName = assignment.Coach_Mentor_Account__r.Name;
+                        this.startDate = assignment.Start_Date__c;
+                        this.endDate = assignment.End_Date__c;
+                    }
+
+                }
+
+                /*
+                List<Intern_Certification_Area__c> certList = a.Intern_Account_Cert__r;
+                if( certList != null && certList.size() > 0 )
+                {
+                    this.certification = certList[0];
+                    if ( certification != null )
+                    {
+                        this.certLevel = certification.Certification_Type__c;
+                        this.certStatus = certification.Status__c;
+                    }
+
+                }
+                */
+            }
+
+        }
+    }
+
+    public class MapWrapper
+    {
+        public Account coach {get; set;}
+        public Account campus {get; set;}
+        public String type {get; set;}
+        public Integer candidateCount {get; set;}
+        public String name {get; set;}
+        public String latitude {get; set;}
+        public String longitude {get; set;}
+        public Id theId {get; set;}
+        public Integer candidateWithCoachCount {get; set;}
+        public Boolean hasCompletelyAssigned {get; set;}
+        public Integer assignedCount {get; set;}
+        public Integer unassignedCount {get; set;}
+
+        public void setHasCompleted()
+        {
+            System.debug(LoggingLevel.WARN, '---> start setHasCompleted');
+            System.debug(LoggingLevel.WARN, '---> candidateCount: ' + candidateCount);
+            System.debug(LoggingLevel.WARN, '---> candidateWithCoachCount: ' + candidateWithCoachCount);
+            System.debug(LoggingLevel.WARN, '---> candcount == candwithcoachcount? ' + (candidateCount == candidateWithCoachCount) );
+
+            assignedCount = candidateWithCoachCount;
+            unassignedCount = candidateCount - candidateWithCoachCount;
+
+            if ( candidateCount == candidateWithCoachCount )
+            {
+                hasCompletelyAssigned = true;
+            }
+            else
+            {
+                hasCompletelyAssigned = false;
+            }
+
+            System.debug(LoggingLevel.WARN, '---> hascompletedassigned:' + hasCompletelyAssigned);
+        }
+
+        public MapWrapper( Account a, String type )
+        {
+            if ( a != null )
+            {
+                this.type = type;
+                this.name = a.Name;
+                this.theId = a.Id;
+                this.candidateCount = 0;
+                this.candidateWithCoachCount = 0;
+                this.hasCompletelyAssigned = false;
+
+                if ( type == TYPE_CAMPUS )
+                {
+                    this.campus = a;
+                    this.latitude = String.valueOf(a.BillingLatitude);
+                    this.longitude = String.valueOf(a.BillingLongitude);
+
+                    System.debug(LoggingLevel.WARN, '---> candcount == candwithcoachcount? ' + (candidateCount == candidateWithCoachCount) );
+
+                    setHasCompleted();
+                }
+                else if ( type == TYPE_COACH )
+                {
+                    this.coach = a;
+                    this.latitude = String.valueOf(a.Coach_Location__Latitude__s);
+                    this.longitude = String.valueOf(a.Coach_Location__Longitude__s);
+                }
+
+            }
+
+        }
+
+
+    }
+
+
+}

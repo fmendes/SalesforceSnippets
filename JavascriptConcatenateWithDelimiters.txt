@@ -1,0 +1,17 @@
+var list = [];
+if( Remark1 != "" ) {
+    list.push( Remark1 );
+}
+if( Remark2 != "" ) {
+    list.push( Remark2 );
+}
+if( Remark3 != "" ) {
+    list.push( Remark3 );
+}
+if( Remark4 != "" ) {
+    list.push( Remark4 );
+}
+if( Remark5 != "" ) {
+    list.push( Remark5 );
+}
+Result = list.join( Delimiter )?;

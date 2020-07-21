@@ -1,0 +1,159 @@
+PricingInformationRow.cmp
+
+<aura:component >
+	<aura:attribute name="rowName" type="String" /> 
+    <aura:attribute name="listPrice" type="Decimal" />
+    <aura:attribute name="bidPrice" type="Decimal" />
+    <aura:attribute name="break" type="Decimal" />
+    <aura:attribute name="discount" type="Decimal" />
+    <aura:attribute name="onlyDisplayPrices" type="Boolean" />
+    <aura:attribute name="disabled" type="Boolean" />
+
+    <aura:registerEvent name="changedEvent" type="c:PIRowChangedEvent"/>
+
+    <tr>
+
+      <th scope="row" data-label="Name">
+        <div class="slds-truncate" title="Name">{!v.rowName}</div>
+      </th>
+
+      <td data-label="List Price">
+        <div class="slds-truncate slds-float--right" title="listPrice">
+            <ui:outputNumber format="#,##0.00" value="{!v.listPrice}" />
+        </div>
+      </td>
+
+      <td data-label="Bid Price" class="rightAligned">
+        <div class="slds-truncate slds-float--right" title="bidPrice">
+            <aura:if isTrue="{! v.disabled || and( v.listPrice == 0, v.rowName != 'Misc Adder' ) }">
+                <ui:outputNumber format="#,##0.00" value="{!v.bidPrice}" />
+            <aura:set attribute="else">
+                <ui:inputNumber format="#,##0.00" 
+                    class="slds-input rightAligned" aura:id="bidPrice" 
+                    change="{!c.onBidPriceChange}"
+                    value="{!v.bidPrice}" />
+            </aura:set>
+            </aura:if>
+        </div>
+      </td>
+
+      <td data-label="Break" class="rightAligned">
+          <aura:if isTrue="{!v.onlyDisplayPrices}">
+          <aura:set attribute="else">
+            <div class="slds-truncate slds-float--right" title="break">
+            <aura:if isTrue="{! v.disabled || v.listPrice == 0 }">
+                <ui:outputNumber format="#,##0.00" value="{!v.break}" />
+
+                <aura:set attribute="else">
+                    <ui:inputNumber format="#,##0.00" 
+                        class="slds-input rightAligned" aura:id="break" 
+                        change="{!c.onBreakChange}"
+                        value="{!v.break}" />
+                </aura:set>
+                </aura:if>
+            </div>
+          </aura:set>
+          </aura:if>
+      </td>
+
+      <td data-label="Discount" class="rightAligned">
+          <aura:if isTrue="{!v.onlyDisplayPrices}">
+          <aura:set attribute="else">
+            <div class="slds-truncate slds-float--right" title="discount">
+                <aura:if isTrue="{! v.disabled || v.listPrice == 0 }">
+                    <ui:outputNumber format="#,##0.00%" value="{!v.discount}" />
+
+                    <aura:set attribute="else">
+                        <ui:inputNumber format="#,##0.00%" 
+                            class="slds-input rightAligned" aura:id="discount" 
+                            change="{!c.onDiscountChange}"
+                            value="{!v.discount}" />
+                    </aura:set>
+                </aura:if>
+            </div>
+          </aura:set>
+          </aura:if>
+      </td>
+      
+    </tr>
+</aura:component>
+
+PricingInformationRowController.js
+
+({
+  doInit: function( component, event, helper ) {   
+  }
+
+    ,
+    onBidPriceChange: function( component, event, helper ) {
+
+        var rowChangedEvent = component.getEvent( "changedEvent" );
+
+        // propagate change to Discount
+        var listPrice = component.get( "v.listPrice" );
+        var bidPrice = component.get( "v.bidPrice" );
+        if( ! listPrice || ! bidPrice || listPrice === 0 ) {
+            rowChangedEvent.fire();
+            return;
+        }
+
+        var breakAmount = listPrice - bidPrice;
+        component.set( "v.break", breakAmount );
+
+        var discount = breakAmount / listPrice;
+        discount = Math.round( discount * 100.0 ) / 100.0;
+        component.set( "v.discount", discount );
+
+        rowChangedEvent.fire();
+    }
+
+    ,
+    onBreakChange: function( component, event, helper ) {
+
+        var rowChangedEvent = component.getEvent( "changedEvent" );
+
+        // propagate change to Discount
+        var listPrice = component.get( "v.listPrice" );
+        var breakAmount = component.get( "v.break" );
+        if( ! listPrice || ! breakAmount || listPrice === 0 ) {
+            rowChangedEvent.fire();
+            return;
+        }
+
+        var bidPrice = listPrice - breakAmount;
+        component.set( "v.bidPrice", bidPrice );
+
+        var discount = breakAmount / listPrice;
+        discount = Math.round( discount * 100.0 ) / 100.0;
+        component.set( "v.discount", discount );
+
+        rowChangedEvent.fire();
+    }
+
+    ,
+    onDiscountChange: function( component, event, helper ) {
+
+        var rowChangedEvent = component.getEvent( "changedEvent" );
+
+        // propagate change to Break
+        var listPrice = component.get( "v.listPrice" );
+        var discount = component.get( "v.discount" );
+
+        var breakAmount = discount * listPrice;
+        component.set( "v.break", breakAmount );
+
+        var bidPrice = listPrice - breakAmount;
+        component.set( "v.bidPrice", bidPrice );
+
+        rowChangedEvent.fire();
+    }
+})
+
+PricingInformationRow.css
+
+.THIS {
+}
+.THIS .rightAligned { 
+    text-align: right;
+    padding-right: .15rem;
+}

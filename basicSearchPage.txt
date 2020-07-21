@@ -1,0 +1,104 @@
+<apex:page controller="VFC_LeadSearch" showHeader="true" sidebar="true">
+
+<style type="text/css">
+	.showStatus {
+		position: absolute;
+		overflow: hidden;
+		top: 0px;
+		padding: 0;
+		margin: 0;
+		width: 90%;
+		height: 100%;
+		background: rgba( 255, 255, 255, 0.8 ); /* dimmed */
+		z-index: 1001;
+		visibility: visible;
+		display: block;
+	}
+	.hideStatus {
+		visibility: hidden;
+		display: none;
+	}
+	.animatedStatus {
+		display: block;
+		position: absolute;
+		top: 0;
+		bottom: 0;
+		left: 0;
+		right: 0;
+		margin: auto;
+		vertical-align: middle;
+		z-index: 1002;
+	}
+</style>
+
+<apex:form id="theForm">
+
+	<apex:pageMessages id="errorMessage"  />
+
+	<apex:actionStatus id="ajaxStatus" layout="block"
+			startStyleClass="showStatus" stopStyleClass="hideStatus" >
+		<apex:facet name="start">
+			<apex:image value="/img/loading32.gif" styleClass="animatedStatus" />
+		</apex:facet>
+	</apex:actionStatus>
+
+	<apex:pageBlock id="thePageBlock" title="Leads Search">
+		<apex:pageBlockButtons id="buttonBlock" location="bottom">
+			<apex:commandButton value="Search" action="{!search}" 
+					status="ajaxStatus" reRender="resultsPageBlock" />
+		</apex:pageBlockButtons>
+
+		<apex:pageBlockSection id="searchSection" columns="2">
+			<apex:pageBlockSectionItem >
+				<apex:outputLabel for="phone" value="Phone" />
+				<apex:inputText id="phone" value="{!phone}" />
+			</apex:pageBlockSectionItem>
+
+			<apex:pageBlockSectionItem >
+				<apex:outputLabel for="email" value="Email" />
+				<apex:inputText id="email" value="{!email}" />
+			</apex:pageBlockSectionItem>
+
+			<apex:pageBlockSectionItem >
+				<apex:outputLabel for="firstName" value="First Name" />
+				<apex:inputText id="firstName" value="{!firstName}" />
+			</apex:pageBlockSectionItem>
+
+			<apex:pageBlockSectionItem >
+				<apex:outputLabel for="address" value="Address" />
+				<apex:inputText id="address" value="{!address}" />
+			</apex:pageBlockSectionItem>
+
+		</apex:pageBlockSection>
+	</apex:pageBlock>
+
+	<apex:pageBlock id="resultsPageBlock" title="Search Results">
+		<apex:pageBlockButtons id="buttonBlock" location="both" 
+				rendered="{!contactList != null && contactList.size > 0}">
+			<apex:commandButton value="Select" action="{!selectContact}" />
+		</apex:pageBlockButtons>
+
+		<apex:pageBlockTable value="{!contactList}" var="c" 
+				rendered="{!contactList != null && contactList.size > 0}">
+			<apex:column>
+				<apex:facet name="header">
+					<apex:inputCheckbox value="{!selectAllStatus}">
+						<apex:actionSupport event="onchange" action="{!selectAll}" reRender="resultsPageBlock" />
+					</apex:inputCheckbox>
+				</apex:facet>
+
+				<apex:inputCheckbox value="{!contactSelectionMap[ c.FirstName + c.LastName ]}">
+					<apex:actionSupport event="onchange" action="{!selectedContact}" reRender="resultsPageBlock" />
+				</apex:inputCheckbox>
+			</apex:column>
+			<apex:column value="{!c.FirstName}" />
+			<apex:column value="{!c.LastName}" />
+			<apex:column value="{!c.Phone}" />
+			<apex:column value="{!c.Email}" />
+			<apex:column value="{!c.MailingStreet}" />
+			<apex:column value="{!c.MailingCity}" />
+		</apex:pageBlockTable>
+	</apex:pageBlock>
+</apex:form>
+
+</apex:page>

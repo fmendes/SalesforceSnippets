@@ -1,0 +1,77 @@
+<aura:component controller="pagination">
+ 
+    <!-- 
+    /**
+     * Webkul Software.
+     *
+     * @category  Webkul
+     * @author    Webkul
+     * @copyright Copyright (c) 2010-2016 Webkul Software Private Limited (https://webkul.com)
+     * @license   https://store.webkul.com/license.html
+     */
+     -->
+ 
+    <ltng:require styles="{!$Resource.SLDS +
+             '/assets/styles/salesforce-lightning-design-system-ltng.css'}" />
+    <aura:attribute name="accounts" type="Account[]"/>
+    <aura:handler name="init" value="{!this}" action="{!c.getAccounts}" />
+     
+    <aura:attribute name="offset" type="integer" />
+     
+    <aura:attribute name="next" type="boolean" />
+    <aura:attribute name="prev" type="boolean" />
+ 
+    <div class="wk_static">
+        <div class="slds-page-header" role="banner">
+            <div class="slds-grid">
+                <div class="slds-col slds-has-flexi-truncate">
+                    <div class="slds-media slds-media--center slds-no-space slds-grow">
+                        <div class="slds-media__figure">
+                            <span class="slds-icon_container slds-icon-standard-account">
+                                <c:SVG class="slds-icon" xlinkHref="/resource/SLDS/assets/icons/standard-sprite/svg/symbols.svg#account" />
+                                <span class="slds-assistive-text">Account Icon</span>
+                            </span>
+                        </div>
+                        <div class="slds-media__body">
+                            <h1 class="slds-page-header__title slds-m-right--small slds-truncate slds-align-middle" title="Accounts">Accounts</h1>
+                        </div>
+                    </div>                    
+                </div>                
+            </div>
+        </div>
+        <table class="slds-table slds-table--bordered slds-max-medium-table--stacked-horizontal"><!--Table must be responsive-->
+            <thead>
+                <tr class="slds-text-heading--label ">                    
+                    <th class="" scope="col">Account Name</th>                    
+                    <th class="slds-is-sortable" scope="col">Account Number</th>
+                    <th class="slds-is-sortable" scope="col">Account Source</th>
+                    <th class="slds-is-sortable" scope="col">Active</th>           
+                </tr>  
+            </thead>
+            <tbody>
+                <aura:iteration items="{!v.accounts}" var="account">
+                    <tr class="slds-hint-parent">                        
+                        <td data-label="Account Name" >
+                            <a href="{! '#/sObject/' + account.Id + '/view'}">{!account.Name}</a>
+                        </td>
+                        <td data-label="Account Number" >{!account.AccountNumber}</td>
+                        <td data-label="Account Source" >{!account.AccountSource}</td>
+                        <td data-label="Active">{!account.Active__c}</td>
+                    </tr>
+                </aura:iteration>
+            </tbody>
+        </table>
+        <ui:button class="slds-button slds-button--neutral slds-p-horizontal--xx-small slds-m-right--x-small slds-float--right" press="{!c.Next}" disabled="{!v.next}" >
+            <span class="slds-icon slds-icon-text-default">
+                <c:SVG class="slds-button__icon slds-button__icon--large" xlinkHref="/resource/SLDS/assets/icons/utility-sprite/svg/symbols.svg#chevronright" />
+                <span class="slds-assistive-text">Next</span>
+            </span>                 
+        </ui:button>
+        <ui:button class="slds-button slds-button--neutral slds-p-horizontal--xx-small slds-m-right--x-small slds-float--right" press="{!c.Previous}" disabled="{!v.prev}">
+            <span class="slds-icon slds-icon-text-default">
+                <c:SVG class="slds-button__icon slds-button__icon--large" xlinkHref="/resource/SLDS/assets/icons/utility-sprite/svg/symbols.svg#chevronleft" />
+                <span class="slds-assistive-text">Previous</span>
+            </span>               
+        </ui:button> 
+    </div>
+</aura:component>

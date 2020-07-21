@@ -1,0 +1,22 @@
+{!REQUIRESCRIPT("/soap/ajax/24.0/connection.js")} 
+{!REQUIRESCRIPT("/soap/ajax/24.0/apex.js")} 
+try{ 
+	var query = "SELECT Id,Name from Account LIMIT 2"; 
+	var records = sforce.connection.query(query); 
+	var records1 = records.getArray('records'); 
+	alert(records); 
+	var accountNames = ''; 
+	for(var i=0;i<records1.length;i++){ 
+		accountNames = accountNames + records1[i].Name + ','; 
+	} 
+	alert(accountNames); 
+	if(records1.length == 1){ 
+		//window.location.href = 'http://www.google.com'; 
+	}
+	else{ 
+		alert('There is no Account'); 
+	} 
+} 
+catch(e){ 
+	alert('An Error has Occured. Error:' +e); 
+}

@@ -1,0 +1,21 @@
+// files belonging to obj indicated by LinedEntityId
+SELECT ID, ContentDocumentId, LinkedEntityId, ShareType, Visibility FROM ContentDocumentLink WHERE LinkedEntityId = 'a0S1F000001AO96UAG' 
+
+// file identified by ContentDocumentId from the previous query
+SELECT ID, Title, Description FROM ContentDocument WHERE ID = '0691F000000GfYPQA0' 
+
+// create a ContentDistribution record
+
+select id, Name, DistributionPublicUrl, ContentVersionId, ContentVersion.Title, ContentDocumentID, PreferencesAllowViewInBrowser, PreferencesAllowPDFDownload, PreferencesAllowOriginalDownload from ContentDistribution where ContentDocumentID = '0691F000000GfYPQA0'
+
+// NOTE:  ContentDocumentId is NOT writeable. Use ContentVersionID
+
+ID 05D1F0000008RfsUAE
+Name nintendo 64.jpg 4/23/2019
+DistributionPublicURL https://csXX.salesforce.com/sfc/p/1F0000000x8G/a/1F0000008Rfs/hSRad4zxr93tW.nCuin6Nz.ed1McSxyeZ5fBs7K9aFI
+ContentVersionId 0681F000000Gek7QAC
+ContentVersion.Title nintendo 64.jpg
+ContentDocumentID 0691F000000GfYPQA0
+PreferencesAllowViewInBrowser true
+PreferencesAllowPDFDownload false
+PreferencesAllowOriginalDownload true

@@ -1,0 +1,77 @@
+@isTest
+public with sharing class VFC_Controller_Test {
+	@TestSetup
+	public static void setupData() {
+		Account a = new Account();
+		a.Name = 'myCompany Test One';
+		a.Type = 'Customer';
+		a.Channel__c = 'Reseller';
+		a.RecordType = new RecordType( Name = 'Site' );
+		insert a;
+
+
+        // get first oppty stage
+        Schema.DescribeFieldResult fr = Opportunity.StageName.getDescribe();
+		List<Schema.PicklistEntry> stagePLEList = fr.getPicklistValues();
+        String firstStage = stagePLEList[ 0 ].getValue();
+
+		Opportunity o = new Opportunity();
+		o.AccountID = a.ID;
+		o.Name = 'myCompany Test 1';
+		o.StageName = firstStage;
+		o.CloseDate = Date.today();
+		o.RecordType = new RecordType( Name = 'Fixed' );
+		insert o;
+
+        Id pricebookId = Test.getStandardPricebookId();
+
+        Product2 aProduct = new Product2();
+        aProduct.Name = 'Test Product';
+        insert aProduct;
+
+        PriceBookEntry pbe = new PriceBookEntry();
+        pbe.Product2Id = aProduct.ID;
+        pbe.IsActive = true;
+        pbe.UnitPrice = 300;
+        pbe.Pricebook2Id = pricebookId;
+        insert pbe;
+
+        //xxxx.PricebookEntryId = pbe.ID;
+
+	}
+
+	public static TestMethod void myUnitTest() {
+		Test.startTest();
+
+		// create objects to test
+
+		// set page and parameters
+		Test.setCurrentPage( Page.myPage );
+		ApexPages.CurrentPage().getParameters().put( 'ID', obj.ID );
+
+
+		// instantiate the extension controller
+		ApexPages.StandardController stdCtrlr = 
+					new ApexPages.StandardController( theObj );
+		VFC_Controller theController = new VFC_Controller( stdCtrlr );
+
+		// instantiate the main controller
+		VFC_Controller theController = new VFC_Controller();
+		
+		//theController.previousURL = '/';
+		//theController.cancel();
+
+		if( ApexPages.getMessages().size() > 0 ) {
+			String errorMsg = ApexPages.getMessages()[ 0 ].getSummary();
+			system.assert( errorMsg.contains( 'Please enter' ), '1st error: ' + errorMsg );
+			system.assert( errorMsg.contains( 'in the opportunity before entering revenue distribution' ), '2nd error: ' + errorMsg );
+		}
+
+		Test.stopTest();
+
+		//system.assertEquals( 0, variable, 'Test' );
+
+
+		//Database.Error[] errors = new Database.Error[] {};
+		//String listOfErrors = VFC_Controller.ConcatenateErrors( errors );
+	}

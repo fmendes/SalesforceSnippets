@@ -1,0 +1,137 @@
+IN THE VISUALFORCE PAGE:
+
+<style type="text/css">
+    .showStatus {
+        position: fixed;
+        top: 0px;
+        padding: 0;
+        margin: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba( 255, 255, 255, 0.5 ); /* dimmed */
+        visibility: visible;
+    }
+    .hideStatus { 
+        visibility: hidden;
+    }
+</style>
+
+<apex:actionStatus id="ajaxStatus" startStyleClass="showStatus" stopStyleClass="hideStatus" layout="block">
+    <apex:image value="/img/loading32.gif" />
+</apex:actionStatus>
+
+		<apex:pageBlockButtons id="navigator" location="top">
+			<apex:commandButton action="{!first}" value="First" status="ajaxStatus" />
+			<apex:repeat id="oneButton4EachPageNavigationBar" value="{!ListOfPages}" var="p">
+				&nbsp;<apex:outputPanel id="currentPageNoButton" rendered="{! p == PageNumber }" >[ {!p} ]</apex:outputPanel>
+				<apex:outputPanel id="individualPageButton" rendered="{! p != PageNumber }" >
+					<apex:commandButton action="{!goToPage}" value="{!p}" 
+						rerender="bugfix4SettingParamOnCommandButton,refunds,navigator,navigatorBottom"
+						status="ajaxStatus" >
+						<apex:param name="pageNbr" assignTo="{!pageNbr}" value="{!p}" />
+					</apex:commandButton>
+				</apex:outputPanel>
+			</apex:repeat>
+			<apex:commandButton action="{!last}" value="Last" status="ajaxStatus" />
+			
+		</apex:pageBlockButtons>
+
+		<apex:pageBlockButtons id="navigatorBottom" location="bottom">
+			<apex:commandButton action="{!first}" value="First" status="ajaxStatus" />
+			<apex:repeat id="oneButton4EachPageNavigationBarBottom" value="{!ListOfPages}" var="p2">
+				&nbsp;<apex:outputPanel id="currentPageNoButtonBottom" rendered="{! p2 == PageNumber }" >[ {!p2} ]</apex:outputPanel>
+				<apex:outputPanel id="individualPageButtonBottom" rendered="{! p2 != PageNumber }" >
+					<apex:commandButton action="{!goToPage}" value="{!p2}" 
+						rerender="bugfix4SettingParamOnCommandButton,refunds,navigator,navigatorBottom"
+						status="ajaxStatus" >
+						<apex:param name="pageNbr" assignTo="{!pageNbr}" value="{!p2}" />
+					</apex:commandButton>
+				</apex:outputPanel>
+			</apex:repeat>
+			<apex:commandButton action="{!last}" value="Last" status="ajaxStatus" />
+			
+		</apex:pageBlockButtons>
+
+		<apex:pageBlock id="bugfix4SettingParamOnCommandButton" rendered="false"></apex:pageBlock>
+
+IN THE APEX CONTROLLER:
+
+	public VFC_Service_Ext( ApexPages.StandardController controller ) {
+		theService = (Service__c) controller.getRecord();
+
+		// in case the parameter points to a specific page of the results
+		pageNbr = 1;
+		String pageParam = ApexPages.currentPage().getParameters().get( 'pageNbr' );
+		if( pageParam != null ) {
+			pageNbr = Integer.valueOf( pageParam );
+		}
+		//...
+	}
+
+	public ApexPages.StandardSetController ssController { get; set; }
+	public List<Refund__c> refundList { 
+		get{ return ssController.getRecords(); }
+		set; 
+	}
+
+	public void retrieveRefunds() {
+		// retrieve refunds in order to calculate the totals per type and group them by state
+		Database.QueryLocator aQuery = Database.getQueryLocator( [ 
+			SELECT ID, Name, Collection_Type__c, State_Identified__c, Vendor__c
+						, Amount_Identified_Dollars__c, Adjusted_dollars__c
+						, Amount_Recovered_dollars__c, Left_to_Recover__c
+						, Batch_number__c, Refund_Note__c, Vendor_Contact__c
+					FROM Refund__c 
+					WHERE Service__c = :theService.ID 
+					ORDER BY State_Identified__c, Collection_Type__c ] );
+		ssController = new ApexPages.StandardSetController( aQuery );
+		ssController.setPageSize( 10 );
+
+		if( pageNbr != null && pageNbr > 1 ) {
+			goToPage();
+		}
+	}
+
+	public final static Integer NavigatorNumberPages = 10;
+	public void first() {
+		ssController.first();
+		retrieveNotes();
+	}
+	public void last() {
+		ssController.last();
+		retrieveNotes();
+	}
+	public Integer getNumberOfPages() {
+		Decimal TotalPages = ssController.getResultSize() / ssController.getPageSize();
+		TotalPages = Math.floor( TotalPages ) + ( ( Math.mod( ssController.getResultSize(), ssController.getPageSize() ) > 0 ) ? 1 : 0 );
+		return Integer.valueOf( TotalPages );
+	}
+	public List<Integer> getListOfPages() {
+		Integer StartRange = ssController.getPageNumber();
+		Integer Difference = getNumberOfPages() - StartRange; // how far is the current page from the last page
+		Integer NavigatorHalf = NavigatorNumberPages / 2;
+		
+		// set the start range so that the current page is centered in the list of page numbers - ex:  51 52 [53] 54 55
+		// if the page is near the last page, we don't need it centered - ex:  51 52 53 [54] 55
+		StartRange = Difference > NavigatorHalf ? StartRange - NavigatorHalf : StartRange - (NavigatorNumberPages - 1) + Difference;
+		StartRange = ( StartRange < 1 ) ? 1 : StartRange;
+
+		// add numbers to the list that will correspond to page buttons in the navigation bar
+		List<Integer> NumberList = new List<Integer>();
+		while( StartRange <= getNumberOfPages() && NumberList.size() < NavigatorNumberPages ) {
+			NumberList.add( StartRange );
+			StartRange ++;
+		}
+		
+		return NumberList;
+	}
+	public Integer getPageNumber() {
+		return ssController.getPageNumber();
+	}
+	public Integer pageNbr { get; set; }
+	public PageReference goToPage() {
+		ssController.setPageNumber( pageNbr );
+		retrieveNotes();
+		return null;
+	}
+

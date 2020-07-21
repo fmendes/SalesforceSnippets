@@ -1,0 +1,6 @@
+
+<apex:commandButton onclick="if( ! confirm( 'Are you sure?' ) ) return false;"
+                    value="Delete" action="{!deleteProductOption}"
+                    reRender="mainDiv" >
+    <apex:param name="productOptionId" value="{!o.ID}" assignTo="{!productOptionId}" />
+</apex:commandButton>

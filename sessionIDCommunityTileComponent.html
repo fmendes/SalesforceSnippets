@@ -1,0 +1,209 @@
+
+<!-- Community Tiles -->
+<template>
+
+    This is a test 002: {userId} and {totId}
+    <br/>
+    sessionId = {currentSessionId}
+    <br/>
+
+
+    <div class="html_div_outer">
+        <div class="html_div_inner">
+            <div class="html_tile">
+                <a href="https://catalyst.InsuranceCompanyWithIntegration.net/sso" target="_blank">
+                    <img src="https://InsuranceCompanyWithIntegration.force.com/portal/file-asset/CatalystBox?v=1" />
+                </a>
+            </div>
+            <div class="html_tile">
+                <!-- a href="https://sso.connect.pingidentity.com/sso/sp/initsso?saasid=8f914c44-9d3c-447a-b6d0-fec946885189&idpid=778cd748-8f4f-425b-9820-1fcfb312c7ce" target="_blank"><img src="https://InsuranceCompanyWithIntegration.force.com/portal/file-asset/FireLightBox?v=1" /></a -->
+                <a href="https://InsuranceCompanyWithIntegration.force.com/portal/s/firelight" target="_blank">
+                    <img src="https://InsuranceCompanyWithIntegration.force.com/portal/file-asset/FireLightBox?v=1" />
+                </a>
+            </div>
+            <div class="html_tile">
+                <a href="https://InsuranceCompanyWithIntegration.force.com/portal/s/multiplicity" target="_blank">
+                    <img src="https://InsuranceCompanyWithIntegration.force.com/portal/file-asset/MultiplicityBox?v=1" />
+                </a>
+            </div>
+            <div class="html_tile">
+                <a href={myWebsiteURL} target="_blank">
+                    <img src="https://InsuranceCompanyWithIntegration.force.com/portal/file-asset/myWebsiteBox?v=1" />
+                </a>
+            </div>
+        </div>
+        <div class="html_div_inner">
+            <div class="html_marketing_tile">
+                <img src="https://InsuranceCompanyWithIntegration.force.com/portal/file-asset/AegeanPromo?v=1" />
+            </div>
+        </div>
+    </div>
+
+</template>
+
+
+
+import { LightningElement, api, wire, track } from 'lwc';
+import { getRecord, getFieldValue } from 'lightning/uiRecordApi';
+import getSessionId from '@salesforce/apex/AuraHelper.getSessionId';
+
+import USER_ID from '@salesforce/user/Id';
+import TOTID_FIELD from '@salesforce/schema/User.Twenty_Over_Ten_Id__c';
+
+export default class CommunityTiles extends LightningElement
+{
+    userId = USER_ID;
+
+    @wire( getRecord, { recordId: USER_ID, fields: [ TOTID_FIELD ] } ) currentUser;
+
+    get totId()
+    {
+        return getFieldValue( this.currentUser.data, TOTID_FIELD );
+    }
+
+    @track currentSessionId;
+    @track myWebsiteURL;
+
+    // using wired function in order to avoid initial state when every variable is null
+    @wire( getSessionId )
+        wiredSessionData( { error, data } ) {
+            if( data ) {
+                let sessionId = data;
+                let totId = this.totId;
+                this.currentSessionId = data;
+
+                this.myWebsiteURL = `https://twentyoverten.com/login/InsuranceCompanyWithIntegration/sso?session_id=${sessionId}&tot_user_id=${totId}`;
+            }
+
+            if( error ) {
+                if( error.body ) {
+                    this.error = error.body.message;
+                } else {
+                    this.error = error;
+                }
+
+                window.console.log( 'getSessionId error', JSON.stringify( error ) );
+            }
+
+        }
+
+}
+
+
+    @media only screen and (min-width: 600px) {
+        .html_div_outer {display:flex;width:100%;justify-content:space-between;}
+        .html_div_inner {display:flex;justify-content:space-between;flex-wrap:wrap;flex-basis:50%;}
+        .html_div_outer_full {display:flex;width:100%;justify-content:space-between;}
+        .html_div_inner_full {display:flex;width:100%;justify-content:space-between;flex-wrap:wrap;}
+        .html_tile {
+            margin:0.5rem;
+            flex-grow:1;
+            flex-basis:40%;
+            display:flex;
+            flex-wrap:wrap;
+            justify-content:center;
+            align-items: center;
+        }
+        .html_tile_full {
+            margin:0.5rem;
+            border:1px solid #dddbd9;
+            background-color: #f3f2f1;
+            flex-basis:23%;
+            display:flex;
+            flex-wrap:wrap;
+            justify-content:center;
+            align-items: center;
+        }
+        .html_marketing_tile {
+            flex-grow:1;
+            margin:0.5rem;
+        }
+    }
+    @media only screen and (max-width: 599px) {
+        .html_div_outer, .html_div_outer_full {display:block;}
+        .html_div_inner, .html_div_inner_full {display:block;}
+        .html_tile, .html_tile_full {
+            margin:0.5rem;
+            border:1px solid #f3f2f1;
+            flex-grow:1;
+            flex-basis:100%;
+            display:flex;
+            justify-content:center;
+            align-items: center;
+        }
+        .html_marketing_tile {
+            flex-grow:1;
+            margin:0.5rem;
+        }
+    }
+    .forceCommunityThemeNav .uiMenuList {
+        width: 260px!important;
+    }
+    .forceCommunityThemeHeaderBase .themeBottomBorder {
+        height: 0!important;
+    }
+    .comm-navigation, button.comm-navigation__top-level-item-link {
+        font-family: 'Montserrat', sans-serif;
+        text-transform: uppercase;
+        color: #e5e5e5!important;
+        font-size: 0.7rem!important;
+    }
+    body {
+        font-family: 'Montserrat', sans-serif!important;
+    }
+    @media only screen and (min-width: 48em) {
+        .forceCommunityThemeNav .linkBtn.comm-navigation__top-level-item-link--active {
+            border-bottom: 2px solid #5d87a1!important;
+        }
+    }
+    .salesforceIdentityLoginForm2 .inverseTextColor {
+        color: #111111!important;
+    }
+    img {
+        width: 100%;
+    }
+    .red {
+        color: #a23127;
+    }
+    .blue {
+        color: #2e5496;
+    }
+    .gray_box {
+        background-color: #e6e7e5;
+        padding: 1em;
+    }
+    /* Marketing Resources */
+    .marketing-resource-tile {
+        box-shadow: 0 2px 3px #333;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 5rem;
+        padding: 0.5rem;
+    }
+    .marketing-resource-tile h2 {
+        text-transform: uppercase;
+        font-weight: normal!important;
+        text-align: center;
+    }
+    .marketing-resource-tile h2 a:hover {
+        text-decoration: none;
+        border-bottom: 2px solid red;
+    }
+
+
+
+    <?xml version="1.0" encoding="UTF-8"?>
+<LightningComponentBundle xmlns="http://soap.sforce.com/2006/04/metadata">
+    <apiVersion>46.0</apiVersion>
+    <description>Community Tiles</description>
+    <isExposed>true</isExposed>
+    <masterLabel>Community Tiles</masterLabel>
+    <targets>
+        <target>lightning__AppPage</target>
+        <target>lightning__RecordPage</target>
+        <target>lightning__HomePage</target>
+        <target>lightningCommunity__Page</target>
+        <target>lightningCommunity__Default</target>
+    </targets>
+</LightningComponentBundle>

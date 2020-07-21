@@ -1,0 +1,149 @@
+
+
+@IsTest
+private class VFC_FieldTrialSearch_Test {
+
+    public static TestDataGenerator td;
+    public static Field_Trial_Settings__c settings;
+    public static List<Field_Trial__c> trials;
+    public static List<Field_Trial_Line__c> lines;
+    public static List<Location__c> locations;
+
+
+    @testSetup static void setupTestData() {
+        td = new TestDataGenerator();
+        settings = td.getFieldTrialSettings();
+        trials = td.getFieldTrials(true);
+        lines = td.getFieldTrialLines(true);
+
+        locations = new List<Location__c>();
+        Location__c loc = new Location__c();
+        loc.Postal_Code__c = '78704';
+        loc.Geolocation__Latitude__s = lines[0].Trial_Location__Latitude__s;
+        loc.Geolocation__Longitude__s = lines[0].Trial_Location__Longitude__s;
+        locations.add( loc );
+
+        insert locations;
+
+
+    }
+
+    static testMethod void testRadiusSearch() {
+        td = new TestDataGenerator();
+        Field_Trial__c dummyFT = new Field_Trial__c();
+        PageReference theScreen = Page.FieldTrialSearch;
+        Test.setCurrentPage(theScreen);
+
+        ApexPages.StandardController con = new ApexPages.Standardcontroller( dummyFT );
+        VFC_FieldTrialSearch controller = new VFC_FieldTrialSearch( con );
+
+        controller.searchType = Label.fieldTrial_RadiusSearch;
+        controller.isRadiusSearch = true;
+        controller.searchZip = '78704';
+        controller.distance = '100';
+        controller.clearFieldSearch = Label.fieldTrial_OnlyClearfield;
+        controller.isClearfield = true;
+
+        controller.doSearch();
+        Integer expectedNum = 1;
+        Integer actualNum = controller.searchResults.size();
+
+        System.assertEquals( expectedNum, actualNum );
+
+    }
+
+    static testMethod void testCountySearch() {
+
+        td = new TestDataGenerator();
+        Field_Trial__c dummyFT = new Field_Trial__c();
+
+        // get the county from the first field trial
+        trials = [SELECT id, name, County__c, State__c FROM Field_Trial__c];
+        String county = trials[0].County__c;
+        String state = trials[0].State__c;
+
+        PageReference theScreen = Page.FieldTrialSearch;
+        Test.setCurrentPage(theScreen);
+
+        ApexPages.StandardController con = new ApexPages.Standardcontroller( dummyFT );
+        VFC_FieldTrialSearch controller = new VFC_FieldTrialSearch( con );
+
+        controller.isRadiusSearch = true;
+        controller.doToggleSearch();
+        controller.searchType = 'not radius';
+        controller.searchCounty = county;
+        controller.searchState = state;
+        controller.clearFieldSearch = Label.fieldTrial_OnlyClearfield;
+        controller.isClearfield = true;
+
+        controller.doSearch();
+        Integer expectedNum = 1;
+        Integer actualNum = controller.searchResults.size();
+
+        System.assertEquals( expectedNum, actualNum );
+
+    }
+
+    static testMethod void testNoResults() {
+        td = new TestDataGenerator();
+        Field_Trial__c dummyFT = new Field_Trial__c();
+        PageReference theScreen = Page.FieldTrialSearch;
+        Test.setCurrentPage(theScreen);
+
+        ApexPages.StandardController con = new ApexPages.Standardcontroller( dummyFT );
+        VFC_FieldTrialSearch controller = new VFC_FieldTrialSearch( con );
+
+        // test no zip entered
+        controller.searchType = Label.fieldTrial_RadiusSearch;
+        controller.isRadiusSearch = true;
+        controller.searchZip = null;
+        controller.distance = null; // test the default radius
+        controller.isClearfield = true;
+
+        controller.doSearch();
+        Integer expectedNum = 0;
+        Integer actualNum = 0;
+        if ( controller.searchResults != null )
+        {
+            actualNum = controller.searchResults.size();
+        }
+
+        System.assertEquals( expectedNum, actualNum );
+
+        // test no results
+        controller.searchType = Label.fieldTrial_RadiusSearch;
+        controller.isRadiusSearch = true;
+        controller.searchZip = '77339';
+        controller.distance = null;
+        controller.clearFieldSearch = Label.fieldTrial_NonClearfield;
+        controller.isClearfield = false; // set to false -- all test data created as true
+
+        controller.doSearch();
+        expectedNum = 0;
+        actualNum = 0;
+        if ( controller.searchResults != null )
+        {
+            actualNum = controller.searchResults.size();
+        }
+
+        System.assertEquals( expectedNum, actualNum );
+
+        // test no county
+        controller.isRadiusSearch = true;
+        controller.doToggleSearch();
+        controller.searchType = 'not radius';
+        controller.searchCounty = null;
+        controller.searchState = null;
+        controller.clearFieldSearch = Label.fieldTrial_BothClearfield;
+        controller.isClearfield = false; // set to false -- all test data created as true
+
+        controller.doSearch();
+        expectedNum = 0;
+        actualNum = 0;
+        if ( controller.searchResults != null )
+        {
+            actualNum = controller.searchResults.size();
+        }
+
+    }
+}

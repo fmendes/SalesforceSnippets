@@ -1,0 +1,164 @@
+<apex:page controller="MergeContactController"  label="Merge Contacts" >
+
+<style type="text/css">
+    .redText { font-style:italic; color:red; font-weight: bold; font-size: small; }
+    .bigRedText { font-style:italic; color:red; font-weight: bold; font-size: large; }
+    .shiftedRight { text-align:right; }
+    .results { overflow:auto; width:100%; height: 400px; border: solid 1px silver; }
+    .leftcol { width:33%; float:left; vertical-align: top; display: inline-block; }
+    .rightcol { width:33%; float:right; vertical-align: top; display: inline-block; }
+    .fontbold { font-weight:bold; text-align:right; vertical-align: middle; }
+    .mergeborder { border-color: #BFCFD4; border-style: solid; border-width: 1px; 
+                border-collapse: collapse; border-bottom: 1px solid #BBB; }
+    .selValues tbody>tr>td { width: 33%; height: 18px; }
+    .disabledOptions { color: DimGray; }
+    .enabledOptions { font-weight: bold; }
+</style>
+
+<apex:form id="Step1form">
+
+    <apex:actionStatus id="status" startText="Processing..." startStyleClass="redText" >
+        <apex:facet name="start">
+            <span class="redText">Processing...</span>
+            <img class="waitingImage" src="/img/loading.gif" title="Please Wait..." />
+        </apex:facet>
+    </apex:actionStatus>
+
+<apex:pageBlock id="pbMain" title="{!StepHeader}"  >
+
+    <apex:pageMessages id="pageMessages" showDetail="true" />
+    <apex:outputText id="msgToUser" styleClass="bigRedText" value="{!MsgToUser}" />
+
+    <div class="shiftedRight">
+    <apex:panelGroup >
+        <apex:commandButton value="Previous" action="{!previous}" status="status" reRender="pbMain" 
+                title="Previous Merge Step" rendered="{!Step > 1}" />
+        &nbsp;
+        <apex:commandButton value="Next" action="{!next}" status="status" reRender="pbMain" 
+                title="Next Merge Step" rendered="{!Step == 1}" />
+        <apex:commandButton value="Merge" action="{!doMerge}" status="status" reRender="pbMain" 
+                onclick="if(!confirm('These records will be merged into one record using the selected values. Merging cannot be undone. Proceed with the record merge?')) return false;" 
+                title="Perform Merge" rendered="{!Step == 2}" />
+        &nbsp;
+        <apex:commandLink value="Cancel" action="{!cancel}" status="status" reRender="pbMain" title="Cancels the merge" />
+    </apex:panelGroup>    
+    </div>
+    
+    <apex:pageBlockSection id="pbsStep1" rendered="{!(Step == 1)}"
+         collapsible="false" columns="1" showHeader="true">
+
+        Please select up to three contacts that you wish to merge into one. Use the "Find Contacts" feature to search for specific contacts.
+        <br />
+        <apex:panelGroup >
+        <apex:inputText id="nameSearched" value="{!nameSearched}"/>
+            <apex:commandButton value="Find Contacts" action="{!findContacts}" status="status" 
+                reRender="pbMain" title="Find contacts to select" />
+        </apex:panelGroup>    
+    
+        <apex:outputPanel id="ResultsPanel" layout="block" styleClass="results" rendered="{!ResultsCount > 0}">
+        <apex:pageBlockTable id="ResultsTable" value="{!SearchResults}" var="c" rendered="{!ResultsCount > 0}"
+            style="font-size: x-small;" >
+            <apex:column >
+                <apex:inputCheckbox value="{!c.Selected}"/>
+            </apex:column>
+            <apex:column headerValue="Last Name"><apex:outputLink value="/{!c.id}" target="new">{!c.LastName}</apex:outputLink></apex:column>
+            <apex:column headerValue="First Name"><apex:outputLink value="/{!c.id}" target="new">{!c.FirstName}</apex:outputLink></apex:column>
+            <apex:column headerValue="Middle Name"><apex:outputLink value="/{!c.id}" target="new">{!c.MiddleName}</apex:outputLink></apex:column>
+            <apex:column headerValue="Degree" value="{!c.Degree}"/>
+            <apex:column headerValue="Email" value="{!c.Email}"/>
+            <apex:column headerValue="Home Phone" value="{!c.HomePhone}"/>
+            <apex:column headerValue="Work Phone" value="{!c.Work_Phone}"/>
+            <apex:column headerValue="Mobile Phone" value="{!c.MobilePhone}"/>
+            <apex:column headerValue="Address" value="{!c.Address_Line_1}"/>
+            <apex:column headerValue="City" value="{!c.City}"/>
+            <apex:column headerValue="State" title="Residing State" value="{!c.State}"/>
+            <apex:column headerValue="Zip" value="{!c.Zipcode}"/>
+        </apex:pageBlockTable>
+        </apex:outputPanel>
+    </apex:pageBlockSection>
+
+    <apex:pageBlockSection id="pbsStep2" rendered="{!(Step == 2)}"
+             collapsible="false" columns="1" showHeader="true">
+        Select the values that you want to retain in the merged record. Highlighted rows indicate fields that contain conflicting data. The Master Record selected will retain read-only and hidden field values. The oldest Created By date and user will be retained in the merged record. 
+    <br /><br />
+    Note: Activities, Notes, Attachments, Cases, Opportunities, and Campaign History related to these Contacts will be associated with the resulting merged record.
+        <br />
+        <apex:outputPanel id="MergePanel" layout="block">
+
+        <table class="mergeEntity mergeborder " border="0" cellpadding="0" cellspacing="0">
+            <tr class="headerRow">
+                <td width="18%">&nbsp;</td>
+                <th width="*" scope="col">
+                    <span class="leftcol">{!Name1}</span>
+                </th>
+                <th width="*" scope="col">
+                    <span class="leftcol">{!Name2}</span>
+                </th>
+                <apex:outputText rendered="{!( MergeSize > 2 )}">
+                    <th width="*" scope="col">
+                            <span class="rightcol">{!Name3}</span>
+                    </th>
+                </apex:outputText>
+            </tr>
+            <tbody>
+
+            <apex:repeat id="MergeTbl" value="{!MergeFields}" var="c">
+                <tr class="requiredInput mergeborder">
+                    <td width="18%" class="fontbold">
+                        {!c.ColumnName}
+                    </td>
+                    <td id="colvalues" colspan="{!IF( MergeSize > 2, 3, 2 )}">
+                        <apex:selectRadio styleClass="selValues" 
+                            disabledClass="disabledOptions" enabledClass="enabledOptions"
+                            title="{!c.ColumnName}" label="{!c.ColumnName}" 
+                            value="{!c.SelectedValue}" disabled="{!c.Disabled}" style="width: 100%;" >
+                            <apex:selectOptions id="valueOption" value="{!c.Value}"></apex:selectOptions>
+                        </apex:selectRadio>
+                    </td>
+                </tr>
+            </apex:repeat>
+
+            </tbody>
+        </table>
+    
+        </apex:outputPanel>
+
+    </apex:pageBlockSection>
+<!--
+    <apex:pageBlockSection id="pbsStep3" rendered="{!(Step == 3)}"
+             collapsible="false" columns="1" showHeader="true">
+        <table class="mergeEntity mergeborder " border="0" cellpadding="0" cellspacing="0">
+            <tr class="headerRow">
+                <td width="18%">&nbsp;</td>
+                <th width="*" scope="col">
+                    {!MasterC.Name}
+                </th>
+            </tr>
+            <tbody>
+
+                <apex:repeat id="MergeTbl" value="{!MergeFields}" var="c">
+                    <tr class="requiredInput mergeborder">
+                        <td width="18%" class="fontbold">
+                            {!c.ColumnName}
+                        </td>
+                        <td id="colvalues" colspan="{!IF( MergeSize > 2, 3, 2 )}">
+                            <apex:selectRadio styleClass="selValues" 
+                                disabledClass="disabledOptions" enabledClass="enabledOptions"
+                                title="{!c.ColumnName}" label="{!c.ColumnName}" 
+                                value="{!c.SelectedValue}" disabled="{!c.Disabled}" style="width: 100%;" >
+                                <apex:selectOptions id="valueOption" value="{!c.Value}"></apex:selectOptions>
+                            </apex:selectRadio>
+                        </td>
+                    </tr>
+                </apex:repeat>
+    
+            </tbody>
+        </table>
+
+    </apex:pageBlockSection>
+-->
+</apex:pageBlock>
+
+</apex:form>
+
+</apex:page>

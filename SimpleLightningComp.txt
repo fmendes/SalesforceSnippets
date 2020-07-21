@@ -1,0 +1,179 @@
+<aura:component controller="Main_LX_MessageToUser"
+                implements="force:appHostable,flexipage:availableForAllPageTypes,flexipage:availableForRecordHome,force:hasRecordId,forceCommunity:availableForAllPageTypes" 
+                access="global" >
+    
+    <aura:attribute name="intrinsicMotivation" type="String" default="" />
+    
+    <aura:handler name="init" value="{!this}" action="{!c.doInit}" />
+    
+    <aura:if isTrue="{! v.intrinsicMotivation != null &amp;&amp; v.intrinsicMotivation != '' }">
+        <lightning:card>
+            <aura:set attribute="title">
+                Intrinsic Motivation
+            </aura:set>
+            <p class="slds-p-horizontal_small">
+                {!v.intrinsicMotivation}
+            </p>
+        </lightning:card>
+    </aura:if>
+	
+</aura:component>
+
+
+
+({
+    doInit : function( component, event, helper ) {
+        var getUserMessage = component.get( "c.getUserMessage" );
+        getUserMessage.setCallback( this, function( response ) {
+            var intrinsicMotivation = '';
+            var state = response.getState();
+            if( state === "SUCCESS" ) {
+                intrinsicMotivation = response.getReturnValue();
+                if( intrinsicMotivation === null ) {
+                    return;
+                }
+            } else if( state === "ERROR" ) {
+                var errors = response.getError();
+                if( ! errors ) {
+                    return;
+                }
+                
+                console.log( 'Error= ', errors[ 0 ].message );
+                
+                var showToast = $A.get( "e.force:showToast" ); 
+                showToast.setParams({ 
+                    'type': 'error'
+                    , 'mode': 'dismissible'
+                    , 'title' : 'ERROR'
+                    , 'message' : errors[ 0 ].message 
+                }); 
+                showToast.fire(); 
+            }
+                
+            component.set( "v.intrinsicMotivation", intrinsicMotivation );
+        });
+        
+        $A.enqueueAction( getUserMessage );
+    }
+})
+
+
+
+
+
+/**********************************************************************
+* Name:     Main_LX_MessageToUser
+* Author:   myCompany, Inc. (www.myCompany.com)
+*  
+* ======================================================
+* ======================================================
+* Purpose: Apex class for AppointmentSummary lightning component
+*
+* ======================================================
+* ======================================================
+* History:                                                            
+* VERSION   DATE            INITIALS        DESCRIPTION/FEATURES ADDED
+* 1.0       Nov 2018        FF              initial development
+*   
+***********************************************************************/
+public class Main_LX_MessageToUser {
+
+    @AuraEnabled
+    public static String getUserMessage() {
+        User u = [ SELECT Id, ContactId 
+                         FROM User 
+                         WHERE Id = :UserInfo.getUserId() ];
+        System.debug( 'user= ' + u );
+        
+        if( u.ContactId == null ) {
+            return null;
+        }
+        
+        // get Community Wizard Custom Settings
+        CommunityWizardSettings__c settings = CommunityWizardSettings__c.getInstance();
+        
+        // get Active Opportunity Stage Names
+        Set<String> activeOpptyStageSet = Main_DisplayUtils.parseIncomingStringIntoSet( settings.Active_Opportunity_Stages__c );
+                
+        // Find Open Opportunities
+        List<Opportunity> activeOpptyList = 
+            [ SELECT Id, Intrinsic_Motivation__c 
+              FROM Opportunity
+              WHERE Participant__c = :u.ContactId
+                AND StageName IN :activeOpptyStageSet ];
+        System.debug( 'activeOpptyList= ' + activeOpptyList );
+        
+        if( activeOpptyList == Null || activeOpptyList.size() <= 0 ) {
+            return null;
+        }
+        
+        return activeOpptyList[ 0 ].Intrinsic_Motivation__c;
+    }
+}
+
+
+
+
+@isTest
+public class Main_LX_MessageToUser_Test {
+    @TestSetup
+    public static void createData() {
+        
+        // Create Custom Settings
+        CommunityUserSettings__c userSettings = new CommunityUserSettings__c();
+        userSettings.Contact_Record_Type__c = 'Participant';
+        userSettings.DPP_Program_User_Profile__c = '#Custom: Community Diabetes User';
+        userSettings.Default_User_Profile__c = '#Custom: Community Standard User';
+        insert userSettings;
+        
+        CommunityWizardSettings__c wizSettings = new CommunityWizardSettings__c();
+        wizSettings.Active_Opportunity_Stages__c = '40-Phase I, 50-Phase II';
+        insert wizSettings;
+        
+        // Create Contact       
+        TestDataGenerator td = new TestDataGenerator();
+        Contact participant = td.getContacts(false)[0]; 
+        participant.Home_Email__c = 'icm3test@icm3test.net';
+        participant.Community_Alert__c ='Alert';
+        participant.Coach__c = UserInfo.getUserId();
+        participant.RecordTypeId = Schema.SObjectType.Contact.getRecordTypeInfosByName().get(userSettings.Contact_Record_Type__c).getRecordTypeId();       
+        insert participant;
+        
+        List<Profile> profiles = [SELECT Id, Name FROM Profile 
+                                            WHERE Name = :userSettings.Default_User_Profile__c];
+        
+        User u = new User();
+        u.alias = 'ICMTest';
+        u.email = participant.Home_Email__c;
+        u.username = u.email;
+        u.emailencodingkey = 'UTF-8';
+        u.lastname = participant.lastname;
+        u.firstname = participant.firstname;
+        u.contactId = participant.Id;
+        u.localesidkey = 'en_US';
+        u.CommunityNickname = 'icmTestuser555';
+        u.Languagelocalekey = 'en_US';
+        u.localesidkey = 'en_US';
+        u.TimeZoneSidKey = 'America/Chicago';
+        u.EmailEncodingKey = 'ISO-8859-1';  
+        u.ProfileId = profiles[0].Id;       
+        insert u;
+        
+        // create opportunity
+        Opportunity oppty = td.getOpportunities(false)[0];
+        oppty.Stagename = '40-Phase I';
+        oppty.Participant__c = participant.Id;
+        //oppty.Create_Community_User__c = true;
+        //oppty.ForecastCategoryName = '0-Closed';
+        //oppty.Program__c = 'DPP - No Services';
+        oppty.Intrinsic_Motivation__c = 'TEST MSG';
+        insert oppty;
+    }
+    
+    public static TestMethod void myUnitTest() {
+        String msg = Main_LX_MessageToUser.getUserMessage();
+        
+        system.assertEquals( 'TEST MSG', msg, 'Testing Intrinsic Message' );
+    }
+
+}

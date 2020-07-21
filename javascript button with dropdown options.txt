@@ -1,0 +1,81 @@
+{!REQUIRESCRIPT("/soap/ajax/25.0/connection.js")}
+{!REQUIRESCRIPT("/soap/ajax/25.0/apex.js")}
+
+// parameters
+var buttonName = "capital_call_macquarie_trade_checklist";
+var pageName1 = "Traditional Checklist";
+var pageLink1 = "/apex/CapitalCallChecklist?ID={!Opportunity.Id}";
+var pageName2 = "Macquarie Checklist";
+var pageLink2 = "/apex/MacquarieChecklist?ID={!Opportunity.Id}";
+var menuName = "checklistMenu";
+
+// reference to the popup menu if it was already created
+var chklstMenu = document.getElementById( menuName );
+
+// reference to the table row where the top buttons are
+var buttonList = document.getElementsByName( buttonName );
+var parentTR = buttonList[ 0 ].parentElement;
+
+if( chklstMenu === null ) {
+console.log( 'creating popup menu' );
+   // create CSS style to control display of menu
+   var newStyle = document.createElement( "STYLE" );
+
+   var styleContent = [ ".chklstMenu { display: block; width: 220px; "
+   , "position: absolute; background-color: whiteSmoke; "
+   , "border: gray 0px solid; z-index: 99; } "
+   , ".chklstMenuOpt { margin: 7px; } "
+   , ".chklstMenuOpt ul { list-style: none; padding-left: 0px; } "
+   , ".chklstMenuOpt li { padding-top: 7px; } "
+   ].join( "" );
+
+   newStyle.innerHTML = styleContent;
+   newStyle.appendChild( document.createTextNode( "" ) ); // webkit hack
+   document.head.appendChild( newStyle );
+
+   // create popup on the first click
+   chklstMenu = document.createElement( "DIV" );
+   chklstMenu.tabIndex = "0";
+   chklstMenu.setAttribute( "id", menuName );
+   var divContent = [ "<div id='", menuName, "Options' class='chklstMenuOpt'>"
+   , "<p><strong>Select the type:</strong></p><ul><li>"
+   , "<a href='", pageLink1, "'>"
+   , pageName1, "</a></li><li>"
+   , "<a href='", pageLink2, "'>"
+   , pageName2, "</a></li></ul></div>"
+   ].join( "" );
+
+   chklstMenu.innerHTML = divContent;
+   chklstMenu.className = "chklstMenu";
+   chklstMenu.style.borderWidth = "1px";
+
+   // set position of popup to below the button and add popup to the table row
+   var buttonList = document.getElementsByName( buttonName );
+   var buttonPos = buttonList[ 0 ].getBoundingClientRect();
+   chklstMenu.style.left = ( buttonPos.left - 12 ) + "px";
+   chklstMenu.style.top = ( buttonPos.height + 171 ) + "px";
+   parentTR.appendChild( chklstMenu );
+
+   var chklstOpt = document.getElementById( menuName + "Options" );
+   chklstOpt.style.display = "inline-block";
+
+} else {
+console.log( 'popup menu already created' );
+   var chklstOpt = document.getElementById( menuName + "Options" );
+
+   // if already displaying, hide it
+   if( chklstMenu.style.borderWidth === "1px" ) {
+console.log( 'hiding popup menu' );
+      // hide menu
+      chklstMenu.style.borderWidth = "0px";
+
+      chklstOpt.style.display = "none";
+   } else {
+console.log( 'showing popup menu' );
+      chklstMenu.style.borderWidth = "1px";
+
+      chklstOpt.style.display = "inline-block";
+   }
+}
+
+chklstMenu.focus();

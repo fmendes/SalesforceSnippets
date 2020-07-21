@@ -1,0 +1,30 @@
+<apex:page id="${NAME}" standardController="Account" extensions="Controller_${NAME}" docType="html-5.0"
+showHeader="false" sideBar="false" lightningStylesheets="true" applyBodyTag="false" applyHtmlTag="false">
+
+<html xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" lang="en">
+
+<head>
+    <title>  </title>
+    <meta charset="utf-8" />
+    <meta http-equiv="x-ua-compatible" content="ie=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <!--<c:Overlay style="processing" />-->
+    <!-- Import the Design System style sheet -->
+    <apex:slds />
+
+</head>
+
+<body>
+
+    <div class="slds-scope">
+        <apex:form id="theForm">
+
+        <apex:pageMessages escape="false" id="pageMsg"/>
+
+        </apex:form>
+
+    </div>
+
+</body>
+</apex:page>

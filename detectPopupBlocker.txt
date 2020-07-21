@@ -1,0 +1,24 @@
+
+console.log( '*** open coupon window with token' );
+var newWin = window.open( "http://inmar-coupon-site-embed/#login/{!IDPNToken}"
+	, "_blank", "location=no,menubar=no,toolbar=no,titlebar=no,status=no" );
+
+var popupsDisabled = ! newWin || newWin.closed || typeof newWin.closed=='undefined';
+console.log( 'popups disabled = ' + popupsDisabled );
+
+if( ! popupsDisabled ) {
+	try {
+		// testing for popup blocking in Chrome
+		newWin.focus();   
+	} catch( e ) {
+		popupsDisabled = true;
+		console.log( 'popups disabled  (Chrome) = ' + popupsDisabled );
+	}
+}
+
+if( popupsDisabled ) {
+	// popup was blocked so we show the warning
+	var thepopupWarning = document.getElementById( "popupWarning" );
+	console.log( 'popupWarning = ' + thepopupWarning );
+	thepopupWarning.className  = "";
+}

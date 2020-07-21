@@ -1,0 +1,59 @@
+
+	public static void emailTemplateToContacts( ID aTemplateID, List<ID> recipientList, List<ID> targetList ) {
+
+        //List<OrgWideEmailAddress> orgAddressList = [
+        //        SELECT ID
+        //        FROM OrgWideEmailAddress
+        //        WHERE Address = 'doNotReply@blahblah.com'
+        //];
+        //aSingleMsg.setOrgWideEmailAddressID( orgAddressList[ 0 ].ID );
+
+		Set<String> uniqueEmailSet = new Set<String>();
+		
+		Messaging.SingleEmailMessage[] msgList = new Messaging.SingleEmailMessage[] {};
+		for( Integer i = 0; i < recipientList.size(); i++ ) {
+			ID aRecipient = recipientList[ i ];
+			ID aTarget = targetList[ i ];
+			
+			if( uniqueEmailSet.add( (String) aTarget + (String) aRecipient ) ) { //If TRUE then UNIQUE!
+				Messaging.SingleEmailMessage aSingleMsg = new Messaging.SingleEmailMessage();
+				aSingleMsg.setTemplateID( aTemplateID );
+				//aSingleMsg.setReplyTo( CloudnexaSupportSender.Address );   // NOTE:  this was overriding setOrgWideEmailAddressID with Brad's email
+				aSingleMsg.setOrgWideEmailAddressID( CloudnexaSupportSender.ID );
+				aSingleMsg.setSaveAsActivity( false );
+				aSingleMsg.setTargetObjectID( aRecipient );
+				aSingleMsg.setWhatID( aTarget );
+				msgList.add( aSingleMsg );
+			}
+		}
+
+		Messaging.SendEmailResult[] resultList = Messaging.sendEmail( msgList, false );
+
+
+/*  CANT USE MASS EMAIL BECAUSE WE CANT SET ORG WIDE EMAIL ID WITH MASS EMAILS
+		// create mass email message with all targets and recipients
+		Messaging.MassEmailMessage aMsg = new Messaging.MassEmailMessage();
+		aMsg.setTemplateID( aTemplateID );
+		aMsg.setReplyTo( CloudnexaSupportSender.Address );
+		aMsg.setOrgWideEmailAddressIDs( CloudnexaSupportSender.ID );  // this doesn't work
+		aMsg.setSaveAsActivity( false );
+		aMsg.setTargetObjectIDs( recipientList );
+		aMsg.setWhatIDs( targetList );
+
+		// send the notifications - if one fails, continue sending the others and report errors silently by creating a case
+		Messaging.SendEmailResult[] resultList = Messaging.sendEmail( new Messaging.MassEmailMessage[] { aMsg }, false );
+*/
+		String errors = '';
+		for( Messaging.SendEmailResult aResult : resultList ) {
+			if( aResult.isSuccess() ) {
+				continue;
+			}
+			for( Messaging.SendEmailError anError : aResult.getErrors() ) {
+				errors = errors + anError.getMessage() + ' - ' + anError.getFields() + ' - ID ' + anError.getTargetObjectID() + '\n';
+			}
+		}
+		if( errors != '' ) {
+			// create a case for troubleshooting any mass email errors
+			createCaseToReportError( errors );
+		}
+	}

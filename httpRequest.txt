@@ -1,0 +1,30 @@
+HttpRequest req = new HttpRequest();
+
+//String url= 'http://production.shippingapis.com/'
+//              +'ShippingAPI.dll?API=Verify&XML=';
+
+// using named credentials
+String url = 'callout:JSPA_REST_API';
+
+String xml =
+'<AddressValidateRequest USERID="323STRAT1774">'
+//+ '<Revision>1</Revision>'
++'<Address ID="0"><Address1>8008 Jester</Address1>'
++'<Address2></Address2><City>Austin</City>'
++'<State>TX</State><Zip5>78759</Zip5>'
++'<Zip4></Zip4></Address></AddressValidateRequest>';
+
+req.setEndpoint( url + EncodingUtil.urlEncode(xml, 'UTF-8') );
+
+req.setMethod( 'GET' );
+
+req.setBody( 'UserName:{!HTMLENCODE($Credential.Username)} Password:{!HTMLENCODE($Credential.Password)}' );
+
+req.setHeader( 'Content-Type', 'text/xml' );
+
+Http h = new Http();
+
+HttpResponse res = h.send( req );
+
+system.debug( res.getStatus() );
+system.debug( res.getBody() );

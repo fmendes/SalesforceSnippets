@@ -1,0 +1,57 @@
+<apex:selectOption itemLabel="AL" itemValue="Alabama" />
+<apex:selectOption itemLabel="AK" itemValue="Alaska" />
+<apex:selectOption itemLabel="AZ" itemValue="Arizona" />
+<apex:selectOption itemLabel="AR" itemValue="Arkansas" />
+<apex:selectOption itemLabel="CA" itemValue="California" />
+<apex:selectOption itemLabel="CO" itemValue="Colorado" />
+<apex:selectOption itemLabel="CT" itemValue="Connecticut" />
+<apex:selectOption itemLabel="DE" itemValue="Delaware" />
+<apex:selectOption itemLabel="FL" itemValue="Florida" />
+<apex:selectOption itemLabel="GA" itemValue="Georgia" />
+<apex:selectOption itemLabel="HI" itemValue="Hawaii" />
+<apex:selectOption itemLabel="ID" itemValue="Idaho" />
+<apex:selectOption itemLabel="IL" itemValue="Illinois" />
+<apex:selectOption itemLabel="IN" itemValue="Indiana" />
+<apex:selectOption itemLabel="IA" itemValue="Iowa" />
+<apex:selectOption itemLabel="KS" itemValue="Kansas" />
+<apex:selectOption itemLabel="KY" itemValue="Kentucky" />
+<apex:selectOption itemLabel="LA" itemValue="Louisiana" />
+<apex:selectOption itemLabel="ME" itemValue="Maine" />
+<apex:selectOption itemLabel="MD" itemValue="Maryland" />
+<apex:selectOption itemLabel="MA" itemValue="Massachusetts" />
+<apex:selectOption itemLabel="MI" itemValue="Michigan" />
+<apex:selectOption itemLabel="MN" itemValue="Minnesota" />
+<apex:selectOption itemLabel="MS" itemValue="Mississippi" />
+<apex:selectOption itemLabel="MO" itemValue="Missouri" />
+<apex:selectOption itemLabel="MT" itemValue="Montana" />
+<apex:selectOption itemLabel="NE" itemValue="Nebraska" />
+<apex:selectOption itemLabel="NV" itemValue="Nevada" />
+<apex:selectOption itemLabel="NH" itemValue="New Hampshire" />
+<apex:selectOption itemLabel="NJ" itemValue="New Jersey" />
+<apex:selectOption itemLabel="NM" itemValue="New Mexico" />
+<apex:selectOption itemLabel="NY" itemValue="New York" />
+<apex:selectOption itemLabel="NC" itemValue="North Carolina" />
+<apex:selectOption itemLabel="ND" itemValue="North Dakota" />
+<apex:selectOption itemLabel="OH" itemValue="Ohio" />
+<apex:selectOption itemLabel="OK" itemValue="Oklahoma" />
+<apex:selectOption itemLabel="OR" itemValue="Oregon" />
+<apex:selectOption itemLabel="PA" itemValue="Pennsylvania" />
+<apex:selectOption itemLabel="RI" itemValue="Rhode Island" />
+<apex:selectOption itemLabel="SC" itemValue="South Carolina" />
+<apex:selectOption itemLabel="SD" itemValue="South Dakota" />
+<apex:selectOption itemLabel="TN" itemValue="Tennessee" />
+<apex:selectOption itemLabel="TX" itemValue="Texas" />
+<apex:selectOption itemLabel="UT" itemValue="Utah" />
+<apex:selectOption itemLabel="VT" itemValue="Vermont" />
+<apex:selectOption itemLabel="VA" itemValue="Virginia" />
+<apex:selectOption itemLabel="WA" itemValue="Washington" />
+<apex:selectOption itemLabel="WV" itemValue="West Virginia" />
+<apex:selectOption itemLabel="WI" itemValue="Wisconsin" />
+<apex:selectOption itemLabel="WY" itemValue="Wyoming" />
+<apex:selectOption itemLabel="DC" itemValue="District of Columbia" />
+<apex:selectOption itemLabel="AS" itemValue="American Samoa" />
+<apex:selectOption itemLabel="GU" itemValue="Guam" />
+<apex:selectOption itemLabel="MP" itemValue="Northern Mariana Islands" />
+<apex:selectOption itemLabel="PR" itemValue="Puerto Rico" />
+<apex:selectOption itemLabel="UM" itemValue="United States Minor Outlying Islands" />
+<apex:selectOption itemLabel="VI" itemValue="Virgin Islands, U.S." />

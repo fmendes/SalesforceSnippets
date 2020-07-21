@@ -1,0 +1,112 @@
+@IsTest
+public with sharing class Controller_CommunitiesSelfReg_Test {
+
+    @TestSetup
+    public static void createData() {
+        Account acct = new Account();
+        acct.Name = 'Some other company';
+        acct.NMLS__c = '4312';
+        insert acct;
+
+        Contact cont = new Contact();
+        cont.AccountID = acct.ID;
+        cont.FirstName = 'Joe';
+        cont.LastName = 'Sixpack';
+        cont.NMLS_ID__c = '54321';
+        cont.Email = 'joe6@test.com';
+        insert cont;
+    }
+
+    @IsTest
+    public static void testCommunitiesSelfRegController() {
+        Test.startTest();
+
+        Controller_CommunitiesSelfReg controller = new Controller_CommunitiesSelfReg();
+        controller.firstName = 'FirstName';
+        controller.lastName = 'LastName';
+        controller.email = 'test@force.com';
+        controller.companyName = 'myCompany TEST Co.';
+        controller.companyNMLS = '12340';
+        controller.contactNMLS = '1234';
+        //controller.communityNickname = 'test';
+
+        // registerUser will always return null when the page isn't accessed as a guest user
+        System.assert( controller.registerUser() == null );
+
+        // mismatched password test
+        controller.password = 'abcd1234';
+        controller.confirmPassword = 'abcd123';
+        System.assert( controller.registerUser() == null );
+
+        // good password test
+        controller.password = 'abcd1234';
+        controller.confirmPassword = 'abcd1234';
+        System.assert( controller.registerUser() == null );
+
+        Test.stopTest();
+
+        // increase test coverage
+        Savepoint sp = Database.setSavepoint();
+        try{
+            Integer i = 1 / 0;
+        } catch( Exception e ) {
+            Controller_CommunitiesSelfReg.handleSingleError( sp, e );
+        }
+    }
+
+    @IsTest
+    public static void testCompanyValidation() {
+        Test.startTest();
+
+        Test.setCurrentPage( Page.CommunitiesSelfReg );
+
+        Controller_CommunitiesSelfReg controller = new Controller_CommunitiesSelfReg();
+        controller.firstName = 'FirstName';
+        controller.lastName = 'LastName';
+        controller.email = 'test@force.com';
+        controller.companyName = 'myCompany TEST Co.';
+        controller.companyNMLS = '4312';
+        controller.contactNMLS = '54321';
+        controller.password = 'abcd1234';
+        controller.confirmPassword = 'abcd1234';
+
+        // test company NMLS validation
+        controller.registerUser();
+
+        if( ApexPages.getMessages().size() > 0 ) {
+            String errorMsg = ApexPages.getMessages()[ 0 ].getSummary();
+            system.assert( errorMsg.contains( 'belongs to a different company' ), '1st error: ' + errorMsg );
+            //system.assert( errorMsg.contains( 'in the opportunity before entering revenue distribution' ), '2nd error: ' + errorMsg );
+        }
+
+        Test.stopTest();
+    }
+
+    @IsTest
+    public static void testContactValidation() {
+        Test.startTest();
+
+        Test.setCurrentPage( Page.CommunitiesSelfReg );
+
+        Controller_CommunitiesSelfReg controller = new Controller_CommunitiesSelfReg();
+        controller.firstName = 'FirstName';
+        controller.lastName = 'LastName';
+        controller.email = 'test@force.com';
+        controller.companyName = 'myCompany TEST Co.';
+        controller.companyNMLS = '43120';
+        controller.contactNMLS = '54321';
+        controller.password = 'abcd1234';
+        controller.confirmPassword = 'abcd1234';
+
+        // test contact NMLS validation
+        controller.registerUser();
+
+        if( ApexPages.getMessages().size() > 0 ) {
+            String errorMsg = ApexPages.getMessages()[ 0 ].getSummary();
+            system.assert( errorMsg.contains( 'belongs to a different person' ), '1st error: ' + errorMsg );
+            //system.assert( errorMsg.contains( 'in the opportunity before entering revenue distribution' ), '2nd error: ' + errorMsg );
+        }
+
+        Test.stopTest();
+    }
+}

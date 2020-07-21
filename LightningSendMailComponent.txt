@@ -1,0 +1,222 @@
+COMPONENT TO REPLACE SEND EMAIL URL HACK /_ui/core/email/author/EmailAuthor?
+
+<aura:component controller="SendEmailTemplatePopC"
+                implements="force:appHostable,flexipage:availableForAllPageTypes,flexipage:availableForRecordHome,force:hasRecordId,forceCommunity:availableForAllPageTypes,force:lightningQuickAction" access="global" >
+    
+    <aura:attribute name="mydata" type="Object"/>
+    <aura:attribute name="mycolumns" type="List"/>
+    <aura:attribute name="selIds" type="List"/>
+    <aura:attribute name="selectedRows" type="List" />
+    
+    <lightning:button label="Send Email PopUp"
+                      iconName="utility:new_window"
+                      iconPosition="left"
+                      variant="brand"
+                      onclick="{!c.newPopup}"
+                      />
+    
+    <div role="dialog" tabindex="-1" aria-labelledby="header43" aura:id="Modalbox1" class="slds-modal slds-modal_large">
+        <div class="slds-modal__container" style="width: 65%;">
+            <div class="slds-modal__header">
+                EMAIL
+            </div>
+            
+            <div aura:id="mid" class="slds-modal__content slds-p-around--medium">
+                <div class="slds-p-left_xx-large slds-p-right_xx-large">
+                    <div class="slds-page-header" style="padding-top: 9px; padding-bottom: 9px;, padding-right: 9px;, padding-left: 10px;">
+                        <h3 style="font-size: 1rem;" title="">Send Email</h3>
+                    </div> 
+                </div>
+                <br/>
+                <div class = "slds-size--8-of-8">
+                    <lightning:datatable aura:id="tableid"
+                                         data="{! v.mydata }" 
+                                         columns="{! v.mycolumns }" 
+                                         keyField="Id" 
+                                         selectedRows="{! v.selectedRows }"
+                                         onrowselection="{! c.handleRowAction }" />
+                    <br/><br/>
+                    
+                </div>
+            </div>
+            <div class="slds-modal__footer">
+                <lightning:button label="Send HTML Template" onclick="{!c.sendMail}" 
+                                  variant="brand" iconName='utility:email'/>
+                <lightning:button label="Send VF Template" onclick="{!c.sendMailVf}" 
+                                  variant="brand" iconName='utility:email'/>
+                <lightning:button label="close" onclick="{!c.closeNewModal}" 
+                                  variant="brand"/>
+            </div>
+        </div>
+    </div>
+</aura:component>
+
+CONTROLLER:
+
+
+({
+    newPopup : function(component, event, helper){
+        var cmpTarget = component.find('Modalbox1');
+        var cmpBack = component.find('Modalbackdrop');
+        $A.util.addClass(cmpTarget, 'slds-fade-in-open');
+        $A.util.addClass(cmpBack, 'slds-backdrop--open');
+        
+        component.set('v.mycolumns', [
+            {label: 'Name', fieldName: 'Name', type: 'text'},
+            {label: 'Email', fieldName: 'Email', type: 'text'}
+        ]);       
+        
+        var action = component.get('c.cont');
+        action.setCallback(this, function(response){
+            var state = response.getState();
+            if(state === "SUCCESS"){
+                component.set('v.mydata',response.getReturnValue());
+            }
+            else if (state === "ERROR"){
+                var errors = response.getError();
+                if(errors){
+                    if(errors[0] && error[0].message){
+                        console.log('Error Message: ' + errors[0].message);
+                    }
+                }
+                else{
+                    console.log('Unknown Error');
+                }
+            }
+        });
+        $A.enqueueAction(action);
+    },
+    
+    closeNewModal : function(component, event, helper){
+        component.set("v.accForm",{'LastName':''});
+        var cmpTarget = component.find('Modalbox1');
+        var cmpBack = component.find('Modalbackdrop');
+        $A.util.removeClass(cmpBack,'slds-backdrop--open');
+        $A.util.removeClass(cmpTarget, 'slds-fade-in-open');
+    },
+    
+    handleRowAction : function(component, event, helper){
+        var selRows = event.getParam('selectedRows');
+        var rowsIds = [];
+        for (var i = 0; i < selRows.length; i++){
+            rowsIds.push(selRows[i].Id);
+        }
+        component.set("v.selIds",rowsIds);
+    },
+    
+    sendMail : function(component, event, helper){
+        var selectedrowsid = component.get('v.selIds');
+        console.log('selectedrowsid-->>> ' + JSON.stringify(selectedrowsid));
+        
+        var action = component.get("c.send");
+        action.setParams({ 'eid': selectedrowsid });
+        action.setCallback(this, function(response) {
+            var state = response.getState();
+            if (state === "SUCCESS") {
+                console.log('Result from server-->>> ' + response.getReturnValue());
+                if(selectedrowsid != ''){
+                    alert('Email Sent Successfully');
+                }
+                else{
+                    alert('Enter Recipients');
+                }
+                component.set('v.selectedRows', '');
+            }
+        });
+        $A.enqueueAction(action);
+    },
+    
+    sendMailVf : function(component, event, helper){
+        var selectedrowsid1 = component.get('v.selIds');
+        console.log('selectedrowsid1-->>> ' + JSON.stringify(selectedrowsid1));
+        
+        var action = component.get("c.sendVf");
+        action.setParams({ 'evid': selectedrowsid1 });
+        action.setCallback(this, function(response) {
+            var state = response.getState();
+            if (state === "SUCCESS") {
+                console.log('Result from server-->>> ' + response.getReturnValue());
+                if(selectedrowsid1 != ''){
+                    alert('Email Sent Successfully');
+                }
+                else{
+                    alert('Enter Recipients');
+                }
+                component.set('v.selectedRows', '');
+            }
+        });
+        $A.enqueueAction(action);
+    }
+})
+
+
+CSS:
+
+.THIS {
+}
+
+.THIS .slds-section__title{
+    background-color: YellowGreen;
+    color: white
+}
+
+.THIS .slds-modal__header{
+    background-color: OliveDrab;
+    color: white
+}
+
+APEX:
+
+public class SendEmailTemplatePopC {
+
+	@AuraEnabled
+    public static List<Contact> cont(){
+        List<Contact> c = [SELECT Id, Name, Email FROM Contact LIMIT 5];
+        return c;
+    }
+	    
+    @AuraEnabled
+    public static void send(List<String> eid){
+        List<Messaging.SingleEmailMessage> mails =  new List<Messaging.SingleEmailMessage>();
+        
+        EmailTemplate et=[SELECT Id FROM EmailTemplate WHERE developername = 'HTML_Template' LIMIT 1];
+        
+        for(Contact cc : [SELECT Id, Name, Email FROM Contact WHERE Id IN : eid]){
+            Messaging.SingleEmailMessage mail = new Messaging.SingleEmailMessage();
+            
+            String sendTo;
+            sendTo = cc.Id;
+            mail.setTargetObjectId(sendTo);
+            
+            mail.setTemplateId(et.id);
+            mail.setSenderDisplayName('Khan Anas');
+            mail.setSaveAsActivity(false);
+            
+            mails.add(mail);
+            Messaging.sendEmail(mails);
+        }
+    }
+    
+    @AuraEnabled
+    public static void sendVf(List<String> evid){
+        List<Messaging.SingleEmailMessage> mails =  new List<Messaging.SingleEmailMessage>();
+        
+        EmailTemplate et=[SELECT Id FROM EmailTemplate WHERE developername = 'Visualforce_Template' LIMIT 1];
+        
+        for(Contact cc : [SELECT Id, Name, Email FROM Contact WHERE Id IN : evid]){
+            Messaging.SingleEmailMessage mail = new Messaging.SingleEmailMessage();
+            
+            String sendTo;
+            sendTo = cc.Id;
+            mail.setTargetObjectId(sendTo);
+            
+            mail.setTemplateId(et.id);
+            mail.setSenderDisplayName('Khan Anas');
+            mail.setSaveAsActivity(false);
+            
+            mails.add(mail);
+            Messaging.sendEmail(mails);
+        }
+    }
+}
+

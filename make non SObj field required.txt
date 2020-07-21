@@ -1,0 +1,12 @@
+<apex:pageBlock id="dropBlock" mode="edit">
+    <apex:pageBlockSection title="Elements" columns="1" showHeader="false">
+        <!-- ... a number of other pageBlockSectionItems-->  
+        <apex:pageBlockSectionItem >
+            <apex:outputLabel value="Required String Property" />
+            <apex:outputPanel layout="block" styleClass="requiredInput">
+                    <div class="requiredBlock"></div>
+                    <apex:inputText value="{!innerClassInstance.innerClassField}" required="true"/>
+            </apex:outputPanel>
+        </apex:pageBlockSectionItem>
+    </apex:pageBlockSection>
+</apex:pageBlock>

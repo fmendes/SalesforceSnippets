@@ -1,0 +1,43 @@
+import java.util.Properties;
+import java.io.InputStream;
+import org.jdom.input.SAXBuilder;
+import org.jdom.Document;
+import org.jdom.Element;
+import org.jdom.xpath.XPath;
+//import org.jdom.output.XMLOutputter;
+
+// org.jdom.xpath.XPath didnt work
+// next attempt try with the ones below
+import org.jaxen.XPath;
+import org.jaxen.jdom.JDOMXPath;
+
+
+// Loop through the Process Documents
+for( int i = 0; i < dataContext.getDataCount(); i++ ) {
+     InputStream is = dataContext.getStream( i );
+     Properties props = dataContext.getProperties( i );
+
+     // Build XML Document
+     SAXBuilder builder = new SAXBuilder();
+     Document doc = builder.build( is ); // this line failed when I tested
+
+     // next attempt try this
+     //Element root = doc.getRootElement();
+     //def remarks = root.getChild(“RemarkText”);
+
+     // Create an XPath statement to get remarks
+     XPath x = XPath.newInstance( "//RemarkText" );
+     remarks = x.selectNodes( doc );
+
+     // concatenate all Remarks
+     concatenatedRemarks = "";
+     for( Element singleRemark : remarks ) {
+          concatenatedRemarks = concatenatedRemarks + " - " + singleRemark.getText();
+     }
+
+     // store the concatenatedRemarks into a dynamic document property
+     props.setProperty( "document.dynamic.userdefined.ConcatenatedRemarks", concatenatedRemarks );
+
+     // output the Document's data to an InputStream to pass to the next step
+     dataContext.storeStream( is, props );
+}

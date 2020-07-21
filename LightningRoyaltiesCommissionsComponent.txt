@@ -1,0 +1,113 @@
+RoyaltiesCommissionsComponent:
+----------------------------------------------------------------------
+
+<aura:component access="global" 
+		implements="force:appHostable,flexipage:availableForAllPageTypes" >
+	
+    <div>
+       <div>
+           <c:RoyaltiesCommissionList />
+       </div>
+
+    </div>
+
+</aura:component>
+
+
+
+----------------------------------------------------------------------
+RoyaltiesCommissionList:
+----------------------------------------------------------------------
+
+<aura:component >
+
+	<aura:attribute name="errorMsg" type="String" />
+   	<aura:attribute name="royaltyCommissionList" type="SObject[]" />
+
+   	<aura:handler name="init" value="{!this}" action="{!c.doInit}" />
+
+    <aura:handler event="c:RoyaltiesCommissionsRetrieved" action="{!c.handleRoyaltiesCommissionsRetrieved}" />
+
+<div class="slds" >
+
+        <aura:if isTrue="{!v.errorMsg != null}">
+            <ui:message title="Error" severity="error" closable="true">
+                {!v.errorMsg}
+            </ui:message>
+        </aura:if>
+
+        <c:TableWithCheckboxes aura:id="cbxTable" 
+								columnHeaderList="Ticket Date,Ship Date,Paid Date,Job Nbr,Item,Collected,Total Sale,All Prep,Freelance,Dearchiving,Discount,Subtotal,Pub's %,Royalties,Pay" 
+								columnNameList="ticketDate,shipDate,paidDate,jobNbr,item,collected,totalSale,allPrep,freelance,dearchiving,discount,subTotal,pubsPct,royalties,paySelection" 
+							    groupByColumnNameList="item" 
+							    summarizedColumnNameList="totalSale,royalties"
+								rowList="{!v.royaltyCommissionList}" 
+								selectableColumn="paySelection" 
+								selectAllEnabled="false" 
+								onSelectAll="{!c.selectedAll2}" 
+								onSelection="{!c.onCheckSelection}" >
+        </c:TableWithCheckboxes>
+
+</div>
+	
+</aura:component>
+
+
+({
+	doInit : function( component, event, helper ) {
+		var rcList = [];
+		rcList.push( { ticketDate:  2017-01-01
+					, jobNbr: 101
+					, item:  "Reprint"
+					, royalties: 210 } );
+		rcList.push( { ticketDate:  2017-02-01
+					, jobNbr: 102
+					, item:  "Digital"
+					, royalties: 255 } );
+		rcList.push( { ticketDate:  2017-01-01
+					, jobNbr: 103
+					, item:  "Eprint"
+					, totalSale: 500
+					, royalties: 255 } );
+		rcList.push( { ticketDate:  2017-02-01
+					, jobNbr: 104
+					, item:  "Eprint"
+					, royalties: 255 } );
+		rcList.push( { ticketDate:  2017-01-01
+					, jobNbr: 105
+					, item:  "Custom License"
+					, royalties: 2500 } );
+		rcList.push( { ticketDate:  2017-02-01
+					, jobNbr: 106
+					, item:  "Permissions"
+					, royalties: 795 } );
+		rcList.push( { ticketDate:  2017-03-01
+					, jobNbr: 107
+					, item:  "Permissions"
+					, totalSale: 1000
+					, royalties: 590 } );
+
+		rcList.sort( function( a, b ) {
+			if( a.item > b.item ) {
+				return 1;
+			}
+			if( a.item > b.item ) {
+				return -1;
+			}
+			return 0;
+		} );
+
+		component.set( "v.royaltyCommissionList", rcList );
+
+		var cbxTable = component.find( "cbxTable" );
+		cbxTable.tableInit();
+	}
+})
+
+
+.THIS {
+    font-size: 70%!important;
+}
+    .THIS THEAD > TR {
+    font-size: 110%;
+    }

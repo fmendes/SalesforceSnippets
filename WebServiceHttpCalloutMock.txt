@@ -1,0 +1,42 @@
+@isTest
+global class WebServiceMockImpl implements WebServiceMock, HttpCalloutMock {
+
+// Test.setMock( HttpCalloutMock.class, new WebServiceMockImpl() );
+// Test.setMock( WebServiceMock.class, new WebServiceMockImpl() );
+
+	global static Boolean generateException = false;
+	global static Decimal defaultCustPrice = 12345.6789;
+	global static Decimal defaultShipping = 12345.6789;
+	global void doInvoke( Object stub, Object request, Map<String, Object> response,
+				String endpoint, String soapAction, String requestName,
+				String responseNS, String responseName, String responseType ) {
+
+		if( requestName == 'CustPrice' ) {
+			//tempuriOrg.CustPriceResponse_element respElement = new tempuriOrg.CustPriceResponse_element();
+			//respElement.CustPriceResult = defaultCustPrice;
+			//response.put( 'response_x', respElement );
+		}
+
+		if( generateException ) {
+			Integer i = 1 / 0;
+		}
+	}
+
+	global HttpResponse respond( HttpRequest h ) {
+		HttpResponse r = new HttpResponse();
+
+        if( h.getEndpoint().containsIgnoreCase( 'kundenportal.mossgmbh.de' ) ) {
+            r.setBody( '<?xml version="1.0"?><RatingServiceSelectionResponse><RatedShipment>'
+                +'<Service><Code>03</Code></Service><NegotiatedRates><NetSummaryCharges>'
+                +'<GrandTotal><CurrencyCode>USD</CurrencyCode><MonetaryValue>' + defaultShipping
+                +'</MonetaryValue></GrandTotal></NetSummaryCharges></NegotiatedRates>'
+                +'</RatedShipment></RatingServiceSelectionResponse>' );
+        }
+
+		if( generateException ) {
+			Integer i = 1 / 0;
+		}
+
+		return r;
+	}
+}

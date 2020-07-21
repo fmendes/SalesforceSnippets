@@ -1,0 +1,89 @@
+Sorry to interrupt
+This page has an error. You might just need to refresh it.
+[NoErrorObjectAvailable] Script error.
+
+https://developer.salesforce.com/docs/component-library/tools/playground/Oz4GGKbvw/8/edit
+
+================= dataHelper.js ================= 
+
+<template>
+    <div style="height: 300px;">
+        <lightning-datatable
+                key-field="id"
+                data={data}
+                columns={columns}>
+        </lightning-datatable>
+    </div>    
+</template>
+
+================= app.js ================= 
+
+import { LightningElement, track } from 'lwc';
+import dataHelper from './dataHelper';
+
+const COLUMNS = [
+    { label: 'Label', fieldName: 'name' },
+    { label: 'Website', fieldName: 'website', type: 'url' },
+    { label: 'Phone', fieldName: 'phone', type: 'phone' },
+    { label: 'Balance', fieldName: 'amount', type: 'currency' },
+    { label: 'CloseAt', fieldName: 'closeAt', type: 'date' },
+];
+
+export default class App extends LightningElement {
+    @track data = [];
+    @track columns = COLUMNS;
+
+    async connectedCallback() {
+        const data = await dataHelper({ amountOfRecords: 100 });
+        this.data = data;
+    }
+
+    constructor() {
+        super();
+        const dynamicActions = [
+          { type: 'action', typeAttributes: { rowActions: this.getRowActions } }
+        ];
+        this.columns = [ ...this.columns, ...dynamicActions ];
+    }
+
+    getRowActions(row, doneCallback) {
+        const actions = [];
+        if (row.amount && row.amount > 300) {
+            actions.push({
+                'label': 'Over 300',
+                'name': 'over'
+            });
+        } else {
+            actions.push({
+                'label': 'Under 300',
+                'name': 'under'
+            });
+        }
+        doneCallback(actions);
+    }
+    
+}
+
+================= dataHelper.js ================= 
+
+const recordMetadata = {
+    name: 'name',
+    email: 'email',
+    website: 'url',
+    amount: 'currency',
+    phone: 'phoneNumber',
+    closeAt: 'dateInFuture',
+};
+
+export default function fetchDataHelper({ amountOfRecords }) {
+    return fetch('https://data-faker.herokuapp.com/collection', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json; charset=utf-8',
+        },
+        body: JSON.stringify({
+            amountOfRecords,
+            recordMetadata,
+        }),
+    }).then(response => response.json());
+}

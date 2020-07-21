@@ -1,0 +1,26 @@
+public static void copyMappedFields( SObject target
+		, Map<String, Object> source
+		, Map<String, String> fieldMap ) {
+
+	// copy all mapped fields to the target object
+	for( String acctField : fieldMap.keySet() ) {
+					String sourceField = fieldMap.get( acctField );
+					target.put( acctField, getStringValue( source, sourceField ) );
+	}
+}
+
+public static String getStringValue( Map<String, Object> o, String fieldName ) {
+				return String.valueOf( o.get( fieldName ) );
+}
+
+public static void copyFields( SObject target, SObject source
+		, List<String> fieldList ) {
+
+	// copy all mapped fields to the target object
+	for( String acctField : fieldList ) {
+		target.put( acctField, source.get( acctField ) );
+	}
+}
+
+
+

@@ -1,0 +1,164 @@
+SEND EMAIL COMPONENT:
+
+USAGE:  <c:EmailSend/>
+
+APEX:
+
+public class EmailSendController {
+ @AuraEnabled 
+    public static void sendMailMethod(String mMail ,String mSubject ,String mbody){
+    
+     List<Messaging.SingleEmailMessage> mails =  new List<Messaging.SingleEmailMessage>();     
+  
+     // Step 1: Create a new Email
+       Messaging.SingleEmailMessage mail = new Messaging.SingleEmailMessage();
+    
+    // Step 2: Set list of people who should get the email
+       List<String> sendTo = new List<String>();
+       sendTo.add(mMail);
+       mail.setToAddresses(sendTo);
+    
+    // Step 3: Set who the email is sent from
+       mail.setReplyTo('noreply@gmail.com'); // change it with your mail address.
+       mail.setSenderDisplayName('salesforce User'); 
+    
+    // Step 4. Set email contents - you can use variables!
+      mail.setSubject(mSubject);
+      mail.setHtmlBody(mbody);
+    
+    // Step 5. Add your email to the master list
+      mails.add(mail);
+    
+  // Step 6: Send all emails in the master list
+     Messaging.sendEmail(mails);
+   }   
+}
+ 
+ 
+ COMPONENT:
+
+ 
+<aura:component controller="EmailSendController">
+   <!--Part 1 [for attribute declare]-->  
+   <aura:attribute name="email" type="string"/>
+   <aura:attribute name="subject" type="string"/>
+   <aura:attribute name="body" type="string"/>
+   <aura:attribute name="mailStatus" type="boolean" default="false"/>
+   
+   <!---Part 2 [header part] -->  
+   <div class="slds-page-header" role="banner">
+      <h1 class="slds-page-header__title slds-m-right--small slds-align-middle slds-truncate" title="this should match">
+         Quick Email Send.
+      </h1>
+      <div class="slds-text-color--weak">by sfdcMonkey.com</div>
+   </div>
+ 
+   <!---Part 3 [message display part] --> 
+   <aura:if isTrue="{!v.mailStatus}">
+      <div role="alertdialog" tabindex="-1" aria-labelledby="prompt-heading-id" aria-describedby="prompt-message-wrapper" class="slds-modal slds-fade-in-open slds-modal--prompt">
+         <div class="slds-modal__container">
+            <div class="slds-modal__header slds-theme--error slds-theme--alert-texture">
+               <h2 class="slds-text-heading--medium" id="prompt-heading-id">Mail Status</h2>
+            </div>
+            <div class="slds-modal__content slds-p-around--medium">
+               <div>
+                  <p>Email Sent successfully to {!v.email}</p>
+               </div>
+            </div>
+            <div class="slds-modal__footer slds-theme--default">
+               <button class="slds-button slds-button--brand" onclick="{!c.closeMessage}">Close</button>
+            </div>
+         </div>
+      </div>
+      <div class="slds-backdrop slds-backdrop--open"></div>
+   </aura:if>
+   
+   <!---Part 4 [mail fourm part]-->   
+   <div class="slds-m-around--medium">
+      <div class="slds-container--medium">
+         <div class="slds-form--stacked">
+            <div class="slds-form-element">
+               <label class="slds-form-element__label" for="CC">Email</label>
+               <div class="slds-form-element__control">
+                  <ui:inputEmail class="slds-input" aura:id="email"  value="{!v.email}" required="true" placeholder="abc@email.com"/>
+               </div>
+            </div>
+            <div class="slds-form-element">
+               <label class="slds-form-element__label" for="CC">Subject</label>
+               <div class="slds-form-element__control">
+                  <ui:inputText class="slds-input" aura:id="subject"  value="{!v.subject}" placeholder="Subject"/>
+               </div>
+            </div>
+            <div class="slds-form-element">
+               <label class="slds-form-element__label" for="textareaSample2">Mail Body</label>
+               <div class="slds-form-element__control">
+                  <lightning:inputRichText aura:id="body" value="{!v.body}" />
+               </div>
+            </div>
+            <div class="slds-form-element">    
+               <button class="slds-button slds-button--brand" onclick="{!c.sendMail}">Send</button>
+            </div>
+         </div>
+      </div>
+   </div>
+</aura:component>
+ 
+ 
+JS CONTROLLER:
+ 
+({
+    sendMail: function(component, event, helper) {
+        // when user click on Send button 
+        // First we get all 3 fields values   
+        var getEmail = component.get("v.email");
+        var getSubject = component.get("v.subject");
+        var getbody = component.get("v.body");
+        // check if Email field is Empty or not contains @ so display a alert message 
+        // otherwise call call and pass the fields value to helper method    
+        if ($A.util.isEmpty(getEmail) || !getEmail.includes("@")) {
+            alert('Please Enter valid Email Address');
+        } else {
+            helper.sendHelper(component, getEmail, getSubject, getbody);
+        }
+    },
+ 
+    // when user click on the close buttton on message popup ,
+    // hide the Message box by set the mailStatus attribute to false
+    // and clear all values of input fields.   
+    closeMessage: function(component, event, helper) {
+        component.set("v.mailStatus", false);
+        component.set("v.email", null);
+        component.set("v.subject", null);
+        component.set("v.body", null);
+    },
+})
+ 
+
+JS HELPER:
+ 
+({
+    sendHelper: function(component, getEmail, getSubject, getbody) {
+        // call the server side controller method   
+        var action = component.get("c.sendMailMethod");
+        // set the 3 params to sendMailMethod method   
+        action.setParams({
+            'mMail': getEmail,
+            'mSubject': getSubject,
+            'mbody': getbody
+        });
+        action.setCallback(this, function(response) {
+            var state = response.getState();
+            if (state === "SUCCESS") {
+                var storeResponse = response.getReturnValue();
+                // if state of server response is comes "SUCCESS",
+                // display the success message box by set mailStatus attribute to true
+                component.set("v.mailStatus", true);
+            }
+ 
+        });
+        $A.enqueueAction(action);
+    },
+})
+ 
+
+
