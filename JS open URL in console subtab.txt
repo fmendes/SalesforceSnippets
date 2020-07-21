@@ -1,0 +1,27 @@
+<apex:includeScript value="/support/console/22.0/integration.js"/>
+
+<script>
+
+    // for console subtab
+    function openSubTab( anUrl ) {
+        var redirectUrl = anUrl;
+
+        // condition to check for Console
+        if( sforce.console.isInConsole() ) {
+            sforce.console.getEnclosingTabId( function( enclosingResult ) {
+                sforce.console.getEnclosingPrimaryTabId( function( primaryResult ) {
+                    sforce.console.openSubtab( primaryResult.id, redirectUrl, true
+                                        , 'Quote Responses', null );
+                } );
+            } );
+
+        } else { // other than console
+            var win = window.open( redirectUrl, '_blank' );
+            win.focus();
+        }
+    }
+
+    // example (from Javascript):  openSubTab( "/apex/QuoteResponses?QuoteID=" + clonedQRID.value );
+
+// ...
+<script>

@@ -1,0 +1,33 @@
+public with sharing class LogToChatter {
+	public static List<String> logEntryList = new List<String>();
+	public static List<FeedItem> feedItemList = new List<FeedItem>();
+
+	public static void log( String aMsg ) {
+		logEntryList.add( String.valueOf( logEntryList.size() ) + ' - ' + aMsg );
+	}
+
+	public static void save() {
+		String aBody = '';
+		for( String aMsg : logEntryList ) {
+			aBody = aBody + '\n' + aMsg;
+			if( aBody.length() > 4900 ) {
+				FeedItem aPost = new FeedItem();
+				aPost.Body = aBody;
+				aPost.ParentID = UserInfo.getUserID();
+				feedItemList.add( aPost );
+				aBody = '';
+			}
+		}
+
+		if( aBody.length() > 0 ) {
+			FeedItem aPost = new FeedItem();
+			aPost.Body = aBody;
+			aPost.ParentID = UserInfo.getUserID();
+			feedItemList.add( aPost );
+		}
+
+		insert feedItemList;
+		feedItemList.clear();
+		logEntryList.clear();
+	}
+}

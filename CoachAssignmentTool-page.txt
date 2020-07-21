@@ -1,0 +1,432 @@
+<apex:page id="CoachAssignmentTool" standardController="Account" extensions="VFC_CoachAssignmentTool" title="Coach Assignment" docType="html-5.0" showHeader="false" sideBar="false" cache="false">
+
+    <head>
+        <!-- Include Lightning Styles -->
+        <apex:slds />
+        <!-- prevent date picker from being pre-selected -->
+        <script type="text/javascript">
+            function setFocus() { }
+        </script>
+    </head>
+
+    <body class="slds-scope">
+
+    <apex:form id="theForm">
+
+        <apex:outputPanel rendered="{!hasError}">
+            <div style="height: 4rem;" class="demo-only">
+                <div class="slds-notify_container slds-is-relative">
+                    <div role="alert" class="slds-notify slds-notify_toast slds-theme_error">
+                        <span class="slds-assistive-text">error</span>
+                          <span title="Description of icon when needed" class="slds-icon_container slds-icon-utility-error slds-m-right_small slds-no-flex slds-align-top">
+                            <svg aria-hidden="true" class="slds-icon slds-icon_small">
+                            </svg>
+                          </span>
+                        <div class="slds-notify__content">
+                            <h2 class="slds-text-heading_small "><apex:outputText value="{!errorMsg}" escape="false"/> </h2>
+                        </div>
+                        <button title="Close" class="slds-button slds-button_icon slds-notify__close slds-button_icon-inverse">
+                            <svg aria-hidden="true" class="slds-button__icon slds-button__icon_large">
+                            </svg>
+                            <span class="slds-assistive-text">Close</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+        </apex:outputPanel>
+
+
+        <p>&nbsp;</p>
+        <h3 class="slds-text-heading_small slds-m-bottom_medium">&nbsp;&nbsp;&nbsp;&nbsp;Coach Assignment Tool</h3>
+
+        <fieldset class="slds-box ">
+            <legend class="slds-text-heading_small slds-p-vertical_xxx-small">
+                    &nbsp;Search Criteria&nbsp;
+            </legend>
+
+
+
+            <!-- row 1 -->
+            <div class="slds-grid slds-grid_pull-padded-medium">
+                <div class="slds-p-horizontal_small slds-size_1-of-6">
+                    <span class="slds-form-element__label">
+                               Assigned/Unassigned
+                        </span>
+                    <div class="slds-form-element__control">
+                            <span class="slds-form-element__static">
+                                 <apex:selectList value="{!selectedAssignStatus}" multiselect="false" size="1">
+                                     <apex:selectOptions value="{!assignedStatusOptions}"/>
+                                 </apex:selectList>
+                            </span>
+                    </div>
+                </div>
+
+                <div class="slds-p-horizontal_small slds-size_1-of-6">
+                    <span class="slds-form-element__label">
+                                Radius
+                        </span>
+                    <div class="slds-form-element__control">
+                        <apex:selectList value="{!selectedRadius}" multiselect="false" size="1">
+                            <apex:selectOptions value="{!radiusOptions}"/>
+                        </apex:selectList>
+                    </div>
+                </div>
+                <div class="slds-p-horizontal_small slds-size_1-of-6">
+                    <span class="slds-form-element__label">
+                                State
+                        </span>
+                    <div class="slds-form-element__control">
+                            <apex:selectList value="{!selectedState}" multiselect="false" size="1">
+                                <apex:selectOptions value="{!stateOptions}"/>
+                            </apex:selectList>
+                    </div>
+                </div>
+                <div class="slds-p-horizontal_small slds-size_1-of-6">
+                    <span class="slds-form-element__label">
+                               Teaching Start Date
+                        </span>
+                    <div class="slds-form-element__control">
+                            <span class="slds-form-element__static">
+                                <apex:inputField value="{!employment.Start_Date__c}"/>
+                            </span>
+                    </div>
+                </div>
+                <div class="slds-p-horizontal_small slds-size_1-of-6">
+                    <span class="slds-form-element__label">
+                                Teaching End Date
+                        </span>
+                    <div class="slds-form-element__control">
+                            <span class="slds-form-element__static">
+                                <apex:inputField value="{!employment.End_Date__c}"/>
+                            </span>
+                    </div>
+                </div>
+                <div class="slds-p-horizontal_small slds-size_1-of-6">
+                    <span class="slds-form-element__label">
+                                Certificate Start Date
+                        </span>
+                    <div class="slds-form-element__control">
+                            <span class="slds-form-element__static">
+                                <apex:inputField value="{!certification.Start_Date__c}"/>
+                            </span>
+                    </div>
+                </div>
+                <!--<div class="slds-p-horizontal_small slds-size_1-of-6">
+                    <span class="slds-form-element__label">
+                                Teaching End Date
+                        </span>
+                    <div class="slds-form-element__control">
+                            <span class="slds-form-element__static">
+                                <apex:inputField value="{!employment.End_Date__c}"/>
+                            </span>
+                    </div>
+                </div>-->
+            </div>
+            <!-- end row 1 -->
+
+            <!-- start row 2 -->
+            <div class="slds-grid slds-grid_pull-padded-medium">
+                <div class="slds-p-horizontal_small slds-size_1-of-6">
+                    <span class="slds-form-element__label">
+                               Campus
+                        </span>
+                    <div class="slds-form-element__control">
+                            <span class="slds-form-element__static">
+                                <apex:inputField value="{!employment.Campus_Account__c}"/>
+                            </span>
+                    </div>
+                </div>
+                <div class="slds-p-horizontal_small slds-size_1-of-6">
+                    <span class="slds-form-element__label">
+                                District
+                        </span>
+                    <div class="slds-form-element__control">
+                            <span class="slds-form-element__static">
+                                <apex:inputField value="{!employment.District_Account__c}"/>
+                            </span>
+                    </div>
+                </div>
+                <div class="slds-p-horizontal_small slds-size_1-of-6">
+                    <span class="slds-form-element__label">
+                                Coach
+                        </span>
+                    <div class="slds-form-element__control">
+                            <span class="slds-form-element__static">
+                                <apex:inputField value="{!coach.Coach_Mentor_Account__c}"/>
+                            </span>
+                    </div>
+                </div>
+
+                <div class="slds-p-horizontal_small slds-size_1-of-6">
+                    <span class="slds-form-element__label">
+                                Certification Status
+                        </span>
+                    <div class="slds-form-element__control">
+                            <span class="slds-form-element__static">
+                                <apex:inputField value="{!certification.Status__c}"/>
+                            </span>
+                    </div>
+                </div>
+
+
+            </div>
+            <!-- end row 2 -->
+
+
+            <div class="slds-panel__section">
+                <div class="slds-media">
+                    <div class="slds-media__body">
+
+                        <div class="slds-button-group slds-m-top_small" role="group">
+                            <apex:commandButton value="Search" action="{!doSearch}" id="saveButton" styleClass="slds-button slds-button_brand slds-button_neutral slds-not-selected" style="display:inline"/>
+                            <apex:commandButton value="Reset" action="{!doReset}" id="resetButton" styleClass="slds-button slds-button_neutral slds-not-selected" immediate="true" style="display:inline"/>
+                            &nbsp;<apex:commandButton value="Cancel" action="{!cancel}" id="cancelButton" styleClass="slds-button slds-button_neutral slds-not-selected" immediate="true" style="display:inline"/>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+
+        </fieldset>
+        <p>&nbsp;</p>
+
+<!-- begin map -->
+
+    <apex:outputPanel rendered="{!AND( hasSearched, NOT(hasLocation))}">
+        <span class="slds-text-heading_small slds-p-vertical_xxx-small" style="color:red">
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;No campuses found within the search radius. Please expand the search radius</span>
+    </apex:outputPanel>
+
+    <apex:outputPanel rendered="{!AND(hasSearched, hasLocation)}">
+
+        <fieldset class="slds-box ">
+            <legend class="slds-text-heading_small slds-p-vertical_xxx-small">
+                &nbsp;Coaches and Campuses &nbsp;{!mapCriteria}&nbsp;
+            </legend>
+
+            <apex:map width="100%" height="600px" mapType="roadmap" scrollBasedZooming="false"> <!-- center="{latitude: {!theLat}, longitude: {!theLong}}" -->
+
+
+                <!-- unassigned -->
+                <apex:repeat value="{!campusWrappers_unassigned}" var="nearby">
+                    <apex:mapMarker title="{!nearby.name}" position="{latitude: {!nearby.latitude}, longitude: {!nearby.longitude}}" icon="{!URLFOR($Resource.RedPin)}">
+                        <apex:mapInfoWindow >
+
+                            <apex:outputPanel layout="block" style="font-weight: bold;">
+                                <apex:outputLink value="/one/one.app#/sObject/{!nearby.theId}/view" target="_blank">
+                                        {!nearby.name}
+                                </apex:outputLink>
+                            </apex:outputPanel>
+                            <apex:outputPanel layout="block" style="font-weight: bold;">
+                                {!nearby.candidateCount} interns
+                            </apex:outputPanel>
+                            <apex:outputPanel layout="block" style="font-weight: bold;">
+                                {!nearby.assignedCount} Assigned; {!nearby.unassignedCount} Unassigned
+                            </apex:outputPanel>
+                        </apex:mapInfoWindow>
+                    </apex:mapMarker>
+                </apex:repeat>
+
+                <!-- assigned -->
+                <apex:repeat value="{!campusWrappers}" var="nearby">
+                    <apex:mapMarker title="{!nearby.name}" position="{latitude: {!nearby.latitude}, longitude: {!nearby.longitude}}" icon="{!URLFOR($Resource.GreenPin)}">
+                        <apex:mapInfoWindow >
+
+                            <apex:outputPanel layout="block" style="font-weight: bold;">
+                                <apex:outputLink value="/one/one.app#/sObject/{!nearby.theId}/view" target="_blank">
+                                    {!nearby.name}
+                                </apex:outputLink>
+                            </apex:outputPanel>
+                            <apex:outputPanel layout="block" style="font-weight: bold;">
+                                {!nearby.candidateCount} interns
+                            </apex:outputPanel>
+                            <apex:outputPanel layout="block" style="font-weight: bold;">
+                                {!nearby.assignedCount} Assigned; {!nearby.unassignedCount} Unassigned
+                            </apex:outputPanel>
+                        </apex:mapInfoWindow>
+                    </apex:mapMarker>
+                </apex:repeat>
+
+                <!-- we want separate pins for coaches/campuses -->
+                <apex:repeat value="{!coachWrappers}" var="nearby">
+                    <apex:mapMarker title="{!nearby.name}" position="{latitude: {!nearby.latitude}, longitude: {!nearby.longitude}}" icon="{!URLFOR($Resource.BlackPin)}">
+                        <apex:mapInfoWindow >
+
+                            <apex:outputPanel layout="block" style="font-weight: bold;">
+                                <a href="{!baseUrl}/one/one.app#/sObject/{!nearby.theId}/view" target="_new">
+                                        {!nearby.name}
+                                </a>
+                            </apex:outputPanel>
+
+                            <apex:outputPanel layout="block" style="font-weight: bold;">
+                            {!nearby.candidateCount} total active interns
+                            </apex:outputPanel>
+                        </apex:mapInfoWindow>
+                    </apex:mapMarker>
+                </apex:repeat>
+
+
+            </apex:map>
+
+            <p>
+                <img src="{!URLFOR($Resource.BlackPin)}" width="20" height="20"/> = Coach
+                &nbsp;<img src="{!URLFOR($Resource.GreenPin)}" width="13" height="13"/> = Campus with at least one assigned candidate (from current search)
+                &nbsp;<img src="{!URLFOR($Resource.RedPin)}" width="20" height="20"/> = Campus with no assigned candidates (from current search)
+            </p>
+        </fieldset>
+    </apex:outputPanel>
+<!-- end map -->
+
+        <p>&nbsp;</p>
+
+<!-- start candidate results -->
+    <apex:outputPanel rendered="{!hasSearched}" id="candResults">
+        <fieldset class="slds-box ">
+            <legend class="slds-text-heading_small slds-p-vertical_xxx-small">
+                &nbsp;Candidates&nbsp;
+            </legend>
+
+            <apex:outputPanel rendered="{!NOT(hasCandidates)}">
+                <span class="slds-text-heading_small slds-p-vertical_xxx-small" style="color:red">
+                    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;No Candidates Found - try changing filter criteria
+                </span>
+            </apex:outputPanel>
+        </fieldset>
+
+
+
+        <apex:outputPanel rendered="{!hasCandidates}">
+            <div class="slds-scrollable_x">
+                <p>&nbsp;</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Select Coach to Assign/Unassign: <apex:inputField value="{!coachForAssignment.Coach_Mentor_Account__c}"/></p>
+
+
+
+                <div class="slds-panel__section">
+                    <div class="slds-media">
+                        <div class="slds-media__body">
+
+                            <div class="slds-button-group slds-m-top_small" role="group">
+                                <apex:commandButton value="Assign" action="{!doAssign}" id="assignButton_top" styleClass="slds-button slds-button_brand slds-button_neutral slds-not-selected" style="display:inline"/>
+                                &nbsp;<apex:commandButton value="Unassign" action="{!doUnassign}" id="unassignButton_top" styleClass="slds-button slds-button_neutral slds-not-selected" style="display:inline"/>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <apex:pageBlock >
+                    <apex:pageBlockTable value="{!candidateWrappers}" var="item">
+                        <apex:column >
+                            <apex:facet name="header">
+                                <apex:inputCheckBox value="{!isSelectAll}" id="selectAllSites">
+                                    <apex:actionSupport event="onclick" action="{!doSelectAll}" rerender="candResults"/> &nbsp;
+                                </apex:inputCheckBox>
+                            </apex:facet>
+                            &nbsp;<apex:inputCheckbox id="oppSelect" value="{!item.isSelected}"/>
+                        </apex:column>
+                        <apex:column >
+                            <apex:facet name="header">Name</apex:facet>
+                                <a href="{!baseUrl}/one/one.app#/sObject/{!item.candidate.Id}/view" target="_blank">
+                                    {!item.candidate.LastName}, {!item.candidate.FirstName}
+                                </a>
+
+
+                        </apex:column>
+                        <apex:column >
+                            <apex:facet name="header">District</apex:facet>
+                                {!item.district}
+                        </apex:column>
+                        <apex:column >
+                            <apex:facet name="header">Campus</apex:facet>
+                                {!item.campus}
+                        </apex:column>
+                        <apex:column >
+                            <apex:facet name="header">Coach<br/>Assignment Date</apex:facet>
+                            <apex:outputText value="{0,date,MM/dd/yyyy}">
+                                <apex:param value="{!item.startDate}" />
+                            </apex:outputText>
+                        </apex:column>
+                        <apex:column >
+                            <apex:facet name="header">Cert Level</apex:facet>
+                           {!item.certLevel}
+                        </apex:column>
+                        <apex:column >
+                            <apex:facet name="header">Cert Status</apex:facet>
+                            {!item.certStatus}
+                        </apex:column>
+                        <apex:column >
+                            <apex:facet name="header">Coach</apex:facet>
+                            {!item.coachName}
+                        </apex:column>
+                        <apex:column >
+                            <apex:facet name="header">Observation<br/> Initial Contact</apex:facet>
+                            <apex:outputText value="{0,date,MM/dd/yyyy}">
+                                <apex:param value="{!item.candidate.Observation_Initial_Contact__c}" />
+                            </apex:outputText>
+                        </apex:column>
+                        <apex:column >
+                            <apex:facet name="header">Observation<br/> Deadline 1</apex:facet>
+                            <apex:outputText value="{0,date,MM/dd/yyyy}">
+                                   <apex:param value="{!item.candidate.Observation_1_Deadline__c}" />
+                            </apex:outputText>
+                        </apex:column>
+                        <apex:column >
+                            <apex:facet name="header">Observation<br/> Deadline 2</apex:facet>
+                            <apex:outputText value="{0,date,MM/dd/yyyy}">
+                                <apex:param value="{!item.candidate.Observation_2_Deadline__c}" />
+                            </apex:outputText>
+                        </apex:column>
+                        <apex:column >
+                            <apex:facet name="header">Observation<br/> Deadline 3</apex:facet>
+                            <apex:outputText value="{0,date,MM/dd/yyyy}">
+                                <apex:param value="{!item.candidate.Observation_3_Deadline__c}" />
+                            </apex:outputText>
+                        </apex:column>
+                        <apex:column >
+                            <apex:facet name="header">Observation<br/> Deadline 4</apex:facet>
+                            <apex:outputText value="{0,date,MM/dd/yyyy}">
+                                <apex:param value="{!item.candidate.Observation_4_Deadline__c}" />
+                            </apex:outputText>
+                        </apex:column>
+                        <apex:column >
+                            <apex:facet name="header">Observation<br/> Deadline 5</apex:facet>
+                            <apex:outputText value="{0,date,MM/dd/yyyy}">
+                                <apex:param value="{!item.candidate.Observation_5_Deadline__c}" />
+                            </apex:outputText>
+                        </apex:column>
+                        <apex:column >
+                            <apex:facet name="header">Observation<br/> Deadline 6</apex:facet>
+                            <apex:outputText value="{0,date,MM/dd/yyyy}">
+                                <apex:param value="{!item.candidate.Observation_6_Deadline__c}" />
+                            </apex:outputText>
+                        </apex:column>
+
+                    </apex:pageBlockTable>
+                </apex:pageBlock>
+
+
+            </div>
+            <div class="slds-panel__section">
+                <div class="slds-media">
+                    <div class="slds-media__body">
+
+                        <div class="slds-button-group slds-m-top_small" role="group">
+                            <apex:commandButton value="Assign" action="{!doAssign}" id="assignButton_bottom" styleClass="slds-button slds-button_brand slds-button_neutral slds-not-selected" style="display:inline"/>
+                            &nbsp;<apex:commandButton value="Unassign" action="{!doUnassign}" id="unassignButton_bottom" styleClass="slds-button slds-button_neutral slds-not-selected" style="display:inline"/>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </apex:outputPanel>
+
+
+
+    </apex:outputPanel>
+<!-- end candidate results -->
+
+
+    </apex:form>
+    </body>
+
+</apex:page>

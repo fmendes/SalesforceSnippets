@@ -1,0 +1,16 @@
+public with sharing class SomeTriggerHelper {
+
+    public static Set<ID> recordIdsAlreadyProcessedSet = new Set<ID>();
+
+    public static void someTriggerAction( TriggerOperation operationType
+            , Map<Id, SomeObj> oldMap, List<SomeObj> newList ) {
+
+        // collect data
+        Set<String> someIrrelevantSet = new Set<String>();
+        for( SomeObj anObj : newList ) {
+
+            // prevent processing again the same records in case of undesired recursion
+            if( recordIdsAlreadyProcessedSet.contains( anObj.ID ) ) {
+                continue;
+            }
+            recordIdsAlreadyProcessedSet.add( anObj.ID );

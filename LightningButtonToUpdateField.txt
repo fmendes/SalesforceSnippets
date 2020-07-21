@@ -1,0 +1,117 @@
+<!-- 
+	component that displays a button that when clicked will update 
+	the specified field to the specified value 
+-->
+
+<aura:component implements="flexipage:availableForRecordHome,force:hasRecordId" 
+                access="global" >
+    
+    <aura:attribute name="recordId" type="String" />
+	<aura:attribute name="record" type="Object" />
+	<aura:attribute name="recordError" type="String" />
+
+    <aura:attribute name="buttonLabel" type="String" />    
+    <aura:attribute name="fieldToUpdate" type="String" />
+    <aura:attribute name="valueToUpdate" type="String" />    
+
+    <aura:dependency resource="markup://force:editRecord" type="EVENT" />
+    <aura:handler event="force:refreshView" action="{!c.doRefresh}" />
+    
+	<force:recordData aura:id="service"
+					  layoutType="FULL"
+					  recordId="{!v.recordId}"
+					  targetError="{!v.recordError}"
+					  targetFields="{!v.record}"
+					  mode="EDIT" />
+
+    <!-- horizontalAlign options are
+        center, space, spread, and end -->
+    <lightning:layout horizontalAlign=""
+                      multipleRows="true" >
+    
+        <lightning:layoutItem padding="horizontal-small" >
+            <lightning:button aura:id="button1" 
+                              label="{! v.buttonLabel }"
+                              onclick="{!c.onButtonPressed}" />
+        </lightning:layoutItem>
+        
+    </lightning:layout>
+    
+</aura:component>
+
+
+
+
+
+({
+    doInit : function( component, event, helper ) {
+        var service = component.find( "service" );
+        service.reloadRecord( false );
+    }
+    ,
+    doRefresh : function( component, event, helper ) {
+        var service = component.find( "service" );
+        service.reloadRecord( true );
+    }
+    ,
+	onButtonPressed : function( component, event, helper ) {
+        // change the specified field to the specified value
+        var fieldToUpdate = component.get( "v.fieldToUpdate" );
+        var valueToUpdate = component.get( "v.valueToUpdate" );
+        console.log( "fieldToUpdate", fieldToUpdate );
+        console.log( "valueToUpdate", valueToUpdate );
+        
+        if( valueToUpdate === "true" ) {
+            valueToUpdate = true;
+        }
+        if( valueToUpdate === "false" ) {
+            valueToUpdate = false;
+        }
+        
+        component.set( "v.record." + fieldToUpdate, valueToUpdate );
+        console.log( "updated field", component.get( "v.record." + fieldToUpdate ) );
+        
+        // save the change to the record
+        var service = component.find( "service" );
+        service.saveRecord( 
+            $A.getCallback( function( saveResult ) {
+                if( saveResult.state === "SUCCESS" 
+                   			|| saveResult.state === "DRAFT" ) {
+                    console.log( "Save completed successfully." );
+                    // refresh record page
+                    var refreshAction = $A.get( 'e.force:refreshView' );
+                    refreshAction.fire();
+                    
+                } else if ( saveResult.state === "INCOMPLETE" ) {
+                    console.log( "User is offline, device doesn't support drafts." );
+                    
+                } else if ( saveResult.state === "ERROR" ) {
+                    console.log( 'Problem saving record, error: ' + 
+                               JSON.stringify( saveResult.error ) );
+                    
+                } else {
+                    console.log( 'Unknown problem, state: ' + saveResult.state 
+                                + ', error: ' + JSON.stringify( saveResult.error ) );
+                }
+        	})
+        );
+	}
+})
+
+
+
+
+<design:component>
+    
+    <design:attribute name="buttonLabel" label="Button Label"
+                      description="Label of the button - example:  Send Bond Request" />
+
+    <design:attribute name="fieldToUpdate" 
+                      label="Field to update"
+                      description="Field to update" />
+    
+    <design:attribute name="valueToUpdate" 
+                      label="Value to which the field will be set"
+                      description="Value to which the field will be set" /> 
+	
+</design:component>

@@ -1,0 +1,25 @@
+// create 10 contacts with random names
+public static List<String> commonFirstNames = new List<String> {
+'James', 'Mary', 'John', 'Patricia', 'Robert', 'Jennifer', 'Michael'
+, 'Elizabeth', 'William', 'Linda', 'David', 'Barbara', 'Richard', 'Susan'
+, 'Joseph', 'Jessica', 'Thomas', 'Margaret', 'Charles', 'Sarah' };
+
+public static List<String> commonLastNames = new List<String> {
+'Smith', 'Johnson', 'Williams', 'Jones', 'Brown', 'Davis', 'Miller'
+, 'Wilson', 'Moore', 'Taylor', 'Anderson', 'Thomas', 'Jackson', 'White'
+, 'Harris', 'Martin', 'Thompson', 'Garcia', 'Martinez', 'Robinson' };
+
+List<Contact> cL = new List<Contact>();
+
+for( Integer i = 0; i < 10; i++ ) {
+    Contact c = new Contact();
+    Integer listIndex = Math.mod( i, commonFirstNames.size() );
+    c.FirstName = commonFirstNames[ listIndex ];
+    listIndex = Math.mod( i, commonLastNames.size() );
+    c.LastName = commonLastNames[ listIndex ] + ' TEST';
+    c.Conga_Level_1_Group_ID__c = Math.mod( i, 10 ) + 1;
+
+    cL.add( c );
+}
+
+insert cL;

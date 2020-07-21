@@ -1,0 +1,6 @@
+
+
+if( System.FeatureManagement.checkPermission( 'Can_override_the_Settle_Date_on_checklist' ) ) {
+}
+
+rendered="{! NOT( readOnly ) && $Permission.Override_rounding_requirement_on_Allocation }" 

@@ -1,0 +1,23 @@
+//List<Account> l = [ SELECT ID, Name 
+//                  FROM Account 
+//                  WHERE OwnerID = '00524000000vzdp'
+//                  ORDER BY Name ];
+List<Contact> l = [ SELECT ID, Name 
+                  FROM Contact
+                  WHERE OwnerID = '00524000000vzdp'
+                  ORDER BY Name ];
+Integer i = 0;
+List<String> ul = new List<String> {
+    '00524000000tX8Z', '00524000000vzdp', '00525000000TFSJ', '00524000000vS5I'
+   , '00525000000T3BL', '00524000000tpSE'
+};
+for( Contact a : l ) {
+    if( i < ul.size() - 1 ) {
+        i ++;
+    } else {
+        i = 0;
+    }
+    a.OwnerID = ul[ i ];
+}
+
+update l;

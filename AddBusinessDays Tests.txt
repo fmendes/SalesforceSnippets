@@ -1,0 +1,8 @@
+Datetime adt = DateTime.valueOf( '2019-08-09 08:01:00' );
+system.debug( 'adt= ' + adt );
+
+adt = adt.addMinutes( 1 );
+system.debug( 'adt+1= ' + adt );
+
+DateTime nextBusinessDt = BusinessHours.add( WorkdayCalculationHelper.orgsHours.ID, adt, 32400000 );
+system.debug( 'nextBusinessDt= ' + nextBusinessDt );

@@ -1,0 +1,43 @@
+
+Map<String, Boolean> validationMap = new Map<String, Boolean> {
+        'Product to Update' => selectedProduct == null
+        , 'New Price' => newPrice == null
+};
+
+for( String validationMsg : validationMap.keySet() ) {
+    if( validationMap.get( validationMsg ) ) {
+        ApexPages.addMessage( new ApexPages.Message( ApexPages.Severity.ERROR
+                , validationMsg + ' is required.' ) );
+    }
+}
+
+if( ApexPages.getMessages().size() > 0 ) {
+    return null;
+}
+
+////////////////
+
+// validate # attendees, time start/end, availability
+if( validateRequiredFields( theEvent, new String[] {
+		'Number_of_Attendees__c', 'Event_Date__c', 'Scheduled_Pavilion__c'
+		, 'Start_Time__c', 'End_Time__c'
+	} ) ) {
+	return null;
+}
+
+//...
+	
+public static Boolean validateRequiredFields( SObject anObject, String[] fieldList ) {
+	Boolean thereAreErrors = false;
+	for( String aField : fieldList ) {
+		// add to the list each required field that is empty
+		if( anObject.get( aField ) == null || anObject.get( aField ) == '' 
+					|| anObject.get( aField ) == 0 ) {
+			ApexPages.addMessage( new ApexPages.message( ApexPages.severity.ERROR
+							, aField.remove( '__c' ).replace( '_', ' ' ) + ' requires a value.' ) );
+			// NOTE:  the above may not work well for fields whose internal names don't match the labels
+			thereAreErrors = true;
+		}
+	}
+	return thereAreErrors;
+}

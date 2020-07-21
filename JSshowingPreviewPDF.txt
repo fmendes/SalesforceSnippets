@@ -1,0 +1,46 @@
+
+Until a visual force component is released, this should do the trick for you.  You just need to pass in the ContentVersion.Id, an HTML ID with the InnerHtml to use for the dialog title, and a File Format (PDF, WORD, EXCEL).
+ 
+ 
+ 
+<!-- This is an example of how to use the function -->
+ 
+<a id="Title_069Q00000006bam" href="javascript:showPreviewDialog('069Q00000006bam', 'Title_069Q00000006bam', 'PDF');">Cover Sheet</span>
+ 
+ 
+ 
+<!-- This is the javascript -->
+ 
+<script type="text/javascript">
+ 
+ 
+ 
+function showPreviewDialog(contentVersionId, titleElementId, fileFormat) { 
+ 
+  OverlayDialogElement.showFilePreview(
+ 
+    'docViewerOverlay',
+ 
+    titleElementId,
+ 
+    '/_swf/121310/sfc',
+ 
+    contentVersionId,
+ 
+    'chatter_bubble',
+ 
+    'false',
+ 
+    'docViewerContainer',
+ 
+    false,
+ 
+    fileFormat,
+ 
+    false);
+ 
+};
+ 
+ 
+ 
+</script>

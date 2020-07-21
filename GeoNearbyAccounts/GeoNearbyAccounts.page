@@ -1,0 +1,166 @@
+<apex:page showHeader="false" standardController="Account" extensions="VFC_GeoNearbyAccounts" >
+
+    <!--
+    * Purpose: This is the visualforce page that pulls information from the "VFC_GeoNearbyAccounts" controller class. To display
+    *           a map onto the screen for the current and nearby accounts
+     -->
+
+
+    <center>
+        <apex:pageMessages id="messageBlock" />
+        <apex:form id="theForm">
+
+            <!--
+            *******************************************************************************************************************
+            ********************************* Setting Styles for the Page Formatting ******************************************
+            *******************************************************************************************************************
+            -->
+            <style type="text/css">
+        .fBold
+        {
+
+            font-weight: bold;
+        }
+
+        .fBlackLink
+        {
+            color:black;
+            text-decoration:none;
+            font-weight: bold;
+        }
+    </style>
+
+
+            <!--
+            *******************************************************************************************************************
+            ************************** START - Section for Adding the Filter Fields Criteria **********************************
+            *******************************************************************************************************************
+
+            * If new filter fields are to be added to the Page, new sections will need to be added within the <Table><TR> tags below
+
+            -->
+            <table>
+                <tr>
+                    <td>
+                        <apex:outputLabel >Distance (miles): </apex:outputLabel>
+                        <apex:selectList value="{!distance}" multiselect="false" size="1">
+                            <apex:actionSupport event="onchange" reRender="theForm, messageBlock"/>
+                            <apex:selectOption itemLabel="2" itemValue="2" />
+                            <apex:selectOption itemLabel="5" itemValue="5" />
+                            <apex:selectOption itemLabel="10" itemValue="10" />
+                            <apex:selectOption itemLabel="20" itemValue="20" />
+                            <apex:selectOption itemLabel="50" itemValue="50" />
+                        </apex:selectList>
+                    </td>
+                    <td>
+                        <apex:outputLabel >Industry :</apex:outputLabel>
+                        <apex:inputField value="{!filterAccount.Industry}" >
+                            <apex:actionSupport event="onchange" action="{!submit}" reRender="theForm, messageBlock">
+                                <apex:param name="filterFields" assignTo="{!filterFields}" value="Industry:Type"  />
+                            </apex:actionSupport>
+                        </apex:inputField>
+                    </td>
+                    <td>
+                        <apex:outputLabel >Type :</apex:outputLabel>
+                        <apex:inputField value="{!filterAccount.Type}" >
+                            <apex:actionSupport event="onchange" action="{!submit}" reRender="theForm, messageBlock">
+                                <apex:param name="filterFields" assignTo="{!filterFields}" value="Industry:Type"  />
+                            </apex:actionSupport>
+                        </apex:inputField>
+                    </td>
+                </tr>
+            </table>
+            <!--
+            *****************************************************************************************************************
+            ************************** END - Section for Adding the Filter Fields Criteria **********************************
+            *****************************************************************************************************************
+            -->
+
+
+            <!--
+            ************************************************************************************************************************
+            ************************** START - Section for Displaying Data onto Map ************************************************
+            ************************************************************************************************************************
+            -->
+            <!-- zoomLevel="{!vZoomLevels}" -->
+            <apex:map width="600px" height="400px" mapType="roadmap" center="{!Account.BillingStreet},{!Account.BillingCity},{!Account.BillingState}">
+
+                <!--************************* Show the current account information as a blue target icon, display account information below **********************
+                    ************************* Displays the popup window information for the current Account address information and details **********************
+                -->
+                <apex:mapMarker title="{!Account.Name}"
+                                position="{!Account.BillingStreet},{!Account.BillingCity},{!Account.BillingState}"
+                                icon="{!URLFOR($Resource.BlueTarget)}">
+                    <apex:mapInfoWindow >
+                        <apex:outputPanel layout="block" style="font-weight: bold;">
+                            <apex:outputText >{!Account.Name }</apex:outputText>
+                        </apex:outputPanel>
+
+                        <apex:outputPanel layout="block" rendered="{! IF(Account.ParentId!=null,true, false)}">
+                             <apex:outputLink value="{!'/'+Account.ParentId}" style="text-decoration:none;color:black;" target="_blank" >
+                                 <apex:outputText >Parent: {!Account.Parent.Name}</apex:outputText>        
+                             </apex:outputLink>
+                        </apex:outputPanel>
+
+                        <apex:outputPanel layout="block" >
+                            <apex:outputText >{!Account.BillingStreet}</apex:outputText>
+                        </apex:outputPanel>
+
+                        <apex:outputPanel layout="block">
+                            <apex:outputText >{!Account.BillingCity}, {!Account.BillingState}</apex:outputText>
+                        </apex:outputPanel>
+
+                        <apex:outputPanel layout="block" style="font-weight: bold;">
+                            <apex:outputLink value="{! 'tel://' + Account.Phone }">
+                                <apex:outputText >{!Account.Phone}</apex:outputText>
+                            </apex:outputLink>
+                        </apex:outputPanel>
+                    </apex:mapInfoWindow>
+                </apex:mapMarker>
+
+                <!--************************* Repeat and show every nearby account that meets the filter criteria on the map **********************
+                    ************************* This is used for the nearby account markers, shows the pop up details on the page *******************
+                -->
+                <apex:repeat value="{!NearbyAccounts}" var="nearby">
+                    <apex:mapMarker title="{!nearby.a.Name}" position="{!nearby.Position}" >
+                        <apex:mapInfoWindow >
+                            <apex:outputPanel layout="block" >
+                                <apex:outputLink value="{! '/'+nearby.a.Id}" style="font-weight: bold;text-decoration:none;color:black;" target="_blank" >
+                                    <apex:outputText >{! nearby.a.Name }</apex:outputText>
+                                </apex:outputLink>
+                             </apex:outputPanel>
+
+                             <apex:outputPanel layout="block" rendered="{! IF(nearby.a.ParentId!=null,true, false)}">
+                                 <apex:outputLink value="{! '/'+nearby.a.ParentId}" style="text-decoration:none;color:black;" target="_blank" >
+                                     <apex:outputText >Parent: {! nearby.a.Parent.Name }</apex:outputText>        
+                                 </apex:outputLink>
+                            </apex:outputPanel>
+
+                            <apex:outputLink value="{! 'https://maps.google.com?daddr='+nearby.a.BillingStreet+'+'+nearby.a.BillingCity+'+'+nearby.a.BillingState+'+'+nearby.a.BillingPostalCode}" style="text-decoration:none;color:black;"  target="_blank">
+                                <apex:outputPanel layout="block" >
+                                    <apex:outputText >{! nearby.a.BillingStreet }</apex:outputText>
+                                </apex:outputPanel>
+                                <apex:outputPanel layout="block" >
+                                    <apex:outputText >{! nearby.a.BillingCity }, {! nearby.a.BillingState}</apex:outputText>
+                                </apex:outputPanel>
+                            </apex:outputLink>
+
+                            <apex:outputPanel layout="block">
+                                <apex:outputLink value="{! 'tel://' + Account.Phone }">
+                                    <apex:outputText >{! nearby.a.Phone }</apex:outputText>
+                                </apex:outputLink>
+                            </apex:outputPanel>
+                        </apex:mapInfoWindow>
+                    </apex:mapMarker>
+                </apex:repeat>
+
+            </apex:map>
+            <!--
+            ************************************************************************************************************************
+            **************************** END - Section for Displaying Data onto Map ************************************************
+            ************************************************************************************************************************
+            -->
+
+        </apex:form>
+    </center>
+</apex:page>

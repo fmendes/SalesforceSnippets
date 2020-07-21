@@ -1,0 +1,13 @@
+<!--  EXAMPLE OF CURRENCY FORMATTING  -->
+
+
+<apex:column headerValue="{!$ObjectType.Investor_Allocation_Tranche__c.fields.Transaction_Fee__c.label}">
+	<apex:outputField value="{!a.Transaction_Fee__c}" />
+	<apex:outputPanel rendered="{!lastCodeName == a.Code_Name__c}">
+		<br /><br />
+		<apex:outputText value="{0, number, $###,##0.00}" 
+			styleClass="totalRow">
+			<apex:param value="{!transactionFeeMap[ t ]}" />
+		</apex:outputText>
+	</apex:outputPanel>
+</apex:column>

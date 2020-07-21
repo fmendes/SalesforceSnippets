@@ -1,0 +1,430 @@
+public with sharing virtual class TestDataCreator {
+// USAGE:   SObject s = TestDataCreator.createSObject( OpportunityLineItem.SObjectType );
+// OR List<SObject> s = TestDataCreator.createSObjectList( 3, OpportunityLineItem.SObjectType );
+//          TestDataCreator.insertSObjects();
+
+    public static Integer i = 0;
+    public static Boolean requiredOnly;
+
+    public static List<String> commonCompanyNames = new List<String> {
+        'Group', 'Energy', 'International', 'Financial', 'Holdings', 'Health'
+        , 'Services', 'Insurance', 'Corp', 'Foods', 'General', 'Resources'
+        , 'American', 'United', 'Systems', 'Communications', 'Stores', 'Automotive'
+        , 'Data', 'America' };
+
+
+    public static List<String> commonFirstNames = new List<String> {
+        'James', 'Mary', 'John', 'Patricia', 'Robert', 'Jennifer', 'Michael'
+        , 'Elizabeth', 'William', 'Linda', 'David', 'Barbara', 'Richard', 'Susan'
+        , 'Joseph', 'Jessica', 'Thomas', 'Margaret', 'Charles', 'Sarah' };
+
+    public static List<String> commonLastNames = new List<String> {
+        'Smith', 'Johnson', 'Williams', 'Jones', 'Brown', 'Davis', 'Miller'
+        , 'Wilson', 'Moore', 'Taylor', 'Anderson', 'Thomas', 'Jackson', 'White'
+        , 'Harris', 'Martin', 'Thompson', 'Garcia', 'Martinez', 'Robinson' };
+
+    public static List<String> commonStreetNames = new List<String> {
+        'Park', 'Main', 'Oak', 'Pine', 'Maple', 'Cedar', 'Elm'
+        , 'View', 'Washington', 'Lake', 'View', 'Walnut', 'Spring', 'North'
+        , 'Ridge', 'Lincoln', 'Church', 'Willow', 'Mill', 'Sunset' };
+
+    public static List<String> commonStreetSuffixes = new List<String> {
+        'Ave', 'Blvd', 'Cir', 'Ct', 'Dr', 'Ln', 'Pky', 'Rd', 'St', 'Trl' };
+
+    public static List<String> commonCityNames = new List<String> {
+        'Springfield', 'Clinton', 'Madison', 'Franklin', 'Washington'
+        , 'Chester', 'Marion', 'Greenville', 'Georgetown', 'Salem' };
+
+    public static List<String> states = new List<String> {
+        'CA', 'CT', 'FL', 'GA', 'IL', 'IN', 'ME', 'MS', 'NJ', 'NY', 'PA', 'VA', 'TX'
+    };
+
+    public static String getStringFromList( List<String> l, Integer index ) {
+        Integer listIndex = Math.mod( index, l.size() );
+        return l[ listIndex ];
+    }
+
+    public static String getAcronym( Integer index ) {
+        String alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+        Integer firstIndex = Math.mod( index * 3, alphabet.length() );
+        Integer secondIndex = Math.mod( index, alphabet.length() );
+        String acronym = '';
+        if( Math.mod( index, 2 ) == 0 ) {
+            acronym = alphabet.Mid( firstIndex, 1 ) + ' ' + alphabet.Mid( secondIndex, 1 );
+        } else {
+            acronym = alphabet.Mid( secondIndex, 1 ) + ' ' + alphabet.Mid( firstIndex, 1 );
+        }
+        return acronym;
+    }
+
+    // TODO:  set optional number of each parent objects to create (e.g.:  5 opptys, 3 accts)
+    // add optional account/oppty team members, campaign members, contacts
+    // option to generate script instead of actual objects
+    // option to use a template record to create multiples
+
+    // describes relations between records and indicates which should be created first
+    public class SObjNode {
+        public SObject parentObj;
+        public Schema.DescribeFieldResult dfr;
+        public SObject childObj;
+    }
+    public static List<SObjNode> objPairList = new List<SObjNode>();
+
+    public static SObject createSObject( Integer qty, Schema.SObjectType s
+                        , Boolean requiredOnlyParam ) {
+        requiredOnly = requiredOnlyParam;
+        return createSObject( s );
+    }
+
+    public static List<SObject> createSObjectList( Integer qty, Schema.SObjectType s
+                        , Boolean requiredOnlyParam ) {
+        requiredOnly = requiredOnlyParam;
+        return createSObjectList( qty, s );
+    }
+
+    public static List<SObject> createSObjectList( Integer qty, Schema.SObjectType s ) {
+        List<SObject> sobjList = new List<SObject>();
+        for( Integer count = 0; count < qty; count ++ ) {
+            sobjList.add( createSObject( s ) );
+        }
+
+        return sobjList;
+    }
+
+    // runs through the list of relations and creates each record and its dependents
+    public static void insertSObjects() {
+        system.debug( 'PairList= ' + objPairList );
+        system.debug( 'PairList size= ' + objPairList.size() );
+
+        // creates all parent records in the order they're needed
+        for( Integer index = 1; index < objPairList.size(); index ++ ) {
+            SObjNode currentNode = objPairList[ index ];
+            system.debug( 'Node ' + index + '= ' + currentNode );
+
+            if( currentNode.parentObj == null ) {
+                continue;
+            }
+
+            system.debug( 'Inserting parent obj= ' 
+                        + currentNode.parentObj.getSObjectType() );
+
+            insert currentNode.parentObj;
+
+            // determine the name of the lookup field in the child object
+            String objIDName = currentNode.dfr.getName();
+            if( ! currentNode.dfr.isCustom() 
+                    && ! objIDName.endsWith( 'ID' ) 
+                    && ! objIDName.endsWith( 'Id' ) ) {
+                objIDName = objIDName + 'ID';
+            }
+
+            system.debug( 'Assigning child ' 
+                        + currentNode.childObj.getSObjectType() + ' to parent obj' );
+
+            currentNode.childObj.put( objIDName, currentNode.parentObj.ID );
+        }
+
+        // insert all remaining records     
+        for( SObjNode n : objPairList ) {
+            if( n.childObj.ID != null ) {
+                continue;
+            }
+            insert n.childObj;
+        }
+    }
+
+    public static Boolean skipComplicatedFields( String fieldName, Schema.SObjectType s ) {
+        return fieldName.containsIgnoreCase( 'Latitude' ) 
+                || fieldName.containsIgnoreCase( 'Longitude' )
+                || fieldName.containsIgnoreCase( 'JigSaw' )
+                || ( fieldName == 'Product2Id' && s == OpportunityLineItem.SObjectType );
+    }
+
+    public static Boolean skipComplicatedParentObj( SObjectType parentType, SObjectType s ) {
+        return s == parentType || ! parentType.getDescribe().isCreateable()
+                        || parentType == Campaign.sObjectType
+                        || parentType == DandBCompany.sObjectType
+                        || parentType == User.sObjectType
+                        || parentType == Group.sObjectType
+                        || parentType == Contract.sObjectType;
+    }
+
+    public static Boolean skipNonUpdateableFields( Boolean requiredOnlyParam, String aKey, Schema.DescribeFieldResult dfr ) {
+        return dfr.isCalculated() || dfr.isAutoNumber() || ! dfr.isUpdateable()
+            || ( aKey != 'Name' && aKey != 'UnitPrice' && aKey != 'isActive' 
+                    && dfr.isDefaultedOnCreate() )
+            || ( requiredOnlyParam && dfr.isNillable() && aKey != 'UnitPrice' );
+    }
+
+    // create a record and create its parents too if needed
+    public static SObject createSObject( Schema.SObjectType s ) {
+        if( requiredOnly == null ) {
+            requiredOnly = false;
+        }
+
+        SObject obj = s.newSObject();
+
+        // get list of fields to populate
+        DescribeSObjectResult dsr = s.getDescribe();
+        Map<String, Schema.SObjectField> fieldMap = dsr.fields.getMap();
+
+        Boolean objHasParents = false;
+
+        for( String aKey : fieldMap.keySet() ) {
+            // skip fields for which we don't have values
+            // skip OpportunityLineItem.Product2ID which is non-editable, 
+            // but allow PriceBookEntry.Product2ID
+            if( skipComplicatedFields( aKey, s ) ) {
+                system.debug( 'Skipping non-creatable field ' + aKey 
+                            + ' for ' + s );
+                continue;
+            }
+
+            // use standard pricebook whenever populating Pricebook2ID
+            if( aKey == 'Pricebook2Id' ) {
+                ID pbID;
+                if( Test.isRunningTest() ) {
+                    pbID = Test.getStandardPricebookId();
+
+                } else {
+                    List<Pricebook2> pbList = [ SELECT ID FROM Pricebook2 WHERE isStandard = true ];
+                    pbID = pbList[ 0 ].ID;
+                }
+
+                obj.put( aKey, pbID );
+
+                continue;
+            }
+
+            Schema.DescribeFieldResult dfr = fieldMap.get( aKey ).getDescribe();
+
+            // detect if parent record is needed
+            List<Schema.sObjectType> parentObjTypes = dfr.getReferenceTo();
+            if( parentObjTypes.size() > 0 ) {
+
+                SObjectType parentType = parentObjTypes[ 0 ];
+
+                // skip if parent is of the same type
+                // e.g.:  parent account to account, parent oppty to oppty)
+                // skip certain parent objects that are not convenient to create
+                if( skipComplicatedParentObj( parentType, s ) ) {
+                    //system.debug( 'Skipping SObject ' + parentType );
+                    continue;
+                }
+
+                system.debug( 'CREATING PARENT ' + parentObjTypes[ 0 ] + ' for ' + s );
+
+                // create parent record
+                SObject parentSObj = createSObject( parentObjTypes[ 0 ] );
+                if( parentSObj == null ) {
+                    continue;
+                }
+
+                // add relationship to the list so that when inserted,
+                // their IDs will be copied over to the child records
+                SObjNode newNode = new SObjNode();
+                newNode.childObj = obj;
+                newNode.dfr = dfr;
+                newNode.parentObj = parentSObj;
+                objPairList.add( newNode );
+
+                objHasParents = true;
+
+                system.debug( 'Added node #' + ( objPairList.size() - 1 ) 
+                                + '= ' + parentSObj + ' (Parent obj) ' 
+                                + obj );
+
+                continue;
+            }
+
+            // skip non-updateable fields
+            // skip defaulted fields except UnitPrice and isActive due to Product records
+            // if we're creating only required fields, skip non-required except UnitPrice
+            if( skipNonUpdateableFields( requiredOnly, aKey, dfr ) ) {
+                system.debug( 'Skipping ' + s + ' field ' + aKey + '= ' + dfr );
+                continue;
+            }
+
+            // generate a value for each type
+            Object fieldValue = getFieldValue( s, dfr );
+            if( fieldValue == null ) {
+                continue;
+            }
+
+            system.debug( dfr );
+
+            obj.put( aKey, fieldValue );
+        }
+
+        // add record as a child with no parent 
+        // so it gets saved even if it has no parents
+        SObjNode theNode = new SObjNode();
+        theNode.childObj = obj;
+        objPairList.add( theNode );
+
+        return obj;
+    }
+
+    public static Object getFieldValue( Schema.SObjectType s
+                                , Schema.DescribeFieldResult dfr ) {
+
+        //system.debug( dfr );
+
+        // increase counter of fields - to differentiate the values
+        i++;
+
+        String fieldName = dfr.getName();
+
+        if( fieldName == 'Name' || fieldName == 'Name__c' ) {
+            String objName = String.valueOf( s );
+            String newName = 'Test ' + objName.remove( '__c' ).replace( '_', ' ' ) + ' ' + i;
+
+            // compose a company name (e.g.:  H F Holdings)
+            if( s == Account.SObjectType ) {
+                newName = getAcronym( i ) 
+                    + ' ' + getStringFromList( commonCompanyNames, i ) + ' - Test';
+            }
+
+            return newName;
+        }
+
+        // select one of the common first names
+        if( fieldName == 'FirstName' || fieldName == 'First_Name__c' 
+                || fieldName == 'FirstName__c' ) {
+            return getStringFromList( commonFirstNames, i * 3 );
+        }
+
+        // select one of the common last names and flag it as test
+        if( fieldName == 'LastName' || fieldName == 'Last_Name__c' 
+                || fieldName == 'LastName__c' ) {
+            return getStringFromList( commonLastNames, i ) + ' - Test';
+        }
+
+        if( fieldName == 'MailingStreet' || fieldName == 'ShippingStreet' 
+                || fieldName == 'BillingStreet' || fieldName == 'OtherStreet'
+                || fieldName.endsWith( 'Street__c' ) ) {
+            return i + ' ' + getStringFromList( commonStreetNames, i * 3 )
+                + ' ' + getStringFromList( commonStreetSuffixes, i );
+        }
+
+        if( fieldName == 'MailingCity' || fieldName == 'ShippingCity' 
+                || fieldName == 'BillingCity' || fieldName == 'OtherCity'
+                || fieldName.endsWith( 'City__c' ) ) {
+            return getStringFromList( commonCityNames, i ) + ' - Test';
+        }
+
+        if( fieldName == 'MailingState' || fieldName == 'ShippingState' 
+                || fieldName == 'BillingState' || fieldName == 'OtherState'
+                || fieldName.endsWith( 'State__c' ) ) {
+            return getStringFromList( states, i );
+        }
+
+        if( fieldName == 'MailingPostalCode' || fieldName == 'ShippingPostalCode' 
+                || fieldName == 'BillingPostalCode' || fieldName == 'OtherPostalCode'
+                || fieldName.endsWith( 'Zip__c' ) ) {
+            // 40849 is prime, so divided by 100k will result in some 5-digit number
+            String zip = '00000' + Math.mod( ( i + 1 ) * 40849, 100000 );
+            zip = zip.right( 5 );
+            return zip;
+        }
+        
+
+        Object returnValue = null;
+
+        Schema.DisplayType fieldType = dfr.getType();
+
+        if( fieldType == Schema.DisplayType.String 
+                || fieldType == Schema.DisplayType.TextArea ) {
+            String strValue = 'Test ' 
+                + fieldName.remove( '__c' ).replace( '_', ' ' ) + ' ' + i;
+
+            // truncate field if it exceeded the size
+            if( strValue.length() > dfr.getLength() ) {
+                strValue = strValue.substring( 0, dfr.getLength() );
+            }
+            returnValue = strValue;
+        }
+        if( fieldType == Schema.DisplayType.Boolean ) {
+            // default active to true, default others to false
+            if( fieldName == 'isActive' ) {
+                returnValue = true;
+            } else {
+                returnValue = false;
+            }
+        }
+        if( fieldType == Schema.DisplayType.Integer ) {
+            returnValue = i;
+        }
+        if( fieldType == Schema.DisplayType.Currency 
+                || fieldType == Schema.DisplayType.Double ) {
+            Decimal decValue = i * 100;
+
+            // truncate number if it exceeded the size
+            Integer nbrIntDigits = dfr.getPrecision() - dfr.getScale();
+            if( decValue > Math.pow( 10, nbrIntDigits - 1 ) ) {
+                decValue = Math.pow( 10, nbrIntDigits - 1 );
+            }
+            returnValue = decValue;
+        }
+        if( fieldType == Schema.DisplayType.Date ) {
+            returnValue = Date.today().addMonths( i );
+        }
+        if( fieldType == Schema.DisplayType.DateTime ) {
+            returnValue = DateTime.now().addMonths( i );
+        }
+        if( fieldType == Schema.DisplayType.Email ) {
+            returnValue = 'test' + i + '@test.com';
+        }
+        if( fieldType == Schema.DisplayType.Phone ) {
+            returnValue = '(972) 972-' + ( '0000' + Math.mod( i, 10000 ) ).right( 4 );
+        }
+        if( fieldType == Schema.DisplayType.URL ) {
+            returnValue = 'www.test' + i + '.com';
+        }
+        if( fieldType == Schema.DisplayType.Picklist
+                || fieldType == Schema.DisplayType.MultiPicklist ) {
+            List<Schema.PicklistEntry> picklistValues = dfr.getPicklistValues();
+
+            returnValue = picklistValues[ 0 ].getValue();
+        }
+
+        system.debug( 'Setting ' + s + ' field ' + fieldName 
+                + ' of type ' + fieldType + '= ' + returnValue );
+
+        return returnValue;
+    }
+
+    // create record given a map of field names and their values
+    public static SObject createSObject( Schema.SObjectType s
+                        , Map<String, Object> valueMap ) {
+        SObject obj = s.newSObject();
+
+        for( String fieldName : valueMap.keySet() ) {
+            obj.put( fieldName, valueMap.get( fieldName ) );
+        }
+
+        return obj;
+    }
+
+    // create record given a map of fields and their values
+    public static SObject createSObject( Schema.SObjectType s
+                        , Map<Schema.SObjectField, Object> valueMap ) {
+        SObject obj = s.newSObject();
+
+        for( Schema.SObjectField aKey : valueMap.keySet() ) {
+            //Schema.DescribeFieldResult dfr = aKey.getDescribe();
+
+            obj.put( aKey, valueMap.get( aKey ) );
+        }
+
+        return obj;
+    }
+
+// TEST CODE:
+//Schema.SObjectType s = OpportunityLineItem.SObjectType;
+//DescribeSObjectResult dsr = s.getDescribe();
+//Map<String, Schema.SObjectField> fieldMap = dsr.fields.getMap();
+//Schema.DescribeFieldResult dfr = fieldMap.get( 'Product2Id' ).getDescribe();
+//system.debug( dfr );
+
+}

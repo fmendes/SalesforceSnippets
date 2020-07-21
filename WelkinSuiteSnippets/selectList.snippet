@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<CodeSnippets
+    xmlns="http://schemas.microsoft.com/VisualStudio/2005/CodeSnippet">
+    <CodeSnippet Format="1.0.0">
+        <Header>
+            <Title>selectList</Title>
+            <Shortcut>class</Shortcut>
+            <Description>Markup snippet for apex:selectList</Description>
+            <Author>Fernando</Author>
+            <SnippetTypes>
+                <SnippetType>Expansion</SnippetType>
+            </SnippetTypes>
+        </Header>
+        <Snippet>
+            <Declarations>
+                <Literal>
+                    <ID>fieldName</ID>
+                    <Default>mailingState</Default>
+                    <ToolTip>Picklist/text field</ToolTip>
+                </Literal>
+            </Declarations>
+            <Code Language="HTML"><![CDATA[
+                    <apex:selectList id="$fieldName$" value="{!$fieldName$}" multiselect="false" size="1">
+                        <apex:selectOption itemValue="" itemLabel="-- None --" />
+                        <apex:selectOption itemValue="TX" itemLabel="TX" />
+                        <apex:selectOption itemValue="OK" itemLabel="OK" />
+                    </apex:selectList>
+$end$
+]]></Code>
+        </Snippet>
+    </CodeSnippet>
+</CodeSnippets>

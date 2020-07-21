@@ -1,0 +1,86 @@
+<!--
+    Lightning component that displays the specified field/label and data type format
+-->
+
+
+<aura:component implements="flexipage:availableForRecordHome,force:hasRecordId" 
+                access="global" >
+    
+    <aura:attribute name="recordId" type="String" />
+	<aura:attribute name="record" type="Object" />
+	<aura:attribute name="recordError" type="String" />
+
+    <aura:attribute name="fieldLabel" type="String" />
+    <aura:attribute name="fieldToDisplay" type="String" />  
+    <aura:attribute name="valueToDisplay" type="String" />  
+    <aura:attribute name="dataFormat" type="String" />
+    
+    <aura:handler name="init" value="{!this}" action="{!c.doInit}"/>
+
+    <aura:dependency resource="markup://force:editRecord" type="EVENT" />
+    <aura:handler event="force:refreshView" action="{!c.doRefresh}" />
+    
+	<force:recordData aura:id="service"
+					  layoutType="FULL"
+					  recordId="{!v.recordId}"
+					  targetError="{!v.recordError}"
+					  targetFields="{!v.record}"
+					  mode="EDIT" />
+
+    <!-- horizontalAlign options are
+        center, space, spread, and end -->
+    <lightning:layout horizontalAlign=""
+                      multipleRows="true" >
+    	<lightning:layoutItem padding="horizontal-small">
+            {!v.fieldLabel}&nbsp;
+            <lightning:formattedText value="{!v.valueToDisplay}"/>
+        </lightning:layoutItem>
+        
+    </lightning:layout>
+    
+</aura:component>
+
+
+
+
+({
+    doInit : function( component, event, helper ) {
+        var service = component.find( "service" );
+        service.reloadRecord( false
+                , $A.getCallback( function() {
+                    var fieldToDisplay = component.get( "v.fieldToDisplay" );
+                    console.log( "fieldToDisplay", fieldToDisplay );
+                    var valueToDisplay = component.get( "v.record." + fieldToDisplay );
+                    console.log( "valueToDisplay", valueToDisplay );
+                    
+                    var dataFormat = component.get( "v.dataFormat" );
+                    if( dataFormat == "DATE" ) {
+                        valueToDisplay = $A.localizationService.formatDate( valueToDisplay );
+                    }
+                    
+                    component.set( "v.valueToDisplay", valueToDisplay );   
+                })
+        );
+    }
+    ,
+    doRefresh : function( component, event, helper ) {
+        var service = component.find( "service" );
+        service.reloadRecord( true );
+    }
+})
+
+
+
+
+<design:component>
+    
+    <design:attribute name="fieldLabel" label="Field Label"
+                      description="Label of the field - example:  Bid Bond Requested Date" />
+    
+    <design:attribute name="fieldToDisplay" label="Field Name"
+                      description="API Name of the field" />
+    
+    <design:attribute name="dataFormat" label="Data Type"
+                      description="Data type of the field - example:  DATE" />
+    
+</design:component>

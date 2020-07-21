@@ -1,0 +1,19 @@
+in VisualForce:
+
+	{!$ObjectType.Opportunity.fields.Loan_Officer_Display__c.label}
+
+in APEX:
+
+	Schema.SobjectType.Contact.fields.name.label
+
+in APEX using describe:
+
+	// get objects' schema
+	Map<String, Schema.SObjectType> schemaMap = Schema.getGlobalDescribe();
+
+	// get reference to the Quote_Request_Policy__c
+	Schema.SObjectType objSchema = schemaMap.get( 'Quote_Request_Policy__c' );
+	Map<String, Schema.SObjectField> fieldMap = objSchema.getDescribe().fields.getMap();
+	
+	// get label using API name
+	String fieldLabel = fieldMap.get( 'Insurer_Name__c' ).getDescribe().getLabel();

@@ -1,0 +1,40 @@
+// component with buttons to open URLs
+
+	<aura:component implements="force:appHostable,flexipage:availableForRecordHome,force:hasRecordId" 
+	                access="global" >
+	    
+	    <aura:attribute name="recordId" type="String" />
+	    
+		<ui:button label="Sort Line Items" 
+	               press="{!c.sortLineItems}"  />
+
+		<ui:button label="Add Products" 
+	               press="{!c.addProducts}"  />
+	</aura:component>
+
+controller:
+
+	({
+		addProducts : function(component, event, helper) {
+	        var recID = component.get( "v.recordId" );
+	        
+	        // use a different URL for oppty and quote
+	        var URLprefix = "/_ui/sales/quote";
+	        if( recID.startsWith( "006" ) ) {
+	            URLprefix = "/p/opp";
+	        }
+	        
+	        var addProdURL = URLprefix + "/SelectSearch?addTo=" 
+	        		+ recID + "&retURL=%2F" + recID;
+			window.open( addProdURL, "_self" );
+		}
+	    
+	    , sortLineItems : function(component, event, helper) {
+	        var recID = component.get( "v.recordId" );
+	        
+	        var URLprefix = "/oppitm/lineitemsort.jsp?id=";
+	        
+	        var addProdURL = URLprefix + recID + "&retURL=%2F" + recID;
+			window.open( addProdURL, "_self" );
+		}
+	})

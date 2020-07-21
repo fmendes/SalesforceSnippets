@@ -1,0 +1,22 @@
+import { LightningElement, track } from 'lwc';
+
+export default class App extends LightningElement {
+    @track dataTableColumns = [ { label: 'First Col', fieldName: 'first_Col__c' }
+    , { label: 'Second Col', fieldName: 'second_Col__c', type: 'text', sortable: true } ];
+    @track dataTableData = [ 
+        { id: '123', first_Col__c: 'XYZ', second_Col__c: 'ABC' } 
+        , 
+        { id: '124', first_Col__c: '124', second_Col__c: 'XTZ' } 
+        ];
+
+}
+
+<template>
+
+    <lightning-datatable key-field="Id"
+                        data={dataTableData}
+                        columns={dataTableColumns}
+                        hide-checkbox-column="true" >
+    </lightning-datatable>
+
+</template>

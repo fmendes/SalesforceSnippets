@@ -1,0 +1,32 @@
+<!--
+code that sets tab index on elements whose ID ends with
+"selectOccupation" after the page loads
+-->
+
+        <script type="text/javascript">
+            function setTabOrderOnOccupation() {
+                //var arrayOcc = document.getElementsByClassName( 'occupation' );
+
+                var arrayOcc = document.querySelectorAll( 'select[id$="selectOccupation"]' );
+                for( var i = 0; i < arrayOcc.length; i ++ ) {
+                    arrayOcc[ i ].tabIndex = i * 1000 + 240;
+                }
+                console.log( arrayOcc );
+            }
+
+            // set tab order on occupation after page loads while respecting any framework code
+            if( window.attachEvent ) {
+                window.attachEvent( 'onload', setTabOrderOnOccupation );
+            } else {
+                if( window.onload ) {
+                    var curronload = window.onload;
+                    var newonload = function() {
+                        curronload();
+                        setTabOrderOnOccupation();
+                    };
+                    window.onload = newonload;
+                } else {
+                    window.onload = setTabOrderOnOccupation;
+                }
+            }
+        </script>

@@ -1,0 +1,7 @@
+VisualForce:
+
+{!$ObjectType.Object__c.Fields.CustomField__c.Label}
+
+Apex:
+
+Schema.Object__c.fields.CustomField__c.getDescribe().getLabel();

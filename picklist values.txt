@@ -1,0 +1,31 @@
+// avoid hardcoding picklist values
+// use first value and avoid restricted picklist errors
+
+Schema.DescribeFieldResult unitTechFieldResult = Unit__c.Technology__c.getDescribe();
+
+List<Schema.PicklistEntry> ple = unitTechFieldResult.getPicklistValues();
+
+Unit__c u2 = u.clone();
+u2.Technology__c = ple[ 0 ].getValue();
+
+	public List<SelectOption> solarLightList {
+		get {
+			if( solarLightList == null ) {
+				solarLightList = getPicklist( Opportunity.Motion_Solar_Light__c );
+			}
+			return solarLightList;
+		}
+		set;
+	}
+
+	public static List<SelectOption> getPicklist( Schema.SObjectField f ) {
+		List<SelectOption> theList = new List<SelectOption>();
+		Schema.DescribeFieldResult fr = f.getDescribe();
+		List<Schema.PicklistEntry> pleList = fr.getPicklistValues();
+		theList.add( new SelectOption( '', '' ) );
+		for( Schema.PicklistEntry p : pleList ) {
+			theList.add( new SelectOption( p.getValue(), p.getLabel() ) );
+		}
+		system.debug( theList );
+		return theList;
+	}

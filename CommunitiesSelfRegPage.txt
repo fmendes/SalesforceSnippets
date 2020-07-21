@@ -1,0 +1,118 @@
+<apex:page id="communitiesSelfRegPage" showHeader="false"
+      controller="Controller_CommunitiesSelfReg"
+      title="{!$Label.site.user_registration}">
+
+  <link rel="stylesheet" type="text/css" href="/css/sfdc_210.css" />
+
+  <style type="text/css">
+    a { color:#0070d2; }
+    body { background-color:#B1BAC1; }
+    #content, .container { background-color:#ffffff; }
+    #header { color:#51606E; }
+    #header, #footer { color:#000000; }
+    #signup { color:#000000; }
+    #use_new_identity { color:#000000; text-decoration:underline; }
+    #use_new_identity:hover, #use_new_identity:active { color:#000000; }
+    #or_use_idp, #employee_login { color:#000000; }
+    #cancel_idp, #cancel_idp_hint, #employee_login_link { color:#000000; text-decoration:underline; }
+    #cancel_idp:hover, #cancel_idp:active, #cancel_idp_hint:hover,
+    #cancel_idp_hint:active, #employee_login_link:hover, #employee_login_link:active { color:#000000; }
+    body { display: table; width:100%; }
+    #content { margin-bottom:24px; }
+    #wrap { height:100%; }
+    #right { display: none; }
+
+    .primary {
+        color: white!important;
+        background-color: #A60012!important;
+        border: 1px solid #A60012!important;
+            padding: 12px 24px!important;
+    }
+    .primary:hover, .primary:focus {
+        background-color:#A60012;
+    }
+  </style>
+
+  <link rel="canonical" href="/clients/login?locale=us" />
+
+  <div id="left" class="pr">
+    <div id="wrapper">
+      <div id="logo_wrapper" class="standard_logo_wrapper mb24">
+        <h1 style="height: 100%; display: table-cell; vertical-align: bottom; ">
+          <img id="logo" class="standard_logo" alt="client" border="0" name="logo"
+             src="/clients/servlet/servlet.ImageServer?id=0151C000007caFq&oid=00D560000009LER&lastMod=1550162606000" />
+        </h1>
+      </div>
+      <div id="content" style="display: block; ">
+
+          <apex:pageMessages />
+
+        <div id="theloginform" style="display: block; ">
+          <apex:form id="selfreg_form" >
+            <div id="usernamegroup" class="inputgroup">
+
+              <apex:outputLabel value="First Name" for="firstName"
+                                styleClass="label " />
+              <apex:inputText required="true" id="firstName" value="{!firstName}" label="First Name"
+                                styleClass="input r4 wide mb16 mt8" />
+
+              <apex:outputLabel value="Last Name" for="lastName"
+                                styleClass="label " />
+              <apex:inputText required="true" id="lastName" value="{!lastName}" label="Last Name"
+                              styleClass="input r4 wide mb16 mt8 username"  />
+
+                <apex:outputLabel value="Your NMLS #" for="NMLS"
+                                  styleClass="label " />
+                <apex:inputText required="true" id="NMLS" value="{!contactNMLS}"
+                                label="Your NMLS #"
+                                styleClass="input r4 wide mb16 mt8 " />
+
+                <apex:outputLabel value="{!$Label.site.email}" for="email"
+                                  styleClass="label " />
+                <apex:inputText required="true" id="email" value="{!email}"
+                                label="{!$Label.site.email}"
+                                styleClass="input r4 wide mb16 mt8 " />
+
+                <apex:outputLabel value="Company Name" for="companyName"
+                                  styleClass="label " />
+                <apex:inputText required="true" id="companyName" value="{!companyName}"
+                                label="Company Name"
+                                styleClass="input r4 wide mb16 mt8 " />
+
+                <apex:outputLabel value="Company NMLS #" for="companyNMLS"
+                                  styleClass="label " />
+                <apex:inputText required="true" id="companyNMLS" value="{!companyNMLS}"
+                                label="Company NMLS #"
+                                styleClass="input r4 wide mb16 mt8 " />
+                <!--
+                <apex:outputLabel value="{!$Label.site.community_nickname}" for="communityNickname"
+                                  styleClass="label " />
+                <apex:inputText required="true" id="communityNickname" value="{!communityNickname}"
+                                label="{!$Label.site.community_nickname}"
+                                styleClass="input r4 wide mb16 mt8 " />
+                -->
+
+                <apex:outputLabel value="{!$Label.site.password}" for="password"
+                                  styleClass="label " />
+                <apex:inputSecret id="password" value="{!password}"
+                                  styleClass="input r4 wide mb16 mt8 " />
+
+                <apex:outputLabel value="{!$Label.site.confirm_password}" for="confirmPassword"
+                                  styleClass="label " />
+                <apex:inputSecret id="confirmPassword" value="{!confirmPassword}"
+                                  styleClass="input r4 wide mb16 mt8 " />
+                <br/>
+
+                <apex:commandButton id="submit" action="{!registerUser}"
+                                    value="{!$Label.site.submit}"
+                                    styleClass="button r4 wide primary"/>
+
+            </div>
+          </apex:form>
+        </div>
+      </div>
+    </div>
+      <div id="footer">Real estate/finance company footer.</div>
+  </div>
+
+</apex:page>

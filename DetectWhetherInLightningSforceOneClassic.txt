@@ -1,0 +1,46 @@
+<apex:page docType="html-5.0" applyBodyTag="false" applyHtmlTag="false"
+           showHeader="false" standardStylesheets="false">
+<script type="text/javascript">
+
+// This is an anonymous self-executing function closure
+(function(myContext){
+	// Deal with possible order-of-execution issues.
+	// Don't overwrite ourself if we already exist.
+	myContext.ForceUI = myContext.ForceUI || {};
+        
+        // Because this is Visualforce, not a static resource,
+        // we can access a global variable in an expression.
+	<!-- UITHEME INJECTOR -->
+        myContext.ForceUI.UserUITheme = '{! $User.UIThemeDisplayed }';
+
+	// Utility methods that make simple string comparisons
+	// against a local UserUITheme value. This value is
+	// injected from a Visualforce page to allow expression
+	// evaluation of the $User.UIThemeDisplayed global.
+	myContext.ForceUI.isSalesforceClassic = function() {
+		return (this.UserUITheme == 'Theme3');
+	}
+	myContext.ForceUI.isLightningExperience = function() {
+		return (this.UserUITheme == 'Theme4d');
+	}
+	myContext.ForceUI.isSalesforce1 = function() {
+		return (this.UserUITheme == 'Theme4t');
+	}
+	})(this);
+
+	document.addEventListener('DOMContentLoaded', function(event){
+	// Diagnostic only -- don't use this value directly
+	//document.getElementById('UserUIThemeJS').innerHTML = ForceUI.UserUITheme;
+	// EXAMPLES:  Instead, use these utility methods
+	//document.getElementById('isSalesforce1JS').innerHTML = 
+	//    ForceUI.isSalesforce1();
+	//document.getElementById('isLightningExperienceJS').innerHTML = 
+	//    ForceUI.isLightningExperience();
+	//document.getElementById('isSalesforceClassicJS').innerHTML = 
+	//    ForceUI.isSalesforceClassic();
+
+	// if in Apex, just use UserInfo.getUiThemeDisplayed();
+});
+
+</script>
+</apex:page>

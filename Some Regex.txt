@@ -1,0 +1,7 @@
+Pattern pat = Pattern.compile( '.*? ([0-9]+) .*' );
+Matcher mat = pat.matcher( 'abc 12 xyz' );
+system.debug( 'matches()= ' + mat.matches()
+        +'\n group 0= ' + mat.group( 0 ) 
+        +'\n group 1= ' + mat.group( 1 )  );
+system.debug( 'new string= ' +
+        'abc 12 xyz'.replace( mat.group(1), '13' ) );

@@ -1,0 +1,151 @@
+
+
+
+<apex:page id="FieldTrialSearch" standardController="Field_Trial__c" extensions="VFC_FieldTrialSearch" docType="html-5.0">
+
+    <apex:sectionHeader title="Field Trial" subtitle="Search" />
+
+    <apex:form id="theForm">
+
+        <apex:pageMessages escape="false" id="pageMsg"/>
+
+        <apex:pageBlock >
+
+            <apex:pageBlockButtons location="both">
+                <apex:commandButton value="Search" action="{!doSearch}" reRender="theForm, pageMsg"/>
+                <apex:commandButton value="Cancel" action="{!cancel}"/>
+            </apex:pageBlockButtons>
+
+            <apex:pageBlockSection columns="1">
+
+                <apex:pageBlockSectionItem >
+                    <apex:outputLabel value="Search Type" for="doZipSearch"/>
+                    <apex:selectList id="doZipSearch" value="{!searchType}" multiSelect="false" size="1">
+                        <apex:selectOptions value="{!searchTypeOptions}"/>
+                        <apex:actionSupport event="onchange" action="{!doToggleSearch}" rerender="theForm"/>
+                    </apex:selectList>
+                </apex:pageBlockSectionItem>
+                <apex:pageBlockSectionItem >
+                    <apex:outputLabel value="Trial Type" for="clearField"/>
+                    <apex:selectList value="{!clearFieldSearch}" multiselect="false" size="1" id="clearField">
+                        <apex:selectOptions value="{!clearFieldOptions}"/>
+                    </apex:selectList>
+
+
+                </apex:pageBlockSectionItem>
+
+                <!-- Radius Search -->
+                <apex:pageBlockSectionItem id="zipSearchArea" rendered="{!isRadiusSearch}">
+                    <apex:outputLabel value="Zip Code" for="searchZip"/>
+                    <apex:inputText value="{!searchZip}" id="searchZip" style="width:50px;"/>
+                </apex:pageBlockSectionItem>
+
+                <apex:pageBlockSectionItem rendered="{!isRadiusSearch}">
+                    <apex:outputLabel >Distance (miles) </apex:outputLabel>
+                    <apex:selectList value="{!distance}" multiselect="false" size="1">
+                        <apex:selectOption itemLabel="1" itemValue="1" />
+                        <apex:selectOption itemLabel="5" itemValue="5" />
+                        <apex:selectOption itemLabel="10" itemValue="10" />
+                        <apex:selectOption itemLabel="25" itemValue="25" />
+                        <apex:selectOption itemLabel="50" itemValue="50" />
+                        <apex:selectOption itemLabel="100" itemValue="100" />
+                    </apex:selectList>
+                </apex:pageBlockSectionItem>
+
+                <!-- County Search -->
+                <apex:pageBlockSectionItem id="countySearchArea" rendered="{!NOT(isRadiusSearch)}">
+                    <apex:outputLabel value="County" for="County"/>
+                    <apex:inputText value="{!searchCounty}" id="searchCounty" />
+                </apex:pageBlockSectionItem>
+
+                <apex:pageBlockSectionItem rendered="{!NOT(isRadiusSearch)}">
+                    <apex:outputLabel >State: </apex:outputLabel>
+                    <apex:selectList value="{!searchState}" multiselect="false" size="1">
+                        <apex:selectOptions value="{!stateOptions}"/>
+                    </apex:selectList>
+                </apex:pageBlockSectionItem>
+
+
+
+            </apex:pageBlockSection>
+
+
+            <apex:pageBlockSection id="results" title="Results" rendered="{!hasResults}" columns="1">
+
+                <apex:outputText value="{!$Label.fieldTrial_Disclaimer}"/>
+
+
+                <apex:pageBlockTable value="{!searchResults}" var="item" id="trialResults">
+                    <apex:column >
+                        <apex:facet name="header">Cultivar</apex:facet>
+                        <apex:outputText value="{!item.cultivar}"/>
+                    </apex:column>
+                    <apex:column >
+                        <apex:facet name="header">Yield lb/A</apex:facet>
+                        <apex:outputText value="{!item.yield}"/>
+                    </apex:column>
+                    <!--<apex:column >
+                        <apex:facet name="header">Number of Trials</apex:facet>
+                        <apex:outputText value="{!item.fieldTrials}"/>
+                    </apex:column>-->
+                    <!--<apex:column >
+                        <apex:facet name="header">Maturity Days</apex:facet>
+                        <apex:outputText value="{!item.maturityDays}"/>
+                    </apex:column>-->
+                    <!--<apex:column >
+                        <apex:facet name="header">Lodging</apex:facet>
+                        <apex:outputText value="{!item.lodging}"/>
+                    </apex:column>-->
+                    <apex:column >
+                        <apex:facet name="header">Whole Mill</apex:facet>
+                        <apex:outputText value="{!item.wholeMill}"/>
+                    </apex:column>
+                    <apex:column >
+                        <apex:facet name="header">Total Mill</apex:facet>
+                        <apex:outputText value="{!item.totalMill}"/>
+                    </apex:column>
+                    <!--<apex:column >
+                        <apex:facet name="header">Clearfield</apex:facet>
+                        <apex:outputText value="{!item.isClearfield}"/>
+                    </apex:column>-->
+
+                </apex:pageBlockTable>
+                <!-- begin map -->
+                <p>&nbsp;</p>
+
+
+                <apex:map width="600px" height="400px" mapType="roadmap" center="{latitude: {!theLat}, longitude: {!theLong}}" rendered="{!hasLocation}">
+                    <!--<apex:map width="600px" height="400px" mapType="roadmap" center="{latitude: {!theLat}, longitude: {!theLong}}" rendered="{!hasLocation}">-->
+
+                    <apex:repeat value="{!fieldTrialLines}" var="nearby">
+                        <apex:mapMarker title="{!nearby.Cultivar__c}" position="{latitude: {!nearby.Trial_Location__Latitude__s}, longitude: {!nearby.Trial_Location__Longitude__s}}" >
+                            <apex:mapInfoWindow >
+                                <apex:outputPanel layout="block" style="font-weight: bold;">
+                                    <apex:outputText >{! nearby.Cultivar__c }</apex:outputText>
+                                </apex:outputPanel>
+
+                                <!--<apex:outputPanel layout="block">
+                                    <b>Yield: </b> <apex:outputText >{! nearby.Yield__c }</apex:outputText>
+                                </apex:outputPanel>-->
+
+                                <!--<apex:outputPanel layout="block">
+                                   <b>Category: </b> <apex:outputText >{! nearby.category__c }</apex:outputText>
+                                </apex:outputPanel>-->
+
+                                <!--<apex:outputPanel layout="block">
+                                    <b># of Trials: </b> <apex:outputText >{! nearby.Number_of_Trials__c }</apex:outputText>
+                                </apex:outputPanel>-->
+
+                            </apex:mapInfoWindow>
+                        </apex:mapMarker>
+                    </apex:repeat>
+
+                </apex:map>
+                <!-- end map -->
+            </apex:pageBlockSection>
+
+        </apex:pageBlock>
+
+    </apex:form>
+
+</apex:page>

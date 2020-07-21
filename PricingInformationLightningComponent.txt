@@ -1,0 +1,538 @@
+PricingInformation.cmp
+
+<aura:component controller="Main_PricingInformationController"
+    implements="force:lightningQuickActionWithoutHeader,force:hasRecordId" >
+
+    <aura:attribute name="hasErrors" type="Boolean" description="Indicate whether there were failures or not" />
+    <aura:attribute name="errorMsgs" type="String" />
+    <aura:attribute name="QLIList" type="QuoteLineItem[]" />
+    <aura:attribute name="selectedQLI" type="QuoteLineItem" />
+    <aura:attribute name="qli" type="QuoteLineItem" />
+    <aura:attribute name="fieldTable" type="Object" />
+    <aura:attribute name="tableColumns" type="List" />
+
+    <aura:handler name="init" value="{!this}" action="{!c.doInit}" />
+
+    <div class="slds-page-header" role="banner">
+        <p class="slds-text-heading--label">Pricing Information</p>
+        <h1 class="slds-page-header__title slds-m-right--small slds-truncate slds-align-left" 
+                title="Pricing Information Title">{!v.QLIList[ 0 ].Quote.Name}</h1>
+    </div>
+
+    <br/>
+
+    <aura:if isTrue="{!v.hasErrors}">
+        <div class="userCreateError">
+            <ui:message title="Error" severity="error" closable="true">
+                Please review the error messages:<br />
+                {!v.errorMsgs}
+            </ui:message>
+        </div>
+    </aura:if>
+
+    <div class="slds-form slds-form--horizontal">
+
+        <div class="slds-form-element">
+            <label class="slds-form-element__label" for="qlItems">Select Item: </label>
+            <div class="slds-form-element__control">
+                <ui:inputSelect aura:id="qlItems" change="{!c.onSelectChange}" >
+                    <aura:iteration items="{!v.QLIList}" var="qli" >
+                        <ui:inputSelectOption text="{!qli.Id}" label="{!qli.Product2.Name}" />
+                    </aura:iteration>
+                </ui:inputSelect>
+            </div>
+        </div>
+
+        <div class="slds-form-element">
+            <div class="slds-form-element__control">
+            <span class="slds-checkbox">
+                <ui:inputRadio aura:id="byTon" name="priceBy" 
+                    label="" text="byTon" change="{!c.onPriceByChange}" />
+                <span> Price By Ton</span>&nbsp;&nbsp;&nbsp;
+                <ui:inputRadio aura:id="byUnit" name="priceBy" 
+                    label="" text="byUnit" change="{!c.onPriceByChange}" />
+                <span> Price By Unit</span>
+            </span>
+            </div>
+        </div>
+
+
+        <table class="slds-table slds-table_bordered slds-table_cell-buffer">
+          <thead>
+            <tr class="slds-text-title_caps">
+              <th scope="col">
+                <div class="slds-truncate" title="Name">Name</div>
+              </th>
+              <th scope="col">
+                <div class="slds-truncate" title="List Price">List Price</div>
+              </th>
+              <th scope="col">
+                <div class="slds-truncate" title="Bid Price">Bid Price</div>
+              </th>
+              <th scope="col">
+                <div class="slds-truncate" title="Break">Break</div>
+              </th>
+              <th scope="col">
+                <div class="slds-truncate" title="Discount">Discount</div>
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            <c:PricingInformationRow rowName="Sales Price" 
+                listPrice="{!v.qli.Sales_List_Price__c}" 
+                bidPrice="{!v.qli.UnitPrice}" 
+                break="{!v.qli.Sales_Price_Break__c}" 
+                discount="{!v.qli.Discount}" 
+                onlyDisplayPrices="false" disabled="true"
+                changedEvent="{!c.onRowChanged}" />
+            <c:PricingInformationRow rowName="Base Price" 
+                listPrice="{!v.qli.Base_List_Price__c}" 
+                bidPrice="{!v.qli.Base_Bid_Price__c}" 
+                break="{!v.qli.Base_Break__c}" 
+                discount="{!v.qli.Base_Discount__c}" 
+                onlyDisplayPrices="false"
+                changedEvent="{!c.onRowChanged}" />
+            <c:PricingInformationRow rowName="Joint Adder" 
+                listPrice="{!v.qli.Joint_Adder_List_Price__c}" 
+                bidPrice="{!v.qli.Joint_Adder_Bid_Price__c}" 
+                break="{!v.qli.Joint_Adder_Break__c}" 
+                discount="{!v.qli.Joint_Adder_Discount__c}" 
+                onlyDisplayPrices="false"
+                changedEvent="{!c.onRowChanged}" />
+            <c:PricingInformationRow rowName="Lining Adder" 
+                listPrice="{!v.qli.Lining_Adder_List_Price__c}" 
+                bidPrice="{!v.qli.Lining_Adder_Bid_Price__c}" 
+                break="{!v.qli.Lining_Adder_Break__c}" 
+                discount="{!v.qli.Lining_Adder_Discount__c}" 
+                onlyDisplayPrices="false" disabled="true"
+                changedEvent="{!c.onRowChanged}" />
+            <c:PricingInformationRow rowName="Coating Adder" 
+                listPrice="{!v.qli.Coating_Adder_List_Price__c}" 
+                bidPrice="{!v.qli.Coating_Adder_Bid_Price__c}" 
+                break="{!v.qli.Coating_Adder_Break__c}" 
+                discount="{!v.qli.Coating_Adder_Discount__c}" 
+                onlyDisplayPrices="false" disabled="true"
+                changedEvent="{!c.onRowChanged}" />
+            <c:PricingInformationRow rowName="Cable Bond Adder" 
+                listPrice="{!v.qli.Cable_Bond_Adder_List_Price__c}" 
+                bidPrice="{!v.qli.Cable_Bond_Adder_Bid_Price__c}" 
+                break="{!v.qli.Cable_Bond_Adder_Break__c}" 
+                discount="{!v.qli.Cable_Bond_Adder_Discount__c}" 
+                onlyDisplayPrices="false" disabled="true"
+                changedEvent="{!c.onRowChanged}" />
+            <c:PricingInformationRow rowName="Misc Adder" 
+                listPrice="0"
+                bidPrice="{!v.qli.Misc_Adder_Bid_Price__c}" 
+                onlyDisplayPrices="true"
+                changedEvent="{!c.onRowChanged}" />
+          </tbody>
+        </table>
+
+        <!--
+        <div class="slds-form-element">
+            <lightning:datatable data="{! v.fieldTable }" columns="{! v.tableColumns }"
+                keyField="Name" hideCheckboxColumn="true" />
+        </div>
+
+        <div class="slds-form-element">
+            <label class="slds-form-element__label" for="selection">Selection: </label>
+            <div class="slds-form-element__control">
+              <ui:outputText aura:id="selection" value="{!v.qli.LineNumber + ' - ' + v.qli.Product2.Name}" />
+            </div>
+        </div>
+        -->
+
+        <div class="slds-form-element">
+            <ui:button class="slds-button slds-button--neutral" press="{!c.cancel}" label="Cancel" />
+            <ui:button class="slds-button slds-button--brand" press="{!c.savePricing}" label="Save Pricing" />
+        </div>
+
+    </div>
+    
+</aura:component>
+
+PricingInformationController.js
+
+({
+    doInit: function( component, event, helper ) {
+        // load QLI
+        var action = component.get( "c.getQLIList" );
+        action.setParams( { "quoteId" : component.get( "v.recordId" ) } );
+
+        action.setCallback( this, function( response ) {
+            var state = response.getState();
+            if( state === "SUCCESS" ) {
+                var QLIList = response.getReturnValue();
+                component.set( "v.QLIList", QLIList );
+
+                // select first item
+                var qlItems = component.find( "qlItems" );
+                var qliId = QLIList[ 0 ].Id;
+                qlItems.set( "v.value", QLIList[ 0 ].Id );
+
+                helper.displaySelectedQLI( component, helper, qliId );
+
+            } else {
+                helper.handleErrors( component, 'QLI List retrieval' );
+            }
+        });
+
+        $A.enqueueAction( action );
+    }
+
+    ,
+    onSelectChange: function( component, event, helper ) {
+        var selectedQLIId = event.getSource().get( "v.value" );
+        helper.displaySelectedQLI( component, helper, selectedQLIId );
+
+
+        //// dummy data
+        //var fieldTable = [ { Name: "Sales Price", ListPrice: 199.18, BidPrice: 139.43, Break: 59.75, Discount: 30 } 
+        //    , { Name: "Base Price", ListPrice: 115.67, BidPrice: 80.97, Break: 34.70, Discount: 30 } 
+        //    , { Name: "Joint Adder", ListPrice: 45.75, BidPrice: 32.02, Break: 13.72, Discount: 30 } 
+        //    , { Name: "Lining Adder", ListPrice: 37.76, BidPrice: 26.43, Break: 11.33, Discount: 30 } 
+        //    , { Name: "Coating Adder", ListPrice: 0, BidPrice: 0, Break: 0, Discount: 0 } 
+        //    , { Name: "Cable Bond Adder", ListPrice: 0, BidPrice: 0 } 
+        //    , { Name: "Misc Adder", ListPrice: 0, BidPrice: 0 } 
+        //    ];
+        //component.set( "v.fieldTable", fieldTable );
+        //
+        //component.set( "v.tableColumns", [
+        //        { label: 'Name', fieldName: 'Name', type: 'text' }
+        //        , { label: 'List Price', fieldName: 'ListPrice', type: 'currency' }
+        //        , { label: 'Bid Price', fieldName: 'BidPrice', type: 'currency' }
+        //        , { label: 'Break', fieldName: 'Break', type: 'currency' }
+        //        , { label: 'Discount', fieldName: 'Discount', type: 'percent' }
+        //    ]);
+
+    }
+
+    ,
+    onPriceByChange: function( component, event, helper ) {
+        // set selected radio button value to true
+        var clickedRadio = event.getSource();
+        clickedRadio.set( "v.value", true );
+
+        // identify which radio button was clicked
+        var selectedPriceBy = clickedRadio.get( "v.text" );
+        console.log( "selectedPriceBy= %o", selectedPriceBy );
+
+        // set the other radio button value to false
+        if( selectedPriceBy == "byTon" ) {
+            component.find( "byUnit" ).set( "v.value", false );
+        } else {
+            component.find( "byTon" ).set( "v.value", false );
+        }
+
+        // make edits on the temporary copy of selectedQLI
+        var qli = component.get( "v.qli" );
+
+        // determine what unit to use
+        var unit = qli.Unit_Cost__c;
+        var oldUnit = qli.Unit_Tons__c;
+        if( selectedPriceBy == "byTon" ) {
+            unit = qli.Unit_Tons__c;
+            oldUnit = qli.Unit_Cost__c;
+        }
+
+        // recalculate with the selected unit
+        helper.recalculateByUnit( component, qli, unit, oldUnit );
+    }
+
+    ,
+    onRowChanged: function( component, event, helper ) {
+        // recalculate Sales Price row
+        console.log( "onRowChanged" );
+        console.log( event );
+
+        var qli = component.get( "v.qli" );
+
+        // sum sales price, bid price and break
+        var totalPrice = 0;
+        var priceFields = [ 'Base_List_Price__c', 'Joint_Adder_List_Price__c'
+            , 'Coating_Adder_List_Price__c', 'Cable_Bond_Adder_List_Price__c' ];
+        for( var f in priceFields ) {
+            var field = priceFields[ f ];
+            if( qli[ field ] ) {
+                totalPrice = totalPrice + qli[ field ];
+            }
+        }
+        var totalBid = 0;
+        var bidPriceFields = [ 'Base_Bid_Price__c', 'Joint_Adder_Bid_Price__c'
+            , 'Lining_Adder_Bid_Price__c', 'Coating_Adder_Bid_Price__c'
+            , 'Cable_Bond_Adder_Bid_Price__c', 'Misc_Adder_Bid_Price__c' ];
+        for( var f in bidPriceFields ) {
+            var field = bidPriceFields[ f ];
+            if( qli[ field ] ) {
+                totalBid = totalBid + qli[ field ];
+            }
+        }
+        var totalBreak = 0;
+        var breakFields = [ 'Base_Break__c', 'Joint_Adder_Break__c'
+            , 'Lining_Adder_Break__c', 'Coating_Adder_Break__c'
+            , 'Cable_Bond_Adder_Break__c' ];
+        for( var f in breakFields ) {
+            var field = breakFields[ f ];
+            if( qli[ field ] ) {
+                totalBreak = totalBreak + qli[ field ];
+            }
+        }
+
+        // set sales price, list price and break
+        qli.Sales_List_Price__c = totalPrice;
+        qli.UnitPrice = totalBid;
+        qli.Sales_Price_Break__c = totalBreak;
+
+        // calculate discount at sales price level
+
+        //if( totalPrice ) {
+        //    qli.Discount = totalBreak / totalPrice;
+        //} else {
+        if( totalBid && totalBreak && ( totalBid + totalBreak ) != 0 ) {
+            qli.Discount = totalBreak / ( totalBid + totalBreak );
+        } else {
+            qli.Discount = null;
+        }
+
+        // create a temporary copy of selectedQLI to make edits
+        var qliToDisplay = Object.assign( {}, qli );
+        // display changes
+        component.set( "v.qli", qliToDisplay );
+
+        // determine what unit is used
+        var byUnit = component.find( "byUnit" ).get( "v.value" );
+        var byTon = component.find( "byTon" ).get( "v.value" );
+        var unit = qli.Unit_Cost__c;
+        if( ! byUnit && byTon ) {
+            unit = qli.Unit_Tons__c;
+        }
+
+        // reverse conversion to units 
+        // (store only final numbers rather than per unit/ton)
+        helper.recalculateByUnit( component, qli, 1, unit );
+
+        // get de-converted QLI
+        var qli = component.get( "v.qli" );
+
+        // store changed qli in the list
+        var QLIList = component.get( "v.QLIList" );
+        // find QLI by comparing the ID
+        for( var q in QLIList ) {
+            if( qli.Id === QLIList[ q ].Id ) {
+                // store updated QLI with latest edits
+                QLIList[ q ] = qli;
+                //component.set( "v.QLIList", QLIList ); 
+
+                //// restore selection after changing the QLIList
+                //var qlItems = component.find( "qlItems" );
+                //qlItems.set( "v.value", qli.Id );
+                break;
+            }
+        }
+
+
+        // display changes
+        component.set( "v.qli", qliToDisplay );
+
+        console.log( "end onRowChanged" );
+    }
+
+    ,
+    savePricing: function( component, event, helper ) {
+        // TODO:  validate QLI if applicable
+
+        // save QLI
+        var action = component.get( "c.saveQLIList" );
+        action.setParams( { "qliList" : component.get( "v.QLIList" ) } );
+
+        action.setCallback( this, function( response ) {
+            var state = response.getState();
+            if( state === "SUCCESS" ) {
+
+                // create "toast" status message
+                var resultsToast = $A.get( "e.force:showToast" );
+                resultsToast.setParams( {
+                    "title" : "Save Pricing Information",
+                    "message" : "Quote Line Items saved successfully."
+                });
+
+                // close window
+                $A.get( "e.force:closeQuickAction" ).fire();
+                // show toast message
+                resultsToast.fire();
+                // refresh quote page
+                $A.get( "e.force:refreshView" ).fire();
+
+            } else {
+                helper.handleErrors( component, 'QLI List save' );
+            }
+        });
+
+        $A.enqueueAction( action );
+    }
+
+    ,
+    cancel : function( component, event, helper ) {
+        // close window
+        $A.get( "e.force:closeQuickAction" ).fire();
+    }
+
+})
+
+PricingInformationHelper.js
+
+({
+    handleErrors: function ( component, stage ) {
+        console.log( 'Error during ' + stage + ', response state: ' + state );
+        var errorMsgs = state + ' - ';
+        var errors = response.getError();
+        if( errors ) {
+            console.log( errors );
+            if( errors[ 0 ] && errors[ 0 ].message ) {
+                ///console.log( "Error message: " + errors[ 0 ].message );
+                errorMsgs = errorMsgs + errors[ 0 ].message;
+            }
+        }
+        component.set( "v.errorMsgs", errorMsg );
+        component.set( "v.hasErrors", true );
+    }
+    /*
+    , round: function( param ) {
+        // round a given param.value to a given number of param.decimals
+        // and returns the rounded value in param.result
+        param.result = Number( Math.round( param.value + 'e' + param.decimals ) + 'e-' + param.decimals );
+    }
+    */
+    , applyUnit: function( qli, fieldName, oldUnit, unit ) {
+        // avoid NaN
+        if( qli[ fieldName ] ) {
+            qli[ fieldName ] = oldUnit * qli[ fieldName ] / unit;
+            //var aValue = oldUnit * qli[ fieldName ] / unit;
+            //var param = { value: aValue, decimals: 2 };
+            //this.round( param );
+            //qli[ fieldName ] = param.result;
+        } else {
+            qli[ fieldName ] = null;
+        }
+    }
+
+    , fixPercentage: function( qli, fieldName ) {
+        if( qli[ fieldName ] > 1 ) {
+            // store percentage as a fraction
+            qli[ fieldName ] = qli[ fieldName ] / 100.0;
+        }
+    }
+    
+    , recalculateByUnit: function( component, qli, unit, oldUnit ) {
+        if( ! unit ) {
+            unit = 1;
+        }
+        if( ! oldUnit ) {
+            oldUnit = 1;
+        }
+
+        // recalculate sales row
+        var fieldList = [ 'Sales_List_Price__c', 'UnitPrice'
+            , 'Sales_Price_Break__c', 'Base_List_Price__c', 'Base_Bid_Price__c'
+            , 'Base_Break__c', 'Joint_Adder_List_Price__c'
+            , 'Joint_Adder_Bid_Price__c', 'Joint_Adder_Break__c'
+            , 'Lining_Adder_List_Price__c', 'Lining_Adder_Bid_Price__c'
+            , 'Lining_Adder_Break__c', 'Coating_Adder_List_Price__c'
+            , 'Coating_Adder_Bid_Price__c', 'Coating_Adder_Break__c'
+            , 'Cable_Bond_Adder_List_Price__c', 'Cable_Bond_Adder_Bid_Price__c'
+            , 'Cable_Bond_Adder_Break__c', 'Misc_Adder_Bid_Price__c' ];
+        for( var f in fieldList ) {
+            // recalculate each field replacing old unit with new unit
+            this.applyUnit( qli, fieldList[ f ], oldUnit, unit );
+        }
+
+        // fix discounts
+        fieldList = [ 'Discount', 'Base_Discount__c', 'Joint_Adder_Discount__c'
+            , 'Lining_Adder_Discount__c', 'Coating_Adder_Discount__c'
+            , 'Cable_Bond_Adder_Discount__c' ];
+        for( var f in fieldList ) {
+            this.fixPercentage( qli, fieldList[ f ] );
+        }
+
+        // display QLI fields
+        component.set( "v.qli", qli );
+    }
+
+    , displaySelectedQLI: function( component, helper, selectedQLIId ) {
+
+        console.log( "selectedQLIId= %o", selectedQLIId );
+
+        // store previously edited QLI
+        var QLIList = component.get( "v.QLIList" );
+
+        // find which QLI was selected by comparing the Id
+        var selectedQLI;
+        for( var q in QLIList ) {
+            if( selectedQLIId === QLIList[ q ].Id ) {
+                selectedQLI = QLIList[ q ];
+                break;
+            }
+        }
+
+        // if no price unit selected, pick by ton
+        var byTon = component.find( "byTon" ).get( "v.value" );
+        var byUnit = component.find( "byUnit" ).get( "v.value" );
+        if( ! byTon && ! byUnit ) {
+            component.find( "byTon" ).set( "v.value", true );
+            component.find( "byUnit" ).set( "v.value", false );
+            byTon = true;
+        }
+
+        // create a temporary copy of selectedQLI to make edits
+        var qli = Object.assign( {}, selectedQLI );
+
+        // apply unit to the QLI
+        var unit = qli.Unit_Cost__c;
+        var oldUnit = 1;
+        if( byTon ) {
+            unit = qli.Unit_Tons__c;
+        }
+        helper.recalculateByUnit( component, qli, unit, oldUnit );
+    }
+})
+
+Main_PricingInformationController.cls
+
+public class Main_PricingInformationController {
+
+    @AuraEnabled
+    public static List<QuoteLineItem> getQLIList( Id quoteId ) {
+        return [ SELECT ID, LineNumber, Quantity
+                    , TotalPrice, Subtotal, SortOrder, ListPrice
+                    , Product2ID, Product2.Name, QuoteID, Quote.Name 
+                    , PricebookEntryID
+                    , Sales_List_Price__c, UnitPrice, Sales_Price_Break__c
+                    , Discount
+                    , Base_List_Price__c, Base_Bid_Price__c, Base_Break__c
+                    , Base_Discount__c
+                    , Joint_Adder_List_Price__c, Joint_Adder_Bid_Price__c
+                    , Joint_Adder_Break__c, Joint_Adder_Discount__c
+                    , Lining_Adder_List_Price__c, Lining_Adder_Bid_Price__c
+                    , Lining_Adder_Break__c, Lining_Adder_Discount__c
+                    , Coating_Adder_List_Price__c, Coating_Adder_Bid_Price__c
+                    , Coating_Adder_Break__c, Coating_Adder_Discount__c
+                    , Cable_Bond_Adder_List_Price__c
+                    , Cable_Bond_Adder_Bid_Price__c, Cable_Bond_Adder_Break__c
+                    , Cable_Bond_Adder_Discount__c
+                    , Misc_Adder_Bid_Price__c 
+                    , Unit_Tons__c, Unit_Cost__c
+                FROM QuoteLineItem 
+                WHERE QuoteId = :quoteId ];
+    }
+
+    @AuraEnabled
+    public static void saveQLIList( List<QuoteLineItem> qliList ) {
+        // save QLIs
+        update qliList;
+    }
+
+}
+
+PIRowChangedEvent.evt
+
+<aura:event type="COMPONENT" description="PricingInformationRowChanged Event" />

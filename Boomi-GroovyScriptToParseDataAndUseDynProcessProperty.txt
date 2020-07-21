@@ -1,0 +1,23 @@
+import java.util.Properties;
+import java.io.InputStream;
+import com.boomi.execution.ExecutionUtil;
+
+for( int i = 0; i < dataContext.getDataCount(); i++ ) {
+  InputStream is = dataContext.getStream( i );
+  Properties props = dataContext.getProperties( i );
+
+  // get the links from the header response
+  String linkHeaderResponse = props.getProperty( "document.dynamic.userdefined.LinkHeaderResponse" );
+
+  // parse the last link that contains the last page number
+  //<https://teachersoftomorrow.instructure.com/api/v1/accounts/1/courses?page=30&per_page=100; rel="last"
+  String[] linkList = linkHeaderResponse.split( "\\?page=" );
+  String lastPagePart = linkList[ 4 ];
+
+  // parse the last page number from the link and save it
+  String[] pagePartList = lastPagePart.split( "&" );
+  String lastPageNumber = pagePartList[ 0 ];
+  ExecutionUtil.setDynamicProcessProperty( "LastPageNumber", lastPageNumber, false );
+
+  dataContext.storeStream( is, props );
+}

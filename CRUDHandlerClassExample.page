@@ -1,0 +1,510 @@
+<apex:page id="ProjectDailies" standardController="Daily__c"
+           extensions="Controller_ProjectDailies" lightningStylesheets="true" >
+    <!-- standardStylesheets="false"
+           lightningStylesheets="true" -->
+
+    <apex:slds />
+
+    <style>
+        .bigTextArea {
+            width: 90%;
+        }
+        .scrollablePanel {
+            overflow: scroll;
+            height: 150px;
+        }
+
+        td [class^="rich-tabhdr-cell"] + td, .slds-vf-scope [class^="rich-tabhdr-cell"] + td {
+            padding-left: 0.5rem;
+        }
+
+        .rich-tabhdr-side-cell {
+            border-top-style: none;
+        }
+
+        .rich-tab-header, dailyTab {
+            height: 35px!important;
+            padding: 10px!important;
+            line-height: 10px!important;
+            border: solid 1px lightgray;
+            background-color: initial;
+            background-image: initial; /* url(/faces/a4j/g/3_3_3.Finalorg.richfaces.renderkit.images.TabGradientB/DATB/eAH7-PHj2rNrmQAXcAT9) */
+        }
+
+        .rich-tab-active, activeDailyTab {
+            background-color: lightgray;
+            background-image: initial; /* url(/faces/a4j/g/3_3_3.Finalorg.richfaces.renderkit.images.TabGradientA/DATB/eAFbe3btx48fmQAVbAT9) */
+        }
+
+        .dailyTabContent {
+            padding: 10px!important;
+            border: solid 1px gray;
+        }
+    </style>
+
+    <div class="slds-scope">
+
+        <apex:form id="theForm" >
+
+            <!--
+            <apex:actionFunction name="tabChanged" action="{!tabChanged}" rerender="tabDiv,errorMsgs" />
+            -->
+
+            <apex:pageMessages id="errorMsgs" />
+
+            <!-- new Daily record type selection -->
+
+            <apex:pageBlock title="New Daily - Select Type" rendered="{! pageMode == 'RECORDTYPES' }" >
+                <apex:pageBlockTable value="{!dailyRTList}" var="r" >
+                    <apex:column >
+                        <apex:commandButton value="Select" action="{!selectRecordType}" reRender="theForm" >
+                            <apex:param name="selected" value="{!r.ID}" assignTo="{!dailyRTID}" />
+                        </apex:commandButton>
+                    </apex:column>
+                    <apex:column value="{!r.Name}" />
+                    <apex:column value="{!r.Description}" />
+                </apex:pageBlockTable>
+            </apex:pageBlock>
+
+            <!-- new Daily unit selection -->
+
+            <apex:pageBlock title="Select Active Unit" rendered="{! pageMode = 'UNITS' }">
+                <apex:outputPanel styleClass="scrollablePanel" layout="block" >
+                    <apex:pageBlockTable value="{!equipList}" var="e" >
+                        <apex:column >
+                            <apex:commandButton value="Select" action="{!selectUnit}" reRender="theForm" >
+                                <apex:param name="selected" value="{!e.ID}" assignTo="{!selectedUnitID}" />
+                            </apex:commandButton>
+                        </apex:column>
+                        <apex:column value="{!e.Name}" />
+                        <apex:column value="{!e.Model__c}" />
+                        <apex:column value="{!e.Type__c}" />
+                        <apex:column value="{!e.Equipment_Description__c}" />
+                    </apex:pageBlockTable>
+                </apex:outputPanel>
+            </apex:pageBlock>
+
+            <apex:pageBlock title="Project Daily{! IF( selectedUnit != null, ' - Unit: ' + selectedUnit.Name, '' ) }" rendered="{! pageMode = 'DAILY' }">
+
+                <apex:pageBlockButtons location="top" >
+                    <apex:commandButton value="Previous" action="{!previous}" reRender="theForm,errorMsgs" />
+                    <apex:commandButton value="{! IF( selectedTab == 'subcontract', 'Submit', 'Next' ) }" action="{!next}" reRender="theForm,errorMsgs" />
+                </apex:pageBlockButtons>
+                <apex:outputPanel layout="block" id="tabDiv">
+
+                    <apex:tabPanel id="tpWizard" switchType="server" value="{!selectedTab}"
+                                   activeTabClass="activeDailyTab" tabClass="dailyTab" contentClass="dailyTabContent" >
+
+                        <apex:tab id="tabDaily" label="Daily" name="daily">
+                            <apex:pageBlockSection columns="2" title="Information" >
+                                <apex:outputField value="{!d.Name}" />
+                                <apex:outputField value="{!d.RecordTypeID}" />
+
+                                <apex:inputField value="{!d.Project__c}"
+                                                 rendered="{! dailyRTID == projRTID || dailyRTID == projNoMaterialRTList }" />
+                                <apex:pageBlockSectionItem
+                                                 rendered="{! dailyRTID != projRTID && dailyRTID != projNoMaterialRTList }" />
+
+                                <apex:inputField value="{!d.Work_Date__c}" />
+                                <apex:inputField value="{!d.Warranty_Work__c}" />
+                                <apex:inputField value="{!d.County__c}" />
+                                <apex:outputField value="{!d.Status__c}" />
+                                <apex:outputField value="{!d.Total_Daily_Location_Pounds__c}" />
+                            </apex:pageBlockSection>
+
+                            <apex:pageBlockSection columns="1" title="Work Description" >
+                                <apex:inputField value="{!d.Work_Description__c}" styleClass="bigTextArea" />
+                            </apex:pageBlockSection>
+
+                            <apex:pageBlockSection columns="2" title="Inspector Details" >
+                                <apex:inputField value="{!d.Were_Numbers_Turned_in_to_the_Inspector__c}" />
+                                <apex:pageBlockSectionItem />
+
+                                <apex:inputField value="{!d.Inspector_Turned_in_Method__c}" />
+                                <apex:inputField value="{!d.Pounds_Turned_In__c}" />
+                                <apex:inputField value="{!d.Why_No_Numbers_Turned_In__c}" styleClass="bigTextArea" />
+                            </apex:pageBlockSection>
+
+                            <apex:pageBlockSection columns="2" title="Material Details" >
+                                <apex:inputField value="{!d.Is_Project_Complete__c}" />
+                                <apex:inputField value="{!d.Material_Required__c}" />
+                                <apex:inputField value="{!d.ISO_Lot__c}" />
+                                <apex:inputField value="{!d.Manufacturer__c}" />
+                                <apex:inputField value="{!d.Resin_Lot__c}" />
+                                <apex:inputField value="{!d.Foam_Density__c}" />
+                                <apex:pageBlockSectionItem />
+
+                                <apex:inputField value="{!d.Reaction_Speed__c}" />
+
+                                <apex:inputField value="{!d.Is_Clicks_Meter_Operational__c}" />
+                                <apex:pageBlockSectionItem />
+
+                                <apex:inputField value="{!d.Counter_1_Start__c}" />
+                                <apex:inputField value="{!d.Counter_1_Stop__c}" />
+                                <apex:inputField value="{!d.Counter_2_Start__c}" />
+                                <apex:inputField value="{!d.Counter_2_Stop__c}" />
+                                <apex:outputField value="{!d.Total_Clicks__c}" />
+                                <apex:pageBlockSectionItem />
+
+                                <apex:inputField value="{!d.Unit__c}" />
+                                <apex:pageBlockSectionItem />
+
+                                <apex:outputField value="{!d.Unit_Factor__c}" />
+                                <apex:outputField value="{!d.Click_Pounds__c}" />
+                            </apex:pageBlockSection>
+
+                            <apex:pageBlockSection columns="2" title="Flow Details" >
+
+                                <apex:inputField value="{!d.Is_Flow_Meter_Pounds_Operational__c}" />
+                                <apex:inputField value="{!d.Is_Flow_Meter_Gallons_Operational__c}" />
+                                <apex:inputField value="{!d.ISO_Meter_Start__c}" />
+                                <apex:inputField value="{!d.ISO_Meter_Stop__c}" />
+                                <apex:outputField value="{!d.ISO_LBS__c}" />
+                                <apex:inputField value="{!d.ISO_Gallons__c}" />
+                                <apex:inputField value="{!d.Resin_Meter_Start__c}" />
+                                <apex:inputField value="{!d.Resin_Meter_Stop__c}" />
+                                <apex:outputField value="{!d.Resin_LBS__c}" />
+                                <apex:inputField value="{!d.Resin_Gallons__c}" />
+                                <apex:inputField value="{!d.Resin_to_ISO_Ratio__c}" />
+                                <apex:inputField value="{!d.Total_Flow_Meter_LBS__c}" />
+                            </apex:pageBlockSection>
+
+                            <apex:pageBlockSection columns="2" title="Totals" >
+                                <apex:outputField value="{!d.Total_Project_LBs_Sold__c}" />
+                                <apex:outputField value="{!d.Total_Location_Records__c}" />
+                                <apex:outputField value="{!d.Project_Billing_Method__c}" />
+                                <apex:outputField value="{!d.Total_Location_LBS__c}" />
+                                <apex:outputField value="{!d.Total_LBs_Used_on_this_Daily__c}" />
+                                <apex:pageBlockSectionItem />
+
+                                <apex:outputField value="{!d.Total_Project_LBs_Remaining__c}" />
+                            </apex:pageBlockSection>
+
+                            <apex:pageBlockSection  columns="1" title="Safety Details" >
+                                <apex:inputField value="{!d.Safety_Topic_Weekly__c}" />
+                                <apex:inputField value="{!d.Enter_Your_Own_Safety_Topic__c}" styleClass="bigTextArea" />
+                                <apex:inputField value="{!d.Safety_Meeting_Discussion__c}" styleClass="bigTextArea" />
+                            </apex:pageBlockSection>
+
+                            <apex:pageBlockSection columns="2" title="Tubing Details" >
+                                <apex:inputField value="{!d.Tubing_3_5_Ft__c}" />
+                                <apex:inputField value="{!d.Remaining_on_Truck_3_5_Ft__c}" />
+                                <apex:inputField value="{!d.Tubing_5_Ft__c}" />
+                                <apex:inputField value="{!d.Remaining_on_Truck_5_Ft__c}" />
+                                <apex:inputField value="{!d.Tubing_8_Ft__c}" />
+                                <apex:inputField value="{!d.Remaining_on_Truck_8_Ft__c}" />
+                            </apex:pageBlockSection>
+
+                            <apex:pageBlockSection columns="2" title="ISO & Resin Details (25 Liter Increments ONLY)" >
+                                <apex:inputField value="{!d.ISO_1_Liters_Before_Shift__c}" />
+                                <apex:inputField value="{!d.ISO_1_Liters_After_Shift__c}" />
+                                <apex:inputField value="{!d.ISO_2_Liters_Before_Shift__c}" />
+                                <apex:inputField value="{!d.ISO_2_Liters_After_Shift__c}" />
+                                <apex:inputField value="{!d.Resin_1_Liters_Before_Shift__c}" />
+                                <apex:inputField value="{!d.Resin_1_Liters_After_Shift__c}" />
+                                <apex:inputField value="{!d.Resin_2_Liters_Before_Shift__c}" />
+                                <apex:inputField value="{!d.Resin_2_Liters_After_Shift__c}" />
+                                <apex:inputField value="{!d.Transferred_FROM_Yard_or_Unit__c}" />
+                                <apex:inputField value="{!d.Transferred_TO_Yard_or_Unit__c}" />
+                            </apex:pageBlockSection>
+                        </apex:tab>
+
+                <!-- LOCATIONS -->
+
+                        <apex:tab id="tabLocations" label="Locations" name="location">
+                            <apex:commandButton value="Add Location" action="{!addRecord}"
+                                                reRender="pbtLocations,locationPanel" >
+                                <apex:param name="selectedObj" value="Locations" assignTo="{!selectedObj}" />
+                            </apex:commandButton>
+
+                            <apex:pageBlockTable id="pbtLocations" value="{!relatedObjMap[ 'Locations' ].indexSet}" var="l">
+                                <apex:column width="10em">
+                                    <apex:commandButton value="Delete" action="{!deleteRecord}"
+                                                        reRender="pbtLocations,locationPanel,errorMsgs" >
+                                        <apex:param name="selectedObj" value="Locations" assignTo="{!selectedObj}" />
+                                        <apex:param name="selectedIndex" value="{!l}" assignTo="{!relatedObjMap[ 'Locations' ].selectedIndex}" />
+                                    </apex:commandButton>
+                                </apex:column>
+                                <apex:column width="10em">
+                                    <apex:commandButton value="Edit" action="{!editRecord}"
+                                                        reRender="pbtLocations,locationPanel" >
+                                        <apex:param name="selectedObj" value="Locations" assignTo="{!selectedObj}" />
+                                        <apex:param name="selectedIndex" value="{!l}" assignTo="{!relatedObjMap[ 'Locations' ].selectedIndex}" />
+                                    </apex:commandButton>
+                                </apex:column>
+                                <apex:column value="{!relatedObjMap[ 'Locations' ].theMap[ l ].Street__c}" />
+                                <apex:column value="{!relatedObjMap[ 'Locations' ].theMap[ l ].Length_in_Feet__c}" />
+                                <apex:column value="{!relatedObjMap[ 'Locations' ].theMap[ l ].Width_in_Feet__c}" />
+                                <apex:column value="{!relatedObjMap[ 'Locations' ].theMap[ l ].Lift_in_Inches__c}" />
+                                <apex:column value="{!relatedObjMap[ 'Locations' ].theMap[ l ].Pounds__c}" />
+                            </apex:pageBlockTable>
+
+                            <apex:outputPanel id="locationPanel" layout="block">
+                            <apex:pageBlock id="pbLocation" rendered="{!relatedObjMap[ 'Locations' ].selectedIndex != null}" >
+                                <apex:pageBlockButtons >
+                                    <apex:commandButton value="Save" action="{!saveRecord}"
+                                                        reRender="pbtLocations,locationPanel,errorMsgs" >
+                                        <apex:param name="selectedObj" value="Locations" assignTo="{!selectedObj}" />
+                                    </apex:commandButton>
+                                    <apex:commandButton value="Save and New" action="{!saveAndNewRecord}"
+                                                        reRender="pbtLocations,locationPanel,errorMsgs" >
+                                        <apex:param name="selectedObj" value="Locations" assignTo="{!selectedObj}" />
+                                    </apex:commandButton>
+                                    <apex:commandButton value="Cancel" action="{!cancelRecord}"
+                                                        reRender="pbtLocations,locationPanel,errorMsgs" >
+                                        <apex:param name="selectedObj" value="Locations" assignTo="{!selectedObj}" />
+                                    </apex:commandButton>
+                                </apex:pageBlockButtons>
+
+                                <apex:pageBlockSection columns="2" >
+                                    <apex:inputField value="{!relatedObjMap[ 'Locations' ].selectedRecord.Length_in_Feet__c}" />
+                                    <apex:inputField value="{!relatedObjMap[ 'Locations' ].selectedRecord.Width_in_Feet__c}" />
+                                    <apex:inputField value="{!relatedObjMap[ 'Locations' ].selectedRecord.Lift_in_Inches__c}" />
+                                    <apex:inputField value="{!relatedObjMap[ 'Locations' ].selectedRecord.Pounds__c}" />
+                                    <apex:inputField value="{!relatedObjMap[ 'Locations' ].selectedRecord.Street__c}" />
+                                    <apex:inputField value="{!relatedObjMap[ 'Locations' ].selectedRecord.Total_Holes_Drilled__c}" />
+                                    <apex:inputField value="{!relatedObjMap[ 'Locations' ].selectedRecord.Flows_Clicks__c}" />
+                                    <apex:inputField value="{!relatedObjMap[ 'Locations' ].selectedRecord.Total_Holes_Injected__c}" />
+                                    <apex:inputField value="{!relatedObjMap[ 'Locations' ].selectedRecord.Total_Pounds_Used__c}" />
+                                </apex:pageBlockSection>
+                                <apex:pageBlockSection columns="2" >
+                                    <apex:inputField value="{!relatedObjMap[ 'Locations' ].selectedRecord.Beginning_Location__latitude__s}" />
+                                    <apex:inputField value="{!relatedObjMap[ 'Locations' ].selectedRecord.Ending_Location__latitude__s}" />
+                                    <apex:inputField value="{!relatedObjMap[ 'Locations' ].selectedRecord.Beginning_Location__longitude__s}" />
+                                    <apex:inputField value="{!relatedObjMap[ 'Locations' ].selectedRecord.Ending_Location__longitude__s}" />
+                                </apex:pageBlockSection>
+                                <apex:pageBlockSection columns="2" >
+                                    <apex:inputField value="{!relatedObjMap[ 'Locations' ].selectedRecord.Inj_Depth_1_In_Feet__c}" />
+                                    <apex:inputField value="{!relatedObjMap[ 'Locations' ].selectedRecord.Lbs_1__c}" />
+                                    <apex:inputField value="{!relatedObjMap[ 'Locations' ].selectedRecord.Holes_Injected_1__c}" />
+                                    <apex:pageBlockSectionItem />
+
+                                    <apex:inputField value="{!relatedObjMap[ 'Locations' ].selectedRecord.Inj_Depth_2_In_Feet__c}" />
+                                    <apex:inputField value="{!relatedObjMap[ 'Locations' ].selectedRecord.Lbs_2__c}" />
+                                    <apex:inputField value="{!relatedObjMap[ 'Locations' ].selectedRecord.Holes_Injected_2__c}" />
+                                    <apex:pageBlockSectionItem />
+
+                                    <apex:inputField value="{!relatedObjMap[ 'Locations' ].selectedRecord.Inj_Depth_3_In_Feet__c}" />
+                                    <apex:inputField value="{!relatedObjMap[ 'Locations' ].selectedRecord.Lbs_3__c}" />
+                                    <apex:inputField value="{!relatedObjMap[ 'Locations' ].selectedRecord.Holes_Injected_3__c}" />
+                                    <apex:pageBlockSectionItem />
+
+                                    <apex:inputField value="{!relatedObjMap[ 'Locations' ].selectedRecord.Inj_Depth_4_In_Feet__c}" />
+                                    <apex:inputField value="{!relatedObjMap[ 'Locations' ].selectedRecord.Lbs_4__c}" />
+                                    <apex:inputField value="{!relatedObjMap[ 'Locations' ].selectedRecord.Holes_Injected_4__c}" />
+                                    <apex:pageBlockSectionItem />
+
+                                    <apex:inputField value="{!relatedObjMap[ 'Locations' ].selectedRecord.Inj_Depth_5_In_Feet__c}" />
+                                    <apex:inputField value="{!relatedObjMap[ 'Locations' ].selectedRecord.Lbs_5__c}" />
+                                    <apex:inputField value="{!relatedObjMap[ 'Locations' ].selectedRecord.Holes_Injected_5__c}" />
+                                    <apex:pageBlockSectionItem />
+
+                                    <apex:inputField value="{!relatedObjMap[ 'Locations' ].selectedRecord.Holes_Injected_6__c}" />
+                                    <apex:pageBlockSectionItem />
+
+                                </apex:pageBlockSection>
+                                <apex:pageBlockSection columns="2" >
+                                    <apex:inputField value="{!relatedObjMap[ 'Locations' ].selectedRecord.Comments__c}" />
+                                </apex:pageBlockSection>
+                            </apex:pageBlock>
+                            </apex:outputPanel>
+
+                        </apex:tab>
+
+            <!-- CREW -->
+
+                        <apex:tab id="tabCrews" label="Crews" name="crew">
+                            <apex:commandButton value="Add Crew" action="{!addRecord}"
+                                                reRender="pbtCrew,crewPanel" >
+                                <apex:param name="selectedObj" value="Crew" assignTo="{!selectedObj}" />
+                            </apex:commandButton>
+
+                            <apex:pageBlockTable id="pbtCrew" value="{!relatedObjMap[ 'Crew' ].indexSet}" var="c" >
+                                <apex:column width="10em">
+                                    <apex:commandButton value="Delete" action="{!deleteRecord}"
+                                                        reRender="pbtCrew,crewPanel,errorMsgs" >
+                                        <apex:param name="selectedObj" value="Crew" assignTo="{!selectedObj}" />
+                                        <apex:param name="selectedIndex" value="{!c}" assignTo="{!relatedObjMap[ 'Crew' ].selectedIndex}" />
+                                    </apex:commandButton>
+                                </apex:column>
+                                <apex:column width="10em">
+                                    <apex:commandButton value="Edit" action="{!editRecord}"
+                                                        reRender="pbtCrew,crewPanel" >
+                                        <apex:param name="selectedObj" value="Crew" assignTo="{!selectedObj}" />
+                                        <apex:param name="selectedIndex" value="{!c}" assignTo="{!relatedObjMap[ 'Crew' ].selectedIndex}" />
+                                    </apex:commandButton>
+                                </apex:column>
+                                <apex:column value="{!relatedObjMap[ 'Crew' ].theMap[ c ].Employee__c}" />
+                                <apex:column value="{!relatedObjMap[ 'Crew' ].theMap[ c ].Position__c}" />
+                                <apex:column value="{!relatedObjMap[ 'Crew' ].theMap[ c ].Travel_Mode__c}" />
+                                <apex:column value="{!relatedObjMap[ 'Crew' ].theMap[ c ].Out_of_Time__c}" />
+                                <apex:column value="{!relatedObjMap[ 'Crew' ].theMap[ c ].Attended_Safety_Meeting__c}" />
+                            </apex:pageBlockTable>
+
+                            <apex:outputPanel id="crewPanel" layout="block">
+                                <apex:pageBlock id="pbCrew" rendered="{!relatedObjMap[ 'Crew' ].selectedIndex != null}" >
+                                    <apex:pageBlockButtons >
+                                        <apex:commandButton value="Save" action="{!saveRecord}"
+                                                            reRender="pbtCrew,crewPanel,errorMsgs" >
+                                            <apex:param name="selectedObj" value="Crew" assignTo="{!selectedObj}" />
+                                        </apex:commandButton>
+                                        <apex:commandButton value="Save and New" action="{!saveAndNewRecord}"
+                                                            reRender="pbtCrew,crewPanel,errorMsgs" >
+                                            <apex:param name="selectedObj" value="Crew" assignTo="{!selectedObj}" />
+                                        </apex:commandButton>
+                                        <apex:commandButton value="Cancel" action="{!cancelRecord}"
+                                                            reRender="pbtCrew,crewPanel,errorMsgs" >
+                                            <apex:param name="selectedObj" value="Crew" assignTo="{!selectedObj}" />
+                                        </apex:commandButton>
+                                    </apex:pageBlockButtons>
+
+                                    <apex:pageBlockSection columns="2" >
+                                        <apex:inputField value="{!relatedObjMap[ 'Crew' ].selectedRecord.Employee__c}" />
+                                        <apex:inputField value="{!relatedObjMap[ 'Crew' ].selectedRecord.Position__c}" />
+                                    </apex:pageBlockSection>
+
+                                    <apex:pageBlockSection columns="2" >
+                                        <apex:inputField value="{!relatedObjMap[ 'Crew' ].selectedRecord.On_The_Clock_Start_Time__c}" />
+                                        <apex:inputField value="{!relatedObjMap[ 'Crew' ].selectedRecord.Off_The_Clock_Stop_Time__c}" />
+                                        <apex:inputField value="{!relatedObjMap[ 'Crew' ].selectedRecord.Certified_Start_Time__c}" />
+                                        <apex:inputField value="{!relatedObjMap[ 'Crew' ].selectedRecord.Certified_Stop_Time__c}" />
+                                        <apex:inputField value="{!relatedObjMap[ 'Crew' ].selectedRecord.Lunch_Start_Time__c}" />
+                                        <apex:inputField value="{!relatedObjMap[ 'Crew' ].selectedRecord.Lunch_Stop_Time__c}" />
+                                        <apex:inputField value="{!relatedObjMap[ 'Crew' ].selectedRecord.Misc_Time_Hours__c}" />
+                                        <apex:inputField value="{!relatedObjMap[ 'Crew' ].selectedRecord.Misc_Time_Description__c}" />
+                                    </apex:pageBlockSection>
+
+                                    <apex:pageBlockSection columns="2" >
+                                        <apex:inputField value="{!relatedObjMap[ 'Crew' ].selectedRecord.Travel_Mode__c}" />
+                                        <apex:inputField value="{!relatedObjMap[ 'Crew' ].selectedRecord.Per_Diem__c}" />
+                                        <apex:inputField value="{!relatedObjMap[ 'Crew' ].selectedRecord.Out_of_Time__c}" />
+                                        <apex:inputField value="{!relatedObjMap[ 'Crew' ].selectedRecord.Attended_Safety_Meeting__c}" />
+                                    </apex:pageBlockSection>
+                                </apex:pageBlock>
+                            </apex:outputPanel>
+                        </apex:tab>
+
+            <!-- EQUIPMENT -->
+
+                        <apex:tab id="tabEquipment" label="Equipment" name="equipment">
+                            <apex:commandButton value="Add Equipment" action="{!addRecord}"
+                                                reRender="pbtEquipment,equipmentPanel" >
+                                <apex:param name="selectedObj" value="Equipment" assignTo="{!selectedObj}" />
+                            </apex:commandButton>
+
+                            <apex:pageBlockTable id="pbtEquipment" value="{!relatedObjMap[ 'Equipment' ].indexSet}" var="e" >
+                                <apex:column width="10em">
+                                    <apex:commandButton value="Delete" action="{!deleteRecord}"
+                                                        reRender="pbtEquipment,equipmentPanel,errorMsgs" >
+                                        <apex:param name="selectedObj" value="Equipment" assignTo="{!selectedObj}" />
+                                        <apex:param name="selectedIndex" value="{!e}" assignTo="{!relatedObjMap[ 'Equipment' ].selectedIndex}" />
+                                    </apex:commandButton>
+                                </apex:column>
+                                <apex:column width="10em">
+                                    <apex:commandButton value="Edit" action="{!editRecord}"
+                                                        reRender="pbtEquipment,equipmentPanel" >
+                                        <apex:param name="selectedObj" value="Equipment" assignTo="{!selectedObj}" />
+                                        <apex:param name="selectedIndex" value="{!e}" assignTo="{!relatedObjMap[ 'Equipment' ].selectedIndex}" />
+                                    </apex:commandButton>
+                                </apex:column>
+                                <apex:column value="{!relatedObjMap[ 'Equipment' ].theMap[ e ].Equipment__c}" />
+                                <apex:column value="{!relatedObjMap[ 'Equipment' ].theMap[ e ].Issue_with_Equipment__c}" />
+                                <apex:column value="{!relatedObjMap[ 'Equipment' ].theMap[ e ].Issue__c}" />
+                                <apex:column value="{!relatedObjMap[ 'Equipment' ].theMap[ e ].Comments__c}" />
+                            </apex:pageBlockTable>
+
+                            <apex:outputPanel id="equipmentPanel" layout="block">
+                                <apex:pageBlock id="pbEquipment" rendered="{!relatedObjMap[ 'Equipment' ].selectedIndex != null}" >
+                                    <apex:pageBlockButtons >
+                                        <apex:commandButton value="Save" action="{!saveRecord}"
+                                                            reRender="pbtEquipment,equipmentPanel,errorMsgs" >
+                                            <apex:param name="selectedObj" value="Equipment" assignTo="{!selectedObj}" />
+                                        </apex:commandButton>
+                                        <apex:commandButton value="Save and New" action="{!saveAndNewRecord}"
+                                                            reRender="pbtEquipment,equipmentPanel,errorMsgs" >
+                                            <apex:param name="selectedObj" value="Equipment" assignTo="{!selectedObj}" />
+                                        </apex:commandButton>
+                                        <apex:commandButton value="Cancel" action="{!cancelRecord}"
+                                                            reRender="pbtEquipment,equipmentPanel,errorMsgs" >
+                                            <apex:param name="selectedObj" value="Equipment" assignTo="{!selectedObj}" />
+                                        </apex:commandButton>
+                                    </apex:pageBlockButtons>
+
+                                    <apex:pageBlockSection columns="1" >
+                                        <apex:inputField value="{!relatedObjMap[ 'Equipment' ].selectedRecord.Equipment__c}" />
+                                        <apex:inputField value="{!relatedObjMap[ 'Equipment' ].selectedRecord.Issue_with_Equipment__c}" />
+                                        <apex:inputField value="{!relatedObjMap[ 'Equipment' ].selectedRecord.Issue__c}" />
+                                        <apex:inputField value="{!relatedObjMap[ 'Equipment' ].selectedRecord.Comments__c}" />
+                                    </apex:pageBlockSection>
+                                </apex:pageBlock>
+                            </apex:outputPanel>
+
+                        </apex:tab>
+
+            <!-- SUBCONTRACTOR -->
+
+                        <apex:tab id="tabSubContractor" label="Sub-Contractor" name="subcontractor">
+                            <apex:commandButton value="Add Sub-Contractor" action="{!addRecord}"
+                                                reRender="pbtSubContractor,subContractorPanel" >
+                                <apex:param name="selectedObj" value="SubContractor" assignTo="{!selectedObj}" />
+                            </apex:commandButton>
+
+                            <apex:pageBlockTable id="pbtSubContractor" value="{!relatedObjMap[ 'SubContractor' ].indexSet}" var="e" >
+                                <apex:column width="10em">
+                                    <apex:commandButton value="Delete" action="{!deleteRecord}"
+                                                        reRender="pbtSubContractor,subContractorPanel,errorMsgs" >
+                                        <apex:param name="selectedObj" value="SubContractor" assignTo="{!selectedObj}" />
+                                        <apex:param name="selectedIndex" value="{!e}" assignTo="{!relatedObjMap[ 'SubContractor' ].selectedIndex}" />
+                                    </apex:commandButton>
+                                </apex:column>
+                                <apex:column width="10em">
+                                    <apex:commandButton value="Edit" action="{!editRecord}"
+                                                        reRender="pbtSubContractor,subContractorPanel" >
+                                        <apex:param name="selectedObj" value="SubContractor" assignTo="{!selectedObj}" />
+                                        <apex:param name="selectedIndex" value="{!e}" assignTo="{!relatedObjMap[ 'SubContractor' ].selectedIndex}" />
+                                    </apex:commandButton>
+                                </apex:column>
+                                <apex:column value="{!relatedObjMap[ 'SubContractor' ].theMap[ e ].Project_Sub_Contractor__c}" />
+                                <apex:column value="{!relatedObjMap[ 'SubContractor' ].theMap[ e ].Quantity_Applied_Today__c}" />
+                                <apex:column value="{!relatedObjMap[ 'SubContractor' ].theMap[ e ].Comments__c}" />
+                                <apex:column value="{!relatedObjMap[ 'SubContractor' ].theMap[ e ].Complete__c}" />
+                            </apex:pageBlockTable>
+
+                            <apex:outputPanel id="subContractorPanel" layout="block">
+                                <apex:pageBlock id="pbSubContractor" rendered="{!relatedObjMap[ 'SubContractor' ].selectedIndex != null}" >
+                                    <apex:pageBlockButtons >
+                                        <apex:commandButton value="Save" action="{!saveRecord}"
+                                                            reRender="pbtSubContractor,subContractorPanel,errorMsgs" >
+                                            <apex:param name="selectedObj" value="SubContractor" assignTo="{!selectedObj}" />
+                                        </apex:commandButton>
+                                        <apex:commandButton value="Save and New" action="{!saveAndNewRecord}"
+                                                            reRender="pbtSubContractor,subContractorPanel,errorMsgs" >
+                                            <apex:param name="selectedObj" value="SubContractor" assignTo="{!selectedObj}" />
+                                        </apex:commandButton>
+                                        <apex:commandButton value="Cancel" action="{!cancelRecord}"
+                                                            reRender="pbtSubContractor,subContractorPanel,errorMsgs" >
+                                            <apex:param name="selectedObj" value="SubContractor" assignTo="{!selectedObj}" />
+                                        </apex:commandButton>
+                                    </apex:pageBlockButtons>
+
+                                    <apex:pageBlockSection columns="1" >
+                                        <apex:inputField value="{!relatedObjMap[ 'SubContractor' ].selectedRecord.Project_Sub_Contractor__c}" />
+                                        <apex:inputField value="{!relatedObjMap[ 'SubContractor' ].selectedRecord.Quantity_Applied_Today__c}" />
+                                        <apex:inputField value="{!relatedObjMap[ 'SubContractor' ].selectedRecord.Comments__c}" />
+                                        <apex:inputField value="{!relatedObjMap[ 'SubContractor' ].selectedRecord.Complete__c}" />
+                                    </apex:pageBlockSection>
+                                </apex:pageBlock>
+                            </apex:outputPanel>
+
+                        </apex:tab>
+
+                    </apex:tabPanel>
+
+                </apex:outputPanel>
+
+            </apex:pageBlock>
+
+        </apex:form>
+    </div>
+
+</apex:page>

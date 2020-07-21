@@ -1,0 +1,81 @@
+<apex:page controller="" showHeader="true" sidebar="true">
+<!-- <apex:page standardController="" extensions="" 
+showHeader="true" sidebar="true" title="Xxx {!xxx.Name}"> -->
+
+<style type="text/css">
+	.showStatus {
+		position: absolute;
+		overflow: hidden;
+		top: 0px;
+		padding: 0;
+		margin: 0;
+		width: 90%;
+		height: 100%;
+		background: rgba( 255, 255, 255, 0.8 ); /* dimmed */
+		z-index: 1001;
+		visibility: visible;
+		display: block;
+	}
+	.hideStatus {
+		visibility: hidden;
+		display: none;
+	}
+	.animatedStatus {
+		display: block;
+		position: absolute;
+		top: 100px;
+		bottom: 0;
+		left: 0;
+		right: 0;
+		margin-left: auto;
+		margin-right: auto;
+		z-index: 1002;
+	}
+</style>
+
+<apex:form id="theForm">
+
+	<apex:pageMessages id="errorMessage" escape="false" />
+
+	<apex:actionStatus id="ajaxStatus" layout="block"
+			startStyleClass="showStatus" stopStyleClass="hideStatus" >
+		<apex:facet name="start">
+			<apex:image value="/img/loading32.gif" styleClass="animatedStatus" />
+		</apex:facet>
+	</apex:actionStatus>
+
+	<apex:sectionHeader title="" subtitle="" />
+
+	<apex:pageBlock id="thePageBlock" title="" rendered="{!true}">
+		<apex:pageBlockButtons id="buttonBlock" location="both">
+			<apex:commandButton value="" action="{!}" 
+					status="ajaxStatus" reRender="thePageBlock,errorMessage" />
+			<apex:commandButton value="" action="{!}" 
+					status="ajaxStatus" reRender="thePageBlock,errorMessage" />
+		</apex:pageBlockButtons>
+
+		<apex:pageBlockSection id="" columns="2">
+
+			<apex:pageBlockSectionItem >
+				<apex:outputLabel for="" value="" />
+				<apex:inputText id="" value="{!}" tabindex="10" />
+			</apex:pageBlockSectionItem>
+
+		</apex:pageBlockSection>
+	</apex:pageBlock>
+
+
+<script type="text/javascript">
+	// set tab order on new contact form to go down then over
+	//var aControl = document.getElementById( '{!$Component.theForm.iSeriesContactPageBlock.iSeriesContactSection.newFirstNameSI.newFirstName}' );
+	//aControl.xxx = yyy;
+</script>
+
+</apex:form>
+
+</apex:page>
+
+public constructor( ApexPages.StandardController controllerParam ) {
+        controller = controllerParam;
+        theRecord = (myObj__c) controller.getRecord();
+        ...

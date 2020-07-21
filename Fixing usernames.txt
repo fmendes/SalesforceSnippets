@@ -1,0 +1,13 @@
+
+
+List<User> l = [ SELECT ID, Username 
+               FROM User 
+               WHERE Username LIKE '%migrated' ];
+
+for( User u : l ) {
+    u.username = u.username.remove( '.migrated' );
+}
+
+system.debug( l[ 0 ].username );
+
+update l;

@@ -1,0 +1,7 @@
+public static List<Contact> dummyList = new List<Contact> {
+	new Contact( Description = '1', FirstName = 'John', LastName = 'Southers', Phone = '972 972 9722', Email = 'john@sharklasers.com', MailingStreet = '123 Main', MailingCity = 'Dallas' )
+	, new Contact( Description = '2', FirstName = 'Mary', LastName = 'Carrow', Phone = '214 214 2144', Email = 'mary@sharklasers.com', MailingStreet = '321 Leap Rd', MailingCity = 'Houston' )
+	, new Contact( Description = '3', FirstName = 'Thomas', LastName = 'Lehoux', Phone = '817	817 8177', Email = 'tlehoux@sharklasers.com', MailingStreet = '456 Test', MailingCity = 'Sugarland' )
+	, new Contact( Description = '4', FirstName = 'Liz', LastName = 'Ochoa', Phone = '281 281 2811', Email = 'lochoa@sharklasers.com', MailingStreet = '654 Preston', MailingCity = 'Galveston' )
+	, new Contact( Description = '5', FirstName = 'Stephen', LastName = 'Doyle', Phone = '346 346 3466', Email = 'doyle@sharklasers.com', MailingStreet = '789 Arapahoe', MailingCity = 'Austin' )
+};

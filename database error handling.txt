@@ -1,0 +1,80 @@
+EXAMPLE:
+
+		if( saveRecordList( new List<SObject> { a }, 'saving account', 'Name' ) ) {
+			return null;
+		}
+		if( saveRecord( a, 'saving account', 'Name' ) ) {
+			return null;
+		}
+
+
+	public static Boolean saveRecord( SObject aRecord
+				, String OperationDescription, String recordNameField ) {
+		Database.SaveResult aSaveResult;
+		if( aRecord.ID != null ) {
+			aSaveResult = Database.update( aRecord, false );
+		} else {
+			aSaveResult = Database.insert( aRecord, false );
+		}
+
+		if( ! aSaveResult.success ) {
+			String errorList = ConcatenateErrors( aSaveResult.errors );
+			String recordName = (String) aRecord.get( recordNameField );
+			ApexPages.addMessage( new ApexPages.message( ApexPages.severity.ERROR
+							, ' Record: ' + recordName + ' - Error while ' 
+							+ OperationDescription + '. ' + errorList ) );
+			return false;
+		}
+		
+		return true;
+	}
+
+	public static Boolean deleteRecordList( List<SObject> aRecordList, String OperationDescription ) {
+		Database.DeleteResult[] aDelResultList = Database.delete( aRecordList );
+		Boolean ThereAreErrors = false;
+		for( Database.DeleteResult aDelResult : aDelResultList ) {
+			if( ! aDelResult.success ) {
+				ThereAreErrors = true;
+				String errorList = ConcatenateErrors( aDelResult.errors );
+				ApexPages.addMessage( new ApexPages.message( ApexPages.severity.ERROR
+								, 'Error while ' + OperationDescription + '. ' + errorList ) );
+			}
+		}
+		if( ThereAreErrors ) {
+			return false;
+		}
+		
+		return true;
+	}
+	
+	public static Boolean saveRecordList( List<SObject> aRecordList
+				, String OperationDescription, String recordNameField ) {
+		// NOTE:  change to SaveResult for Database.insert
+		Database.UpsertResult[] aSaveResultList = Database.upsert( aRecordList, false );
+		Boolean ThereAreErrors = false;
+		Integer i = 0;
+		for( Database.UpsertResult aSaveResult : aSaveResultList ) {
+			if( ! aSaveResult.success ) {
+				ThereAreErrors = true;
+				String errorList = ConcatenateErrors( aSaveResult.errors );
+				String recordName = ( (Date) aRecordList[ i ].get( recordNameField ) ).format();
+				ApexPages.addMessage( new ApexPages.message( ApexPages.severity.ERROR
+								, ' Record: ' + recordName + ' - Error while ' 
+								+ OperationDescription + '. ' + errorList ) );
+			}
+			i ++;
+		}
+		if( ThereAreErrors ) {
+			return false;
+		}
+		
+		return true;
+	}
+
+	public static String ConcatenateErrors( Database.Error[] errors ) {
+		String errorList = 'ERROR:  ';
+		for( Database.Error anError : errors ) {
+			errorList = errorList + ' / ' + anError.message;
+		}
+		return errorList;
+	}
