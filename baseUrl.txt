@@ -1,0 +1,8 @@
+// get base url in case org uses custom domains
+
+String baseURL = URL.getSalesforceBaseUrl().toExternalForm();
+system.debug( baseURL );
+
+String templateUrl = baseURL + '/_ui/core/email/author/EmailAuthor?p3_lkid=';
+
+// ...

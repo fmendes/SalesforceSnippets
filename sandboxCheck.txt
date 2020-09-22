@@ -1,0 +1,6 @@
+
+
+// add stack trace only while in sandbox
+if( [ SELECT Id, isSandbox FROM Organization LIMIT 1 ].isSandbox == true ) {
+	msg = msg + ' - ' + e.getStackTraceString();
+}
