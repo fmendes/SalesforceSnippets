@@ -1,0 +1,3 @@
+// check bed size METERS - JSON trick to force-populate formula fields with test values
+sourceBed = ( Reactor_Bed__c ) JSON.deserializeStrict(
+            '{"attributes":{"type":"Reactor_Bed__c"},"Bed_Volume_m__c":1}', Reactor_Bed__c.class );
