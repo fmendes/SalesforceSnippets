@@ -2,14 +2,14 @@ global class Main_BatchTransferShares implements Database.Batchable<sObject>, Da
     public static final String jobName = 'myCompany - Process Share Transfers - Monthly Run';
 
     // Seconds Minutes Hours Day_of_month Month Day_of_week Optional_year
-    public static final String DEFAULT_SCHEDULE = '0 30 2 15 * ?'; // every 15th at 2:30 am
+    public static final String DEFAULT_SCHEDULE = '0 30 2 * * ?'; // s mm h d MM W = every day at 2:30 am
 
     global final Integer BatchSize = 1200;
     global Date startDate;
     global String theQuery;
     global ID batchID;
 
-    global Map<ID, Investment__c> investmentMap;
+    //global Map<ID, Investment__c> investmentMap;
 
     global Main_BatchTransferShares() {
         // default to last month, but on the 15th
@@ -26,7 +26,7 @@ global class Main_BatchTransferShares implements Database.Batchable<sObject>, Da
     global void initialize() {
         system.debug( 'initialize' );
 
-        investmentMap = new Map<ID, Investment__c>();
+        //investmentMap = new Map<ID, Investment__c>();
 
         Datetime dt = Datetime.newInstance( startDate.year(), startDate.month(), startDate.day() );
         String sameDayMonthAgoString = dt.format( 'yyyy-MM-dd' );
@@ -56,45 +56,45 @@ global class Main_BatchTransferShares implements Database.Batchable<sObject>, Da
     }
 
     global void processRecords( List<SObject> scope ) {
-        List<Transfer__c> transferList = (List<Transfer__c>) scope;
-        system.debug( 'scope= ' + transferList );
+//        List<Transfer__c> transferList = (List<Transfer__c>) scope;
+//        system.debug( 'scope= ' + transferList );
+//
+//        for( Transfer__c aTransfer : transferList ) {
+//            Decimal nbrShares = aTransfer.of_shares_transferred__c;
+//
+//            // if either source/target investment is already in the map, get it from the map
+//            // because it is more up to date
+//            Investment__c sourceInvestment = investmentMap.get( aTransfer.Transfer_From__c );
+//            if( sourceInvestment == null ) {
+//                sourceInvestment = aTransfer.Transfer_From__r;
+//            }
+//
+//            Investment__c targetInvestment = investmentMap.get( aTransfer.Transfer_To__c );
+//            if( targetInvestment == null ) {
+//                targetInvestment = aTransfer.Transfer_To__r;
+//            }
+//
+//            // validate the transfer
+//            // don't remove more shares than the investment has
+//            //if( sourceInvestment.Shares_Owned__c < nbrShares ) {
+//            //    continue;
+//            //}
+//
+//            // handle transferring of all shares
+//            if( aTransfer.Transfer_all_Shares__c == true
+//                        && ( nbrShares == null || nbrShares == 0 ) ) {
+//                nbrShares = sourceInvestment.Shares_Owned__c;
+//            }
+//
+//            // transfer the shares
+//            sourceInvestment.Shares_Owned__c = sourceInvestment.Shares_Owned__c - nbrShares;
+//            targetInvestment.Shares_Owned__c = targetInvestment.Shares_Owned__c + nbrShares;
+//
+//            investmentMap.put( sourceInvestment.ID, sourceInvestment );
+//            investmentMap.put( targetInvestment.ID, targetInvestment );
+//        }
 
-        for( Transfer__c aTransfer : transferList ) {
-            Decimal nbrShares = aTransfer.of_shares_transferred__c;
-
-            // if either source/target investment is already in the map, get it from the map
-            // because it is more up to date
-            Investment__c sourceInvestment = investmentMap.get( aTransfer.Transfer_From__c );
-            if( sourceInvestment == null ) {
-                sourceInvestment = aTransfer.Transfer_From__r;
-            }
-
-            Investment__c targetInvestment = investmentMap.get( aTransfer.Transfer_To__c );
-            if( targetInvestment == null ) {
-                targetInvestment = aTransfer.Transfer_To__r;
-            }
-
-            // validate the transfer
-            // don't remove more shares than the investment has
-            //if( sourceInvestment.Shares_Owned__c < nbrShares ) {
-            //    continue;
-            //}
-
-            // handle transferring of all shares
-            if( aTransfer.Transfer_all_Shares__c == true
-                        && ( nbrShares == null || nbrShares == 0 ) ) {
-                nbrShares = sourceInvestment.Shares_Owned__c;
-            }
-
-            // transfer the shares
-            sourceInvestment.Shares_Owned__c = sourceInvestment.Shares_Owned__c - nbrShares;
-            targetInvestment.Shares_Owned__c = targetInvestment.Shares_Owned__c + nbrShares;
-
-            investmentMap.put( sourceInvestment.ID, sourceInvestment );
-            investmentMap.put( targetInvestment.ID, targetInvestment );
-        }
-
-        update investmentMap.values();
+        //update investmentMap.values();
     }
 
     global void finish( Database.BatchableContext bc ) {
