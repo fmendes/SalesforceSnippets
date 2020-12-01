@@ -1,0 +1,5 @@
+// check type of an ID 
+if( headClone.Id.getSobjectType() == Schema.Opportunity.SObjectType ) { ... }
+
+// get sobject name fromtype an ID prefix
+String objectName = SchemaGlobalDescribe.findObjectNameFromRecordIdPrefix( '100' );
