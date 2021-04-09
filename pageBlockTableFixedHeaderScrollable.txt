@@ -1,0 +1,31 @@
+<style>
+
+    /* make table scrollable with fixed floating header */
+    .productListContainer table tbody {
+        display: block;
+	    overflow-y: auto;
+	    height: 60vh;
+	    width: 90rem;
+	}
+    .productListContainerSmall table tbody {
+        display: line-item;
+	    overflow-y: auto;
+	    height: 60vh;
+	    width: 90rem;
+	}
+
+</style>
+
+
+
+	<apex:outputPanel layout="block"
+          styleClass="{! IF( productList.size < 16, 'productListContainerSmall', 'productListContainer' ) }" >
+
+	<apex:pageBlockTable id="productTable"
+	                     var="p" value="{!productList}" >
+		<apex:column >
+		...
+		
+	</apex:pageBlockTable>
+
+	</apex:outputPanel>

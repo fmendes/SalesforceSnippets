@@ -1,0 +1,3 @@
+HYPERLINK( "/lightning/o/Task/new?&defaultFieldValues=WhatId=" & Id & ",WhoId=" & Contact__c
+, IMAGE( "/resource/1607451194000/LogACallButton"
+, "Log a Call" ) )

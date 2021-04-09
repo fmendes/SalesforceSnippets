@@ -1,0 +1,12 @@
+find . -name 'CA_*.email' -print0 | xargs -0 sed -i "" "s/Label./Label.CA_/g"
+
+find . -name 'CA_*.email' -print0 | xargs -0 sed -i "" "s/subject="/subject="CA_/g"
+
+find . -name 'CA_*.email-meta.xml' -print0 | xargs -0 sed -i "" "s/name>/name>CA_/g"
+
+
+find . -name 'UK_*.email' -print0 | xargs -0 sed -i "" "s/Label./Label.UK_/g"
+
+find . -name 'UK_*.email' -print0 | xargs -0 sed -i "" "s/subject="/subject="UK_/g"
+
+find . -name 'CA_*.email' -print0 | xargs -0 sed -i "" "s/subject=CA_/subject=/g"

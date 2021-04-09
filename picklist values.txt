@@ -29,3 +29,13 @@ u2.Technology__c = ple[ 0 ].getValue();
 		system.debug( theList );
 		return theList;
 	}
+
+	public static List<String> getPicklistValues( Schema.SObjectField aField ) {
+		Schema.DescribeFieldResult fr = aField.getDescribe();
+		List<Schema.PicklistEntry> aPLEList = fr.getPicklistValues();
+		List<String> valueList = new List<String>();
+		for( Schema.PicklistEntry ple : aPLEList ) {
+			valueList.add( ple.getValue() );
+		}
+		return valueList;
+	}

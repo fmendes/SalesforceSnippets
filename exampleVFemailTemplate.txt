@@ -1,0 +1,101 @@
+<messaging:emailTemplate subject="TERMINATION/COLLECTION NOTICE" 
+                        recipientType="Contact" 
+                        relatedToType="NSAccount__c" >
+
+<messaging:htmlEmailBody >
+<p><c:DunningNoticeLogo /></p>
+
+<p><apex:outputText value="{0,date,MM/dd/yyyy}" >
+    <apex:param value="{! TODAY() }" />
+</apex:outputText></p>
+
+<p style="font-weight: bold; text-align: center;">*** TERMINATION/COLLECTION NOTICE ***</p>
+
+<p>Attn:</p>
+
+<p>{!relatedTo.Account__c} <br />
+Account ID: {!relatedTo.CustomerID__c}</p>
+
+<p>Dear Partner,</p>
+
+<p>We have made repeated attempts to collect the past due balance in the amount of 
+      &nbsp;{!relatedTo.CurrencyIsoCode} &nbsp; <apex:outputText value="{0,number,currency}" >
+                <apex:param value="{!relatedTo.Past_Due_Balance__c}" />
+            </apex:outputText>.</p>
+
+<p>Your account is seriously delinquent and in breach of contract.  Therefore, your account and all existing products and services are terminated effective immediately.</p>
+
+<p>If you do not submit payment in the amount of 
+      &nbsp;{!relatedTo.CurrencyIsoCode} &nbsp; <apex:outputText value="{0,number,currency}" >
+                <apex:param value="{!relatedTo.Past_Due_Balance__c}" />
+            </apex:outputText> within the next 5 business days, or call to arrange a payment plan, we will refer your account to a third-party debt-collection agency.   Unfortunately, we have been forced to initiate procedures for legal action for payment.  This may affect your credit reference accounts.</p>
+
+<p>To avoid your account going into legal action, please call our Finance team at +919 957 5099 for the United States and Canada, Asia Pacific +61 028 412 4905 or +44 138 320 9040 for all other locations or email final.demand@n-able.com to settle payment.</p>
+
+<p> </p>
+<p>Sincerely,
+</p>
+
+</messaging:htmlEmailBody>
+
+<messaging:plainTextEmailBody >
+        
+{! TODAY() }
+
+*** TERMINATION/COLLECTION NOTICE ***
+
+Attn:
+{!relatedTo.Account__c}
+Account ID: {!relatedTo.CustomerID__c}
+
+Dear Partner,
+
+We have made repeated attempts to collect the past due balance in the amount of {!relatedTo.CurrencyIsoCode} {!relatedTo.Past_Due_Balance__c}.
+
+Your account is seriously delinquent and in breach of contract.  Therefore, your account and all existing products and services are terminated effective immediately.
+
+If you do not submit payment in the amount of {!relatedTo.CurrencyIsoCode} {!relatedTo.Past_Due_Balance__c} within the next 5 business days, or call to arrange a payment plan, we will refer your account to a third-party debt-collection agency.   Unfortunately, we have been forced to initiate procedures for legal action for payment.  This may affect your credit reference accounts.
+
+To avoid your account going into legal action, please call our Finance team at +919 957 5099 for the United States and Canada, Asia Pacific +61 028 412 4905 or +44 138 320 9040 for all other locations or email final.demand@n-able.com to settle payment.
+
+Sincerely,
+
+</messaging:plainTextEmailBody>
+
+<messaging:attachment filename="notice.pdf" renderAs="pdf">
+
+<p><c:DunningNoticeLogo /></p>
+
+<p><apex:outputText value="{0,date,MM/dd/yyyy}" >
+    <apex:param value="{! TODAY() }" />
+</apex:outputText></p>
+
+<p style="font-weight: bold; text-align: center;">*** TERMINATION/COLLECTION NOTICE ***</p>
+
+<p>Attn:</p>
+
+<p>{!relatedTo.Account__c} <br />
+Account ID: {!relatedTo.CustomerID__c}</p>
+
+<p>Dear Partner,</p>
+
+<p>We have made repeated attempts to collect the past due balance in the amount of 
+      &nbsp;{!relatedTo.CurrencyIsoCode} &nbsp; <apex:outputText value="{0,number,currency}" >
+                <apex:param value="{!relatedTo.Past_Due_Balance__c}" />
+            </apex:outputText>.</p>
+
+<p>Your account is seriously delinquent and in breach of contract.  Therefore, your account and all existing products and services are terminated effective immediately.</p>
+
+<p>If you do not submit payment in the amount of 
+      &nbsp;{!relatedTo.CurrencyIsoCode} &nbsp; <apex:outputText value="{0,number,currency}" >
+                <apex:param value="{!relatedTo.Past_Due_Balance__c}" />
+            </apex:outputText> within the next 5 business days, or call to arrange a payment plan, we will refer your account to a third-party debt-collection agency.   Unfortunately, we have been forced to initiate procedures for legal action for payment.  This may affect your credit reference accounts.</p>
+
+<p>To avoid your account going into legal action, please call our Finance team at +919 957 5099 for the United States and Canada, Asia Pacific +61 028 412 4905 or +44 138 320 9040 for all other locations or email final.demand@n-able.com to settle payment.</p>
+
+<p> </p>
+<p>Sincerely,</p>
+
+</messaging:attachment>
+ 
+</messaging:emailTemplate>

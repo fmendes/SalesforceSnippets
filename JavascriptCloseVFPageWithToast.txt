@@ -1,0 +1,35 @@
+
+			<script>
+				// execute resizing after page loads while respecting any framework code
+				if( window.attachEvent ) {
+					window.attachEvent( 'onload', checkSuccessfulSave );
+				} else {
+					if( window.onload ) {
+						var curronload = window.onload;
+						var newonload = function() {
+							curronload();
+							checkSuccessfulSave();
+						};
+						window.onload = newonload;
+					} else {
+						window.onload = checkSuccessfulSave;
+					}
+				}
+
+				function checkSuccessfulSave() {
+				    let toastMsg = "{!successToastMessage}";
+					if( toastMsg !== "" && toastMsg != "null" ) {
+					    console.log( toastMsg );
+					    showToast();
+					    sforce.one.navigateToSObject( "{!recordID}" );
+                    }
+                }
+
+		        function showToast() {
+		            sforce.one.showToast({
+		                "title": "Success!",
+		                "message": "{!successToastMessage}",
+		                "type": "success"
+		            });
+		        }
+		    </script>

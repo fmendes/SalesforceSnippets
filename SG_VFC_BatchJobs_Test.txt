@@ -1,0 +1,128 @@
+/***************************************************
+* Name:         SG_VFC_BatchJobs_Test
+* Author:       Strategic Growth, Inc. (www.strategicgrowthinc.com)
+* Date:         26 Feb 2021
+* ==================================================
+* ==================================================
+* Purpose:      ...
+*
+* ==================================================
+* ==================================================
+* History:
+* VERSION   DATE            INITIALS    DESCRIPTION/FEATURES ADDED
+* 1.0       26 Feb 2021     FMF     Initial Development
+* 
+****************************************************/
+
+@isTest
+public with sharing class SG_VFC_BatchJobs_Test {
+
+	public static TestMethod void scheduleTest() {
+		Test.startTest();
+
+		// create/query objects to test
+
+		// set page and parameters
+		Test.setCurrentPage( Page.BatchJobs );
+
+		// instantiate the main controller
+		SG_VFC_BatchJobs theController = new SG_VFC_BatchJobs();
+
+		theController.jobName = 'Schedule HomescanBatch';
+		theController.targetClass = 'HomescanBatch';
+		theController.frequency = 'Hourly';
+		theController.scheduleClass();
+
+		Test.stopTest();
+
+		theController.targetClass = 'HomescanBatch';
+		theController.removeSchedule();
+
+		// test cron expression construction
+		theController.frequency = 'Daily';
+		theController.startTime = '03:00 AM';
+		system.assertEquals( '0 0 3 * * ?', theController.getCronExpressionFromParameters() );
+
+		theController.frequency = 'Weekly';
+		theController.recurrency = new List<String> { '1', '3' };
+		theController.startTime = '03:00 AM';
+		system.assertEquals( '0 0 3 ? * 1,3', theController.getCronExpressionFromParameters() );
+
+		theController.frequency = 'Monthly';
+		theController.dayType = 'dayOfMonth';
+		theController.dayOfMonth = '15';
+		system.assertEquals( '0 0 3 15 */1 ?', theController.getCronExpressionFromParameters() );
+
+		theController.frequency = 'Monthly';
+		theController.dayType = 'dayOfWeek';
+		theController.dayOfWeek = '5';
+		theController.dayOrdinal = '#2';
+		system.assertEquals( '0 0 3 ? * 5#2', theController.getCronExpressionFromParameters() );
+
+		// increase test coverage
+		List<SelectOption> timeOptionList = theController.timeOptionList;
+		List<SelectOption> dayOptionList = theController.dayOptionList;
+		try {
+			Integer i = 1 / 0;
+		} catch( Exception e ) {
+			SG_VFC_BatchJobs.reportException( e );
+		}
+	}
+
+	public static TestMethod void executionTest() {
+		Test.startTest();
+
+		// create/query objects to test
+
+		// set page and parameters
+		Test.setCurrentPage( Page.BatchJobs );
+
+		// instantiate the main controller
+		SG_VFC_BatchJobs theController = new SG_VFC_BatchJobs();
+
+		// NOTE: assumes class exists
+		theController.targetClassForExecution = 'SG_BatchMarketShareAssignment';
+
+		theController.executeClass();
+
+		if( ApexPages.getMessages().size() > 0 ) {
+			String errorMsg = ApexPages.getMessages()[ 0 ].getSummary();
+			system.assert( errorMsg.contains( 'has been initiated successfully.' ), '1st error: ' + errorMsg );
+		}
+		ApexPages.getMessages().clear();
+
+		Test.stopTest();
+	}
+
+	public static TestMethod void cronExpressionTest() {
+		Test.startTest();
+
+		system.assertEquals( 'Everyday at 05:00'
+				, SG_VFC_BatchJobs.translateCronExpression( '0 0 5 * * ?' ) );
+
+		system.assertEquals( 'Everyday at the top of every hour'
+				, SG_VFC_BatchJobs.translateCronExpression( '0 0 * * * ?' ) );
+
+		system.assertEquals( 'Every Sunday/Tuesday at 03:00'
+				, SG_VFC_BatchJobs.translateCronExpression( '0 0 3 ? * 1,3' ) );
+
+		system.assertEquals( 'Every 3rd Sunday at 03:00'
+				, SG_VFC_BatchJobs.translateCronExpression( '0 0 3 ? * 1#3' ) );
+
+		system.assertEquals( '5th of the month at 03:00'
+				, SG_VFC_BatchJobs.translateCronExpression( '0 0 3 5 * ?' ) );
+
+		system.assertEquals( 'Every day on September at 03:00'
+				, SG_VFC_BatchJobs.translateCronExpression( '0 0 3 * 9 ?' ) );
+
+		system.assertEquals( 'Every month on the 5th at 03:00'
+				, SG_VFC_BatchJobs.translateCronExpression( '0 0 3 5 */ ?' ) );
+
+		system.assertEquals( 'Every year on February, 5th at 03:00'
+				, SG_VFC_BatchJobs.translateCronExpression( '0 0 3 5 2 ?' ) );
+
+		//Map<String, String> translationMap = SG_VFC_BatchJobs.getCronExpressionTranslationMap();
+
+		Test.stopTest();
+	}
+}

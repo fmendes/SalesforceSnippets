@@ -10,3 +10,7 @@ for( Schema.SObjectType stype : gd.values() ) {
 	}
 }
 system.debug( objName );
+
+// ALTERNATIVE
+
+String NSAccountPrefix = NSAccount__c.SObjectType.getDescribe().getKeyPrefix();

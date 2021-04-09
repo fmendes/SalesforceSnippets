@@ -1,0 +1,62 @@
+<messaging:emailTemplate subject="50 Days Past Due" 
+        recipientType="Contact" 
+        relatedToType="NSAccount__c">
+
+    <messaging:htmlEmailBody >
+<c:DunningNoticeLogo />
+
+<apex:outputText value="{!$Label.CA_Past_Due_50_Days_Intro}" escape="false" />
+
+<apex:outputText value="{!$Label.CA_Past_Due_2nd_Paragraph}" escape="false" />
+
+<c:DunningNoticeContactInformation relatedToID="{!relatedTo.id}" type="50DaysPastDue" output="html"  />
+
+<c:DunningNoticeInvoiceList relatedToID="{!relatedTo.id}" type="50DaysPastDue" output="html" />
+
+<apex:outputText value="{!$Label.CA_Past_Due_Last_Paragraph}" escape="false" />
+
+<c:DunningNoticeFooter relatedToID="{!relatedTo.id}" />
+
+    </messaging:htmlEmailBody>
+
+<messaging:plainTextEmailBody >
+Dear Partner,
+
+Our records show that your account is now 50 days past due.  We ask that you call today to confirm payment in full.
+ 
+At this stage, the account is under review to be Unsupported, which will restrict access to the Resource Center, Technical Support, updates/upgrades, and access to subscription products. If there are issues paying the full amount, please call to discuss a payment plan to bring the account up to date. 
+
+Please contact us with any questions via the following options.
+
+<c:DunningNoticeContactInformation relatedToID="{!relatedTo.id}" type="50DaysPastDue" output="text" />
+
+<c:DunningNoticeInvoiceList relatedToID="{!relatedTo.id}" type="50DaysPastDue" output="text" />
+
+If you have not yet put your account on automatic payments, please see details on how to apply below.
+
+Thank you for your prompt attention to this matter.
+
+Accounts Receivable Team 
+---
+
+<c:DunningNoticeFooter relatedToID="{!relatedTo.id}" output="text" />
+
+
+</messaging:plainTextEmailBody>
+
+    <messaging:attachment renderAs="PDF" filename="notice.pdf">
+        <c:DunningNoticeLogo />
+
+        <apex:outputText value="{!$Label.CA_Past_Due_50_Days_Intro}" escape="false" />
+
+        <apex:outputText value="{!$Label.CA_Past_Due_2nd_Paragraph}" escape="false" />
+
+        <c:DunningNoticeContactInformation relatedToID="{!relatedTo.id}" type="50DaysPastDue" output="html"  />
+
+        <c:DunningNoticeInvoiceList relatedToID="{!relatedTo.id}" type="50DaysPastDue" output="pdf" />
+
+        <apex:outputText value="{!$Label.CA_Past_Due_Last_Paragraph}" escape="false" />
+
+        <c:DunningNoticeFooter relatedToID="{!relatedTo.id}" />
+    </messaging:attachment>
+</messaging:emailTemplate>

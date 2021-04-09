@@ -1,0 +1,8 @@
+
+    .centerHeader {
+		display: flex;
+		justify-content: center;
+        font-size: medium;
+    }
+
+    <span class="centerHeader">Our donation process is competitive!</span>

@@ -1,0 +1,458 @@
+/***************************************************
+* Name:         SG_VFC_BatchJobs
+* Author:       Strategic Growth, Inc. (www.strategicgrowthinc.com)
+* Date:         26 Feb 2021
+* ==================================================
+* ==================================================
+* Purpose:      ...
+*
+* ==================================================
+* ==================================================
+* History:
+* VERSION   DATE            INITIALS    DESCRIPTION/FEATURES ADDED
+* 1.0       26 Feb 2021     FMF     Initial Development
+* 
+****************************************************/
+
+public class SG_VFC_BatchJobs {
+	public List<ApexClass> classList { get; set; }
+	public List<AsyncApexJob> jobsList { get; set; }
+	public Map<String, String> cronExpressionMap { get; set; }
+	public List<CronTrigger> cronList { get; set; }
+
+	public String targetClass { get; set; }
+	public String targetClassForExecution { get; set; }
+	public Integer batchSize { get; set; }
+
+	public String jobName { get; set; }
+	public String frequency { get; set; }
+	public List<String> recurrency { get; set; }
+	public String dayType { get; set; }
+	public String dayOfMonth { get; set; }
+	public String dayOrdinal { get; set; }
+	public String dayOfWeek { get; set; }
+	public String startTime { get; set; }
+
+	public List<SelectOption> timeOptionList {
+		get {
+			if( timeOptionList == null ) {
+				// build list of hours starting at 12:00 AM and ending at 11:00 PM
+				timeOptionList = new List<SelectOption>();
+				timeOptionList.add( new SelectOption( '', '--None--' ) );
+
+				List<SelectOption> pmOptionList = new List<SelectOption>();
+				for( Integer i = 0; i < 12; i++ ) {
+					String theHour = ( ( i == 0 ? 12 : i ) + '' ).leftPad( 2, '0' );
+					String amHour = theHour + ':00 AM';
+
+					timeOptionList.add( new SelectOption( amHour, amHour ) );
+
+					String pmHour = theHour + ':00 PM';
+					pmOptionList.add( new SelectOption( pmHour, pmHour ) );
+				}
+
+				timeOptionList.addAll( pmOptionList );
+			}
+			return timeOptionList;
+		}
+		set;
+	}
+
+	public List<SelectOption> dayOptionList {
+		get {
+			if( dayOptionList == null ) {
+				// build list of days 1-31
+				dayOptionList = new List<SelectOption>();
+				timeOptionList.add( new SelectOption( '', '--None--' ) );
+				for( Integer i = 1; i < 32; i++ ) {
+					String theDay = i + '';
+					dayOptionList.add( new SelectOption( theDay, theDay ) );
+				}
+			}
+			return dayOptionList;
+		}
+		set;
+	}
+
+	public SG_VFC_BatchJobs() {
+		try {
+			initialize();
+
+		} catch( Exception e ) {
+			reportException( e );
+		}
+	}
+
+	public static void reportException( Exception e ) {
+		system.debug( 'Error: ' + e.getMessage() + ' - ' + e.getStackTraceString() );
+		ApexPages.addMessage( new ApexPages.Message( ApexPages.Severity.ERROR
+				, e.getMessage() + ' - ' + e.getStackTraceString() ) );
+	}
+
+	public void initialize() {
+		batchSize = 200;
+
+		if( classList == null ) {
+			classList = getApexClasses();
+			classList = getBatchableSchedulableClasses( classList );
+		}
+
+		jobsList = getJobResults();
+		cronList = getScheduledJobs();
+		cronExpressionMap = getCronExpressionTranslationMap( cronList );
+
+		targetClass = '';
+		targetClassForExecution = '';
+		frequency = 'Daily';
+		dayType = 'dayOfMonth';
+		recurrency = new List<String>();
+		//dayOrdinal = '1';
+	}
+
+	public void executeClass() {
+		try {
+			system.debug( 'targetClassForExecution= ' + targetClassForExecution );
+			Type classType = Type.forName( targetClassForExecution );
+			Database.Batchable<sObject> newObj = (Database.Batchable<sObject>) classType.newInstance();
+
+
+			// NOTE:  use interface to be able to run the batchable class
+			Database.executeBatch( newObj, batchSize );
+
+			ApexPages.addMessage( new ApexPages.Message( ApexPages.Severity.CONFIRM,
+					'Execution for class ' + targetClassForExecution + ' has been initiated successfully.' ) );
+
+			initialize();
+
+		} catch( Exception e ) {
+			reportException( e );
+		}
+	}
+
+	public void scheduleClass() {
+		try {
+			system.debug( 'targetClass= ' + targetClass );
+
+			if( validateSchedule() == false ) {
+				return;
+			}
+
+			String schedTime = getCronExpressionFromParameters();
+
+			system.debug( 'schedTime= ' + schedTime );
+
+			Type classType = Type.forName( targetClass );
+			Schedulable newObj = (Schedulable) classType.newInstance();
+
+			System.schedule( jobName, schedTime, newObj );
+
+			ApexPages.addMessage( new ApexPages.Message( ApexPages.Severity.CONFIRM,
+					'Class ' + targetClass + ' was scheduled successfully.' ) );
+
+			initialize();
+
+		} catch( Exception e ) {
+			reportException( e );
+		}
+	}
+
+	public Boolean validateSchedule() {
+		ApexPages.getMessages().clear();
+		system.debug( 'frequency= ' + frequency );
+		system.debug( 'recurrency= ' + recurrency );
+		system.debug( 'recurrency.isEmpty= ' + ( recurrency != null ? recurrency.isEmpty() : true ) );
+		system.debug( 'dayType= ' + dayType );
+		system.debug( 'dayOrdinal= ' + dayOrdinal );
+		system.debug( 'dayOfWeek= ' + dayOfWeek );
+
+		Map<String, Boolean> validationMap = new Map<String, Boolean> {
+				'enter a job name' => ( jobName == null || jobName == '' )
+
+				, 'select a frequency' => ( frequency == null )
+
+				, 'select a day of the week' => ( frequency == 'Weekly'
+						&& ( recurrency == null || recurrency.isEmpty() ) )
+
+				, 'select a day of the week or the month' => ( frequency == 'Monthly'
+						&& dayType == null )
+
+				, 'select a day of the month' => ( frequency == 'Monthly'
+						&& dayType == 'dayOfMonth' && dayOfMonth == null )
+
+				, 'select a day of the week/month'  => ( frequency == 'Monthly'
+						&& dayType == 'dayOfWeek'
+						&& ( dayOrdinal == null || dayOfWeek == null ) )
+
+				, 'select a preferred start time' => ( frequency == 'Daily' && startTime == null )
+		};
+
+		for( String validationMsg : validationMap.keySet() ) {
+			if( validationMap.get( validationMsg ) == true ) {
+				ApexPages.addMessage( new ApexPages.Message( ApexPages.Severity.ERROR,
+						'Please ' + validationMsg + ' to schedule.' ) );
+			}
+		}
+
+		return ! ApexPages.hasMessages();
+	}
+
+	public String getCronExpressionFromParameters() {
+		Integer theHour = 0;
+
+		if( frequency != 'Hourly' ) {
+			theHour = Integer.valueOf( startTime.left( 2 ) )
+					+ ( startTime.contains( 'PM' ) ? 12 : 0 );
+		}
+		String schedTime = '0 0 ' + theHour;
+
+		if( frequency == 'Hourly' ) {
+			schedTime = '0 0 * * * ?';
+		}
+
+		if( frequency == 'Daily' ) {
+			schedTime = schedTime + ' * * ?';
+		}
+
+		if( frequency == 'Weekly' ) {
+			schedTime = schedTime + ' ? * ' + String.join( recurrency, ',' );
+		}
+
+		if( frequency == 'Monthly' && dayType == 'dayOfMonth' ) {
+			schedTime = schedTime + ' ' + dayOfMonth + ' */1 ?';
+		}
+
+		if( frequency == 'Monthly' && dayType == 'dayOfWeek' ) {
+			schedTime = schedTime + ' ? * ' + dayOfWeek + dayOrdinal;
+		}
+
+		return schedTime;
+	}
+
+	public void removeSchedule() {
+		try {
+			system.debug( 'removeSchedule= ' + targetClass );
+
+			// remove existing schedule
+			String jobNameMask = targetClass + '%';
+			List<CronTrigger> cL = [
+					SELECT ID
+					FROM CronTrigger
+					WHERE CronJobDetail.Name LIKE :jobNameMask
+			];
+
+			for( CronTrigger aCronTrigger : cL ) {
+				system.abortJob( aCronTrigger.ID );
+			}
+
+			ApexPages.addMessage( new ApexPages.Message( ApexPages.Severity.CONFIRM,
+					'Schedule for ' + targetClass + ' was removed successfully.' ) );
+
+			initialize();
+
+		} catch( Exception e ) {
+			reportException( e );
+		}
+	}
+
+	//public void abortJob() {
+	//    try {
+	//        system.debug( 'abortJob= ' + targetClass );
+	//
+	//        // abort existing job
+	//        String classNameMask = targetClass + '%';
+	//        List<AsyncApexJob > apexJobList = [
+	//                SELECT ID
+	//                FROM AsyncApexJob
+	//                WHERE ApexClass.Name LIKE :classNameMask
+	//                    AND Status != 'Aborted'
+	//                    AND Status != 'Completed'
+	//                    AND Status != 'Failed'
+	//        ];
+	//
+	//        for( AsyncApexJob anApexJob : apexJobList ) {
+	//            system.abortJob( anApexJob.ID );
+	//        }
+//
+	//        ApexPages.addMessage( new ApexPages.Message( ApexPages.Severity.CONFIRM,
+	//                'Job for ' + targetClass + ' was aborted successfully.' ) );
+	//
+	//        initialize();
+	//
+	//    } catch( Exception e ) {
+	//        reportException( e );
+	//    }
+	//}
+
+	public static List<ApexClass> getApexClasses() {
+		List<ApexClass> classList = [
+				SELECT ID, Name, Body
+				FROM ApexClass
+				WHERE Status = 'Active'
+				AND Name != 'SG_VFC_BatchJobs'
+				ORDER BY Name
+		];
+
+		return classList;
+	}
+
+	public static List<ApexClass> getBatchableSchedulableClasses( List<ApexClass> classList ) {
+		// filter classes leaving batchable/schedulable classes
+		List<ApexClass> newClassList = new List<ApexClass>();
+		for( ApexClass aClass : classList ) {
+			Boolean schedulable = aClass.Body.containsIgnoreCase( 'Schedulable' );
+			Boolean batchable = aClass.Body.containsIgnoreCase( 'Database.Batchable' );
+			if( ! schedulable && ! batchable ) {
+				continue;
+			}
+			aClass.Body = ( schedulable ? 'Schedulable ' : '' ) + ( batchable ? 'Batchable' : '' );
+			newClassList.add( aClass );
+		}
+		return newClassList;
+	}
+
+	public static List<CronTrigger> getScheduledJobs() {
+		List<CronTrigger> cronList = [
+				SELECT Id, CronExpression, StartTime, EndTime
+						, PreviousFireTime, NextFireTime, State
+						, CronJobDetail.Name, CronJobDetail.JobType
+				FROM CronTrigger
+				WHERE State != 'DELETED'
+				OR PreviousFireTime >= LAST_N_DAYS:7
+				ORDER BY NextFireTime DESC NULLS LAST, StartTime DESC
+				LIMIT 100
+		];
+		system.debug( 'cronList= ' + cronList );
+
+		return cronList;
+	}
+
+	public static Map<String, String> getCronExpressionTranslationMap( List<CronTrigger> cronList ) {
+		system.debug( 'getCronExpressionTranslationMap cronList= ' + cronList );
+		Map<String, String> cronExpressionMap = new Map<String, String>();
+		for( CronTrigger ct : cronList ) {
+			String cronExpression = ct.CronExpression;
+			if( cronExpression == null ) {
+				continue;
+			}
+
+			String[] cronElementArray = ct.CronExpression.split( ' ' );
+			String scheduleDescription = translateCronExpression( ct.CronExpression );
+
+			cronExpressionMap.put( ct.CronExpression, scheduleDescription );
+		}
+
+		return cronExpressionMap;
+	}
+
+	public static Map<String, String> monthMap = new Map<String, String> {
+			'1' => 'January', '2' => 'February', '3' => 'March', '4' => 'April'
+			, '5' => 'May', '6' => 'June', '7' => 'July', '8' => 'August'
+			, '9' => 'September', '10' => 'October', '11' => 'November'
+			, '12' => 'December'
+	};
+	public static Map<String, String> dayOfWeekMap = new Map<String, String> {
+			'1' => 'Sunday', '2' => 'Monday', '3' => 'Tuesday', '4' => 'Wednesday'
+			, '5' => 'Thursday', '6' => 'Friday', '7' => 'Saturday'
+	};
+	public static Map<String, String> ordinalIndicatorMap = new Map<String, String> {
+			'1' => 'st', '2' => 'nd', '3' => 'rd', '4' => 'th'
+			, '5' => 'th', '6' => 'th', '7' => 'th', '8' => 'th', '9' => 'th', '0' => 'th'
+	};
+
+	public static String translateCronExpression( String originalCronExpression ) {
+		system.debug( 'originalCronExpression= ' + originalCronExpression );
+		String cronExpression = originalCronExpression;
+		String[] cronElementArray = originalCronExpression.split( ' ' );
+		String cronSeconds = cronElementArray[ 0 ]
+				, cronMinutes = cronElementArray[ 1 ]
+				, cronHours = cronElementArray[ 2 ]
+				, cronDay = cronElementArray[ 3 ]
+				, cronMonth = cronElementArray[ 4 ]
+				, cronDOW = cronElementArray[ 5 ];
+
+		cronMinutes = cronMinutes.leftPad( 2, '0' );
+		cronSeconds = ( cronSeconds != '0' ? + ':' + cronSeconds.leftPad( 2, '0' ) : '' );
+
+		String timeDescription = '';
+		if( cronHours != '*' ) {
+			timeDescription = ' at ' + cronHours.leftPad( 2, '0' ) + ':' + cronMinutes + cronSeconds;
+		} else {
+			timeDescription = ' at the ' + cronMinutes
+					+ getOrdinalIndicator( cronMinutes ) + ' minute of every hour '
+					+ cronSeconds;
+			timeDescription = timeDescription.replace( 'at the 00th minute of every hour '
+					, 'at the top of every hour' );
+		}
+
+		if( cronDay == '?' && cronDOW != '?' ) {
+			// 0 0 3 ? * 1#3 = every month 3rd sunday
+			if( cronDOW.contains( '#' ) ) {
+				String aDOW = cronDOW.left( 1 );
+				String ordinalWeek = cronDOW.right( 1 );
+
+				return 'Every ' + ordinalWeek + getOrdinalIndicator( ordinalWeek )
+						+ ' ' + dayOfWeekMap.get( aDOW ) + timeDescription;
+			}
+
+			String[] dowArray = cronDOW.split( ',' );
+			if( cronDOW != null && dayOfWeekMap != null ) {
+				for( String aDOW : dowArray ) {
+					if( dayOfWeekMap.containsKey( aDOW ) ) {
+						cronDOW = cronDOW.replace( aDOW, dayOfWeekMap.get( aDOW ) );
+					}
+				}
+				cronDOW = cronDOW.replace( ',', '/' );
+			}
+
+			return 'Every ' + cronDOW + timeDescription;
+		}
+
+		if( cronMonth == '*' ) {
+			if( cronDay == '*' ) {
+				return 'Everyday' + timeDescription;
+			}
+			return cronDay + getOrdinalIndicator( cronDay )
+					+ ' of the month' + timeDescription;
+		}
+		if( cronMonth != '*' ) {
+			if( cronDay == '*' ) {
+				return 'Every day on ' + monthMap.get( cronMonth ) + timeDescription;
+			}
+			if( cronMonth.contains( '*/' ) ) {
+				return 'Every month on the ' + cronDay + getOrdinalIndicator( cronDay )
+						+ timeDescription;
+			}
+
+			return 'Every year on ' + monthMap.get( cronMonth )
+					+ ', ' + cronDay + getOrdinalIndicator( cronDay ) + timeDescription;
+		}
+
+		return cronExpression;
+	}
+
+	public static String getOrdinalIndicator( String aNumber ) {
+		return ordinalIndicatorMap.get( aNumber.substring( aNumber.length() - 1 ) );
+	}
+
+	//public static String getZeroPaddedNumber( String aNumber, Integer size ) {
+	//    return aNumber.leftPad( size ).replace( ' ', '0' );
+	//}
+
+	public static List<AsyncApexJob> getJobResults() {
+		List<AsyncApexJob> jobList = [
+				SELECT Id, TotalJobItems, Status, NumberOfErrors, MethodName
+						, JobType, JobItemsProcessed, CreatedDate, CreatedById
+						, CompletedDate, ApexClassId, ApexClass.Name
+						, ExtendedStatus
+				FROM AsyncApexJob
+				WHERE JobType IN ( 'BatchApex', 'ScheduledApex', 'Future', 'Queueable', 'BatchApexWorker' )
+				AND ( CreatedDate >= LAST_N_DAYS:7
+				OR CompletedDate >= LAST_N_DAYS:7 )
+				ORDER BY CompletedDate DESC, CreatedDate DESC
+				LIMIT 100
+		];
+
+		return jobList;
+	}
+
+}

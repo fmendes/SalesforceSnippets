@@ -30,16 +30,16 @@ aGuest.TimeZoneSidKey = 'America/Chicago';
 insert aGuest;
 
 // create an account
-Account a = new Account();
-a.Name = 'myCompany Test';
-a.Zip_Code__c = z.ID;
-insert a;
+Account anAccount = new Account();
+anAccount.Name = 'myCompany Test';
+anAccount.Zip_Code__c = z.ID;
+insert anAccount;
 
 // create contact
 Contact c = new Contact();
 c.FirstName = 'Test';
 c.LastName = 'Company Contact';
-c.AccountID = a.ID;
+c.AccountID = anAccount.ID;
 insert c;
 
 
@@ -64,13 +64,16 @@ c.Type = 'Email';
 c.Status = 'In Progress';
 insert c;
 
-OpportunityStage closedWon =
-        [ SELECT Id, ApiName
+OpportunityStage closedWon = [
+		SELECT Id, ApiName
         FROM OpportunityStage
         WHERE IsWon = true
             AND IsClosed = true
-        LIMIT 1 ];
+        LIMIT 1
+];
 
+
+Id sheetRecordTypeId = Schema.SObjectType.Opportunity.getRecordTypeInfosByName().get( 'Sheet' ).getRecordTypeId();
 
 // get first oppty stage
 Schema.DescribeFieldResult fr = Opportunity.StageName.getDescribe();
@@ -80,7 +83,7 @@ String firstStage = stagePLEList[ 0 ].getValue();
 // create opportunity
 Opportunity o = new Opportunity();
 o.Name = 'myCompany Oppty Test';
-o.AccountId = a.ID;
+o.AccountId = anAccount.ID;
 o.CampaignId = c.ID;
 o.Opportunity_Type__c = 'Ancillary';
 o.Line_of_Business__c = 'Ancillary';
@@ -90,6 +93,7 @@ o.CloseDate = Date.today();
 o.Effective_Date__c = Date.today();
 //o.StageName = firstStage;
 o.StageName = closedWon.ApiName;
+o.RecordTypeId = sheetRecordTypeId;
 insert o;
 
 // fix glitch of standard pricebook not working
