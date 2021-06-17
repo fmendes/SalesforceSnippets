@@ -1,0 +1,394 @@
+<!--
+****************************************************
+* Name:         EditMeasurements
+* Author:       Strategic Growth, Inc. (www.strategicgrowthinc.com)
+* Date:         09 Nov 2020
+* ==================================================
+* ==================================================
+* Purpose:      ...
+*
+* ==================================================
+* ==================================================
+* History:
+* VERSION   DATE            INITIALS    DESCRIPTION/FEATURES ADDED
+* 1.0       09 Nov 2020     FMF     Initial Development
+* 
+****************************************************
+-->
+<apex:page id="EditMeasurements"
+           standardController="Opportunity"
+           extensions="SG_VFC_EditMeasurements"
+           showHeader="true"
+           sidebar="false"
+           lightningStylesheets="true"
+           docType="html-5.0">
+
+    <style type="text/css">
+    .showStatus {
+        position: absolute;
+        overflow: hidden;
+        top: 0px;
+        padding: 0;
+        margin: 0;
+        width: 90%;
+        height: 100%;
+        background: rgba( 255, 255, 255, 0.8 ); /* dimmed */
+        z-index: 1001;
+        visibility: visible;
+        display: block;
+    }
+    .hideStatus {
+        visibility: hidden;
+        display: none;
+    }
+    .animatedStatus {
+        display: block;
+        position: absolute;
+        top: 100px;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        margin-left: auto;
+        margin-right: auto;
+        z-index: 1002;
+    }
+
+    @keyframes slideAnimation {
+        from {
+            margin-left: 100%;
+            width: 300%;
+        }
+        to {
+            margin-left: 0%;
+            width: 100%;
+        }
+    }
+
+    .animatedDisplay {
+        animation-name: slideAnimation;
+        animation-duration: 0.3s;
+    }
+
+    .smallNumberCol {
+        width: 90px;
+    }
+
+    .dataCell SELECT {
+        font-size: larger;
+    }
+
+    .dataCell INPUT {
+        font-size: larger;
+    }
+
+    .headerRow DIV, .pbSubheader H3 {
+        font-size: large!important;
+    }
+
+    /* make body wider so columns can expand */
+    DIV.pbBody {
+        min-width: 2700px;
+    }
+
+    .remarks {
+        width: 240px;
+    }
+
+    .orderHeader {
+        width: 6rem;
+    }
+
+/* tooltip content, format and position */
+.tooltip-toggle::before {
+  position: absolute;
+  top: -1.2rem;
+  left: -10rem;
+  background-color: yellow;
+  border-radius: 2px;
+  border: solid 1px darkgray;
+  content: attr(aria-label);
+  padding: 0.25rem;
+  text-transform: none;
+  transition: all 0.5s ease;
+  width: 10rem;
+}
+/* little arrow on the right side of tooltip */
+.tooltip-toggle::after {
+  position: absolute;
+  top: 0.25rem;
+  left: 1rem;
+  border-left: 5px solid #2B222A;
+  border-bottom: 5px solid transparent;
+  border-top: 5px solid transparent;
+  content: " ";
+  font-size: 0;
+  line-height: 0;
+  margin-left: -1rem;
+  width: 0;
+}
+/* tooltip content format/behavior/transition to displayed */
+.tooltip-toggle::before, .tooltip-toggle::after {
+  color: black;
+/*  font-family: monospace;*/
+  font-size: 12px;
+  opacity: 0;
+  pointer-events: none;
+  text-align: center;
+}
+/* tooltip transition to hidden */
+.tooltip-toggle:focus::before, .tooltip-toggle:focus::after, .tooltip-toggle:hover::before, .tooltip-toggle:hover::after {
+  opacity: 1;
+  transition: all 0.75s ease;
+}
+
+    </style>
+
+    <apex:slds />
+    <div class="slds-scope">
+        <apex:form id="theForm">
+
+            <apex:pageMessages id="errorMessage" escape="false"/>
+
+            <apex:actionStatus id="ajaxStatus" layout="block"
+                               startStyleClass="showStatus" stopStyleClass="hideStatus">
+                <apex:facet name="start">
+                    <apex:image value="/img/loading32.gif" styleClass="animatedStatus"/>
+                </apex:facet>
+            </apex:actionStatus>
+
+            <apex:variable value="Sort #" var="SortOrderNumberHeader" />
+
+            <apex:pageBlock id="thePageBlock" title="{!theRecord.Name}" >
+                <apex:pageBlockButtons id="buttonBlock" location="top">
+
+                    <!--
+	https://desertkingwindows--partial.my.salesforce.com/setup/ui/recordtypeselect.jsp?ent=01I3h000001x7PI&retURL=%2F00601000005wT8WAAU&save_new_url=%2Fa0U%2Fe%3FCF00N3h00000HjxMj%3DSixpack%2BTEST%2BOPPTY%26CF00N3h00000HjxMj_lkid%3D00601000005wT8W%26retURL%3D%252F00601000005wT8WAAU
+	https://desertkingwindows--sgidev1.lightning.force.com/lightning/o/Measurement__c/new?count=3&nooverride=1&useRecordTypeCheck=1&navigationLocation=RELATED_LIST&uid=160581819091665897&backgroundContext=%2Flightning%2Fr%2FOpportunity%2F0066C000006nAKdQAM%2Fview
+	after selecting record type, append:  &recordTypeId=0123h000001AlmTAAS
+
+											action="{! URLFOR($Action.Measurement__c.New, null
+											, ['CF00N3h00000HjxMj_lkid'=recordID,'CF00N3h00000HjxMj'=theRecord.Name
+												,'retURL'=$CurrentPage.URL,'saveURL'='/apex/EditMeasurements?id='+recordID
+												,'cancelURL'='/apex/EditMeasurements?id='+recordID]) }"
+
+						<apex:commandButton value="New Measurement"
+											action="/setup/ui/recordtypeselect.jsp?ent=01I6C0000009KqX&retURL=%2F{! recordID }&save_new_url=%2Fa0S%2Fe%3FCF00N3h00000HjxMj%3D{! theRecord.Name }%26CF00N3h00000HjxMj_lkid%3D{! recordID }%26CF00N3h00000HjxMj_lkid%3D00601000005wT8W%26retURL%3D%252F{! recordID }"
+											status="ajaxStatus"
+											immediate="true"
+											reRender="thePageBlock,errorMessage" />
+
+	https://desertkingwindows--sgidev1.lightning.force.com/one/one.app#/alohaRedirect/apex/EditMeasurements?id=0066C000006nAKdQAM
+					-->
+                    <apex:commandButton value="New Measurement"
+                                        action="{! URLFOR($Action.Measurement__c.New, null
+                                        , ['CF00N6C000001B7vT_lkid'=recordID
+                                            ,'CF00N6C000001B7vT'=theRecord.Name
+                                            ,'backgroundContext'='%2Fapex%2FEditMeasurements?id='+recordID
+                                            ,'retURL'='/apex/EditMeasurements?id='+recordID
+                                            ,'saveURL'='/apex/EditMeasurements?id='+recordID
+                                            ,'cancelURL'='/apex/EditMeasurements?id='+recordID]) }"
+                                        immediate="true"
+                                        reRender="thePageBlock,errorMessage" />
+                    <!--  $CurrentPage.URL -->
+                    <apex:commandButton value="Save"
+                                        action="{!saveMeasurements}"
+                                        status="ajaxStatus"
+                                        reRender="thePageBlock,errorMessage" />
+                    <apex:commandButton value="Cancel"
+                                        action="{!cancel}"
+                                        status="ajaxStatus"
+                                        reRender="thePageBlock,errorMessage" />
+                </apex:pageBlockButtons>
+
+                <apex:outputPanel layout="block"
+                                  styleClass="animatedDisplay" >
+
+                    <apex:variable value="Alside/Amerimax Window/Door" var="r" />
+
+                    <apex:pageBlockSection id="pbsAlside"
+                                           title="{! r } Measurements"
+                                           columns="1"
+                                           collapsible="false" >
+                        <apex:pageBlockTable var="m" value="{!measurementMap[ r ]}" >
+                            <apex:column headerValue="{!SortOrderNumberHeader}" headerClass="orderHeader" >
+                                <apex:inputField value="{!m.Sort_Order_Number__c}" >
+                                    <apex:actionSupport event="onchange"
+                                                        action="{!renumberMeasurements}"
+                                                        reRender="thePageBlock,errorMessage">
+                                    </apex:actionSupport>
+                                </apex:inputField>
+                            </apex:column>
+
+                            <apex:column headerValue="{!$ObjectType.Measurement__c.fields.Room__c.label}" >
+                                <apex:inputField value="{!m.Room__c}" />
+                            </apex:column>
+                            <apex:column headerValue="{!$ObjectType.Measurement__c.fields.Series__c.label}"
+                                         html-aria-label="{!m.Sort_Order_Number__c} - {!m.Room__c}"
+                                         styleClass="tooltip-toggle" >
+                                <apex:inputField value="{!m.Series__c}" />
+                            </apex:column>
+                            <apex:column headerValue="{!$ObjectType.Measurement__c.fields.Width__c.label}"
+                                         html-aria-label="{!m.Sort_Order_Number__c} - {!m.Room__c}"
+                                         styleClass="tooltip-toggle" >
+                                <apex:inputField value="{!m.Width__c}" styleClass="smallNumberCol" />
+                            </apex:column>
+                            <apex:column headerValue="{!$ObjectType.Measurement__c.fields.Height__c.label}"
+                                         html-aria-label="{!m.Sort_Order_Number__c} - {!m.Room__c}"
+                                         styleClass="tooltip-toggle" >
+                                <apex:inputField value="{!m.Height__c}" styleClass="smallNumberCol" />
+                            </apex:column>
+                            <apex:column headerValue="{!$ObjectType.Measurement__c.fields.Style_Orientation__c.label}"
+                                         html-aria-label="{!m.Sort_Order_Number__c} - {!m.Room__c}"
+                                         styleClass="tooltip-toggle" >
+                                <apex:inputField value="{!m.Style_Orientation__c}" />
+                            </apex:column>
+                            <apex:column headerValue="{!$ObjectType.Measurement__c.fields.Frame_Type__c.label}" >
+                                <apex:inputField value="{!m.Frame_Type__c}" />
+                            </apex:column>
+                            <apex:column headerValue="{!$ObjectType.Measurement__c.fields.Frame_Color__c.label}" >
+                                <apex:inputField value="{!m.Frame_Color__c}" />
+                            </apex:column>
+                            <apex:column headerValue="{!$ObjectType.Measurement__c.fields.Low_E__c.label}" >
+                                <apex:inputField value="{!m.Low_E__c}" />
+                            </apex:column>
+                            <apex:column headerValue="{!$ObjectType.Measurement__c.fields.Screens__c.label}" >
+                                <apex:inputField value="{!m.Screens__c}" />
+                            </apex:column>
+                            <apex:column headerValue="{!$ObjectType.Measurement__c.fields.Americoat_Color__c.label}" >
+                                <apex:inputField value="{!m.Americoat_Color__c}" />
+                            </apex:column>
+                            <apex:column headerValue="{!$ObjectType.Measurement__c.fields.Glass_Options__c.label}" >
+                                <apex:inputField value="{!m.Glass_Options__c}" />
+                            </apex:column>
+                            <apex:column headerValue="{!$ObjectType.Measurement__c.fields.Obscure_Pattern_Glass__c.label}" >
+                                <apex:inputField value="{!m.Obscure_Pattern_Glass__c}" />
+                            </apex:column>
+                            <apex:column headerValue="{!$ObjectType.Measurement__c.fields.Grid_V_H_Per_Sash__c.label}" >
+                                <apex:inputField value="{!m.Grid_V_H_Per_Sash__c}" />
+                            </apex:column>
+                            <apex:column headerValue="{!$ObjectType.Measurement__c.fields.Grid_Pattern__c.label}" >
+                                <apex:inputField value="{!m.Grid_Pattern__c}" />
+                            </apex:column>
+
+                            <apex:column headerValue="{!$ObjectType.Measurement__c.fields.Remarks_Special_Comments__c.label}"
+                                         styleClass="remarks" >
+                                <apex:inputField value="{!m.Remarks_Special_Comments__c}" styleClass="remarks" />
+                            </apex:column>
+                        </apex:pageBlockTable>
+                    </apex:pageBlockSection>
+
+                    <apex:variable value="Titan Security Door" var="r" />
+
+                    <apex:pageBlockSection title="{! r } Measurements" columns="1"
+                                           collapsible="false" >
+                        <apex:pageBlockTable var="m" value="{!measurementMap[ r ]}" >
+                            <apex:column headerValue="{!SortOrderNumberHeader}" headerClass="orderHeader" >
+                                <apex:inputField value="{!m.Sort_Order_Number__c}" >
+                                    <apex:actionSupport event="onchange"
+                                                        action="{!renumberMeasurements}"
+                                                        reRender="thePageBlock,errorMessage">
+                                    </apex:actionSupport>
+                                </apex:inputField>
+                            </apex:column>
+
+                            <apex:column headerValue="{!$ObjectType.Measurement__c.fields.Door_Model_Name__c.label}" >
+                                <apex:inputField value="{!m.Door_Model_Name__c}" />
+                            </apex:column>
+                            <apex:column headerValue="{!$ObjectType.Measurement__c.fields.Frame_Type__c.label}" >
+                                <apex:inputField value="{!m.Frame_Type__c}" />
+                            </apex:column>
+                            <apex:column headerValue="{!$ObjectType.Measurement__c.fields.Door_Size__c.label}" >
+                                <apex:inputField value="{!m.Door_Size__c}" />
+                            </apex:column>
+                            <apex:column headerValue="{!$ObjectType.Measurement__c.fields.Width__c.label}" >
+                                <apex:inputField value="{!m.Width__c}" styleClass="smallNumberCol" />
+                            </apex:column>
+                            <apex:column headerValue="{!$ObjectType.Measurement__c.fields.Height__c.label}" >
+                                <apex:inputField value="{!m.Height__c}" styleClass="smallNumberCol" />
+                            </apex:column>
+                            <apex:column headerValue="{!$ObjectType.Measurement__c.fields.Door_Type__c.label}" >
+                                <apex:inputField value="{!m.Door_Type__c}" />
+                            </apex:column>
+                            <apex:column headerValue="{!$ObjectType.Measurement__c.fields.Handle_Height__c.label}" >
+                                <apex:inputField value="{!m.Handle_Height__c}" />
+                            </apex:column>
+                            <apex:column headerValue="{!$ObjectType.Measurement__c.fields.Door_Color__c.label}" >
+                                <apex:inputField value="{!m.Door_Color__c}" />
+                            </apex:column>
+                            <apex:column headerValue="{!$ObjectType.Measurement__c.fields.Screens__c.label}" >
+                                <apex:inputField value="{!m.Screens__c}" />
+                            </apex:column>
+                            <apex:column headerValue="{!$ObjectType.Measurement__c.fields.Tempered_Safety_Glass__c.label}" >
+                                <apex:inputField value="{!m.Tempered_Safety_Glass__c}" />
+                            </apex:column>
+                            <apex:column headerValue="{!$ObjectType.Measurement__c.fields.Installation_Type__c.label}" >
+                                <apex:inputField value="{!m.Installation_Type__c}" />
+                            </apex:column>
+                        </apex:pageBlockTable>
+                    </apex:pageBlockSection>
+
+                    <apex:variable value="Titan Screen Door" var="r" />
+
+                    <apex:pageBlockSection title="{! r } Measurements" columns="1"
+                                           collapsible="false" >
+                        <apex:pageBlockTable var="m" value="{!measurementMap[ r ]}" >
+                            <apex:column headerValue="{!SortOrderNumberHeader}" headerClass="orderHeader" >
+                                <apex:inputField value="{!m.Sort_Order_Number__c}" >
+                                    <apex:actionSupport event="onchange"
+                                                        action="{!renumberMeasurements}"
+                                                        reRender="thePageBlock,errorMessage">
+                                    </apex:actionSupport>
+                                </apex:inputField>
+                            </apex:column>
+
+                            <apex:column headerValue="{!$ObjectType.Measurement__c.fields.Door_Model__c.label}" >
+                                <apex:inputField value="{!m.Door_Model__c}" />
+                            </apex:column>
+                            <apex:column headerValue="{!$ObjectType.Measurement__c.fields.Door_Size__c.label}" >
+                                <apex:inputField value="{!m.Door_Size__c}" />
+                            </apex:column>
+                            <apex:column headerValue="{!$ObjectType.Measurement__c.fields.Width__c.label}" >
+                                <apex:inputField value="{!m.Width__c}" styleClass="smallNumberCol" />
+                            </apex:column>
+                            <apex:column headerValue="{!$ObjectType.Measurement__c.fields.Height__c.label}" >
+                                <apex:inputField value="{!m.Height__c}" styleClass="smallNumberCol" />
+                            </apex:column>
+                            <apex:column headerValue="{!$ObjectType.Measurement__c.fields.Handle_Side__c.label}" >
+                                <apex:inputField value="{!m.Handle_Side__c}" />
+                            </apex:column>
+                            <apex:column headerValue="{!$ObjectType.Measurement__c.fields.Door_Color__c.label}" >
+                                <apex:inputField value="{!m.Door_Color__c}" />
+                            </apex:column>
+                        </apex:pageBlockTable>
+                    </apex:pageBlockSection>
+
+                </apex:outputPanel>
+
+            </apex:pageBlock>
+
+            <script>
+                // execute scroll left after page loads while respecting any framework code
+                function scrollLeft() {
+                    window.scrollBy( -3000, 0 );
+                }
+                if( window.attachEvent ) {
+                    window.attachEvent( 'onload', scrollLeft );
+                } else {
+                    if( window.onload ) {
+                        var curronload = window.onload;
+                        var newonload = function() {
+                            curronload();
+                            scrollLeft();
+                        };
+                        window.onload = scrollLeft;
+                    } else {
+                        window.onload = scrollLeft;
+                    }
+                }
+            </script>
+
+        </apex:form>
+
+    </div>
+
+</apex:page>
